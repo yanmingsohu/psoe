@@ -1,0 +1,15 @@
+The executable format for PSX game consoles is different from standard PE or ELF executable formats. The PSX runtime library expects executable files to be in a specific structure that is outlined in the runtime library reference document.
+
+The first 0x800 bytes comprise a standard header format, which is immediately followed by the TEXT section of the binary.
+
+The header format is as follows. All multi-byte numerical addresses are little-endian.
+
+0x000 [8 bytes]  = "PS-X EXE" (magicnum)
+0x010 [4 bytes]  = execution start address
+0x018 [4 bytes]  = starting address of TEXT section
+0x01C [4 bytes]  = size of text section
+0x030 [4 bytes]  = stack ($sp) start address
+0x04C [variable] = "Sony Computer Entertainment Inc. for North America area" 
+(region-specific)
+
+The TEXT section must be stored at an address which is a multiple of 2048 bytes.

@@ -1,0 +1,12 @@
+[submodule "deps/libADSR"]
+	path = deps/libADSR
+	url = https://github.com/kylophone/libADSR
+[submodule "deps/glfw"]
+	path = deps/glfw
+	url = https://github.com/glfw/glfw
+[submodule "deps/soloud"]
+	path = deps/soloud
+	url = https://github.com/jarikomppa/soloud
+[submodule "deps/UGM"]
+	path = deps/UGM
+	url = https://github.com/Ubpa/UGM
