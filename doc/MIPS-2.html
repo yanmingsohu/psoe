@@ -1,0 +1,955 @@
+<html>
+<head><meta http-equiv=Content-Type content="text/html; charset=UTF-8">
+<style type="text/css">
+<!--
+span.cls_002{font-family:Courier New,serif;font-size:18.1px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+div.cls_002{font-family:Courier New,serif;font-size:18.1px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+span.cls_005{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+div.cls_005{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+span.cls_006{font-family:Courier New,serif;font-size:14.0px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: none}
+div.cls_006{font-family:Courier New,serif;font-size:14.0px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: none}
+span.cls_007{font-family:Courier New,serif;font-size:14.0px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_007{font-family:Courier New,serif;font-size:14.0px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_004{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_004{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_008{font-family:Courier New,serif;font-size:10.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_008{font-family:Courier New,serif;font-size:10.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_009{font-family:Courier New,serif;font-size:6.0px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_009{font-family:Courier New,serif;font-size:6.0px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_019{font-family:Courier New,serif;font-size:14.0px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: underline}
+div.cls_019{font-family:Courier New,serif;font-size:14.0px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: none}
+span.cls_010{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: none}
+div.cls_010{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: none}
+span.cls_011{font-family:Courier New,serif;font-size:6.0px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+div.cls_011{font-family:Courier New,serif;font-size:6.0px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+span.cls_012{font-family:Times,serif;font-size:10.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_012{font-family:Times,serif;font-size:10.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_020{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: underline}
+div.cls_020{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_018{font-family:Courier New,serif;font-size:14.0px;color:rgb(0,0,0);font-weight:bold;font-style:italic;text-decoration: none}
+div.cls_018{font-family:Courier New,serif;font-size:14.0px;color:rgb(0,0,0);font-weight:bold;font-style:italic;text-decoration: none}
+-->
+</style>
+</head>
+<body>
+<div style="position:absolute;left:50%;margin-left:-306px;top:0px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:214.20px;top:68.40px" class="cls_002"><span class="cls_002">MIPS Instructions</span></div>
+<div style="position:absolute;left:72.00px;top:99.60px" class="cls_005"><span class="cls_005">Note: You can have this handout on both exams.</span></div>
+<div style="position:absolute;left:72.00px;top:123.30px" class="cls_006"><span class="cls_006">Instruction Formats</span><span class="cls_007">:</span></div>
+<div style="position:absolute;left:72.00px;top:137.64px" class="cls_004"><span class="cls_004">Instruction formats: all 32 bits wide (one word):</span></div>
+<div style="position:absolute;left:204.00px;top:162.00px" class="cls_008"><span class="cls_008">6</span></div>
+<div style="position:absolute;left:258.00px;top:162.00px" class="cls_008"><span class="cls_008">5</span></div>
+<div style="position:absolute;left:312.00px;top:162.00px" class="cls_008"><span class="cls_008">5</span></div>
+<div style="position:absolute;left:377.99px;top:162.00px" class="cls_008"><span class="cls_008">5</span></div>
+<div style="position:absolute;left:431.99px;top:162.00px" class="cls_008"><span class="cls_008">5</span></div>
+<div style="position:absolute;left:491.99px;top:162.00px" class="cls_008"><span class="cls_008">6</span></div>
+<div style="position:absolute;left:165.60px;top:171.66px" class="cls_004"><span class="cls_004">+--------+--------+-------+-------+------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:183.66px" class="cls_004"><span class="cls_004">R-type format| Op-code|</span></div>
+<div style="position:absolute;left:266.40px;top:183.66px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:298.80px;top:183.66px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:349.20px;top:183.66px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:410.40px;top:183.66px" class="cls_004"><span class="cls_004">|  SA</span></div>
+<div style="position:absolute;left:460.80px;top:183.66px" class="cls_004"><span class="cls_004">|</span><span class="cls_008">Funct-code</span><span class="cls_004">|</span></div>
+<div style="position:absolute;left:273.60px;top:192.66px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:192.66px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:378.00px;top:192.66px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:165.60px;top:195.66px" class="cls_004"><span class="cls_004">+--------+--------+-------+-------+------+--------+</span></div>
+<div style="position:absolute;left:198.00px;top:220.02px" class="cls_008"><span class="cls_008">6</span></div>
+<div style="position:absolute;left:258.00px;top:220.02px" class="cls_008"><span class="cls_008">5</span></div>
+<div style="position:absolute;left:317.99px;top:220.02px" class="cls_008"><span class="cls_008">5</span></div>
+<div style="position:absolute;left:437.99px;top:220.02px" class="cls_008"><span class="cls_008">16</span></div>
+<div style="position:absolute;left:164.40px;top:229.68px" class="cls_004"><span class="cls_004">+--------+--------+-------+------------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:241.68px" class="cls_004"><span class="cls_004">I-type format|Op-code |</span></div>
+<div style="position:absolute;left:273.60px;top:241.68px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:291.60px;top:241.68px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:320.40px;top:241.68px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:349.20px;top:241.68px" class="cls_004"><span class="cls_004">| 2’s complement constant|</span></div>
+<div style="position:absolute;left:280.80px;top:250.68px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:250.68px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:165.60px;top:253.68px" class="cls_004"><span class="cls_004">+--------+--------+-------+------------------------+</span></div>
+<div style="position:absolute;left:192.00px;top:278.04px" class="cls_008"><span class="cls_008">6</span></div>
+<div style="position:absolute;left:371.99px;top:278.04px" class="cls_008"><span class="cls_008">26</span></div>
+<div style="position:absolute;left:165.60px;top:287.70px" class="cls_004"><span class="cls_004">+--------+-----------------------------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:299.70px" class="cls_004"><span class="cls_004">J-type format| Op-code|</span></div>
+<div style="position:absolute;left:352.80px;top:299.70px" class="cls_004"><span class="cls_004">jump_target</span></div>
+<div style="position:absolute;left:532.80px;top:299.70px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:165.60px;top:311.70px" class="cls_004"><span class="cls_004">+--------+-----------------------------------------+</span></div>
+<div style="position:absolute;left:172.80px;top:323.70px" class="cls_004"><span class="cls_004">^</span></div>
+<div style="position:absolute;left:532.80px;top:323.70px" class="cls_004"><span class="cls_004">^</span></div>
+<div style="position:absolute;left:172.80px;top:335.70px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:532.80px;top:335.70px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:136.80px;top:347.70px" class="cls_004"><span class="cls_004">bit 31</span></div>
+<div style="position:absolute;left:504.00px;top:347.70px" class="cls_004"><span class="cls_004">bit 0</span></div>
+<div style="position:absolute;left:72.00px;top:371.34px" class="cls_019"><span class="cls_019">Instructions and their formats</span></div>
+<div style="position:absolute;left:72.00px;top:397.68px" class="cls_010"><span class="cls_010">General notes:</span></div>
+<div style="position:absolute;left:72.00px;top:421.68px" class="cls_004"><span class="cls_004">a. </span><span class="cls_005">R</span></div>
+<div style="position:absolute;left:104.40px;top:421.68px" class="cls_004"><span class="cls_004">, </span><span class="cls_005">R</span></div>
+<div style="position:absolute;left:129.60px;top:421.68px" class="cls_004"><span class="cls_004">, and </span><span class="cls_005">R</span></div>
+<div style="position:absolute;left:190.80px;top:421.68px" class="cls_004"><span class="cls_004">specify general purpose registers</span></div>
+<div style="position:absolute;left:100.80px;top:430.68px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:126.00px;top:430.68px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:180.00px;top:430.68px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:72.00px;top:433.74px" class="cls_004"><span class="cls_004">b. Square brackets (</span><span class="cls_005">[]</span><span class="cls_004">) indicate “the contents of”</span></div>
+<div style="position:absolute;left:72.00px;top:445.80px" class="cls_004"><span class="cls_004">c. </span><span class="cls_005">[PC]</span><span class="cls_004"> specifies the address of the instruction in execution</span></div>
+<div style="position:absolute;left:72.00px;top:457.86px" class="cls_004"><span class="cls_004">d. </span><span class="cls_005">I</span><span class="cls_004"> specifies part of instruction and its subscripts indicate</span></div>
+<div style="position:absolute;left:93.60px;top:469.92px" class="cls_004"><span class="cls_004">bit positions of sub-fields</span></div>
+<div style="position:absolute;left:72.00px;top:481.92px" class="cls_004"><span class="cls_004">e. </span><span class="cls_005">||</span><span class="cls_004"> indicates concatenation of bit fields</span></div>
+<div style="position:absolute;left:72.00px;top:493.98px" class="cls_004"><span class="cls_004">f. Superscripts indicate repetition of a binary value</span></div>
+<div style="position:absolute;left:72.00px;top:505.98px" class="cls_004"><span class="cls_004">g. </span><span class="cls_005">M{i}</span><span class="cls_004"> is a value (contents) of the word beginning at the memory</span></div>
+<div style="position:absolute;left:93.60px;top:518.04px" class="cls_004"><span class="cls_004">address i</span></div>
+<div style="position:absolute;left:72.00px;top:530.04px" class="cls_004"><span class="cls_004">h. </span><span class="cls_005">m{i}</span><span class="cls_004"> is a value (contents) of the byte at the memory address i</span></div>
+<div style="position:absolute;left:72.00px;top:542.10px" class="cls_004"><span class="cls_004">i. all integers are in 2’s complement representation if not</span></div>
+<div style="position:absolute;left:93.60px;top:554.10px" class="cls_004"><span class="cls_004">indicated as unsigned</span></div>
+<div style="position:absolute;left:72.00px;top:614.10px" class="cls_005"><span class="cls_005">1.</span><span class="cls_004"> </span><span class="cls_010">addition with overflow:</span><span class="cls_005"> add</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:626.16px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:638.16px" class="cls_004"><span class="cls_004">R-type format | 000000 |</span></div>
+<div style="position:absolute;left:266.40px;top:638.16px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:298.80px;top:638.16px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:352.80px;top:638.16px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:410.40px;top:638.16px" class="cls_004"><span class="cls_004">| 00000 | 100000 |</span></div>
+<div style="position:absolute;left:273.60px;top:638.16px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:647.16px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:381.60px;top:647.16px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:650.16px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:662.16px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:288.00px;top:662.16px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:306.00px;top:662.16px" class="cls_004"><span class="cls_004">&lt;-- [R</span></div>
+<div style="position:absolute;left:352.80px;top:662.16px" class="cls_004"><span class="cls_004">] + [R</span></div>
+<div style="position:absolute;left:399.60px;top:662.16px" class="cls_004"><span class="cls_004">];  PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:295.20px;top:671.16px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:349.20px;top:671.16px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:396.00px;top:671.16px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:216.00px;top:674.16px" class="cls_010"><span class="cls_010">(If overflow then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:686.16px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">add R</span></div>
+<div style="position:absolute;left:234.00px;top:686.16px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:252.00px;top:686.16px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:230.40px;top:695.16px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:248.40px;top:695.16px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:266.40px;top:695.16px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">1</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-306px;top:802px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:72.00px;top:69.66px" class="cls_005"><span class="cls_005">2.</span><span class="cls_004"> </span><span class="cls_010">add without overflow:</span><span class="cls_005"> addu</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:72.00px;top:81.72px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">add</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:93.78px" class="cls_004"><span class="cls_004">- funct=33</span></div>
+<div style="position:absolute;left:144.00px;top:102.78px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:105.78px" class="cls_004"><span class="cls_004">- overflow ignored</span></div>
+<div style="position:absolute;left:72.00px;top:141.78px" class="cls_005"><span class="cls_005">3.</span><span class="cls_004"> </span><span class="cls_010">subtract with overflow:</span><span class="cls_005"> sub </span><span class="cls_004">instruction</span></div>
+<div style="position:absolute;left:172.80px;top:153.84px" class="cls_004"><span class="cls_004">+--------+-------+------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:165.84px" class="cls_004"><span class="cls_004">R-type format | 000000 |</span></div>
+<div style="position:absolute;left:266.40px;top:165.84px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:294.00px;top:165.84px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:344.40px;top:165.84px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:373.20px;top:165.84px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:403.50px;top:165.84px" class="cls_004"><span class="cls_004">| 00000 | 100010 |</span></div>
+<div style="position:absolute;left:273.60px;top:174.84px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:322.80px;top:174.84px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:380.40px;top:174.84px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:177.84px" class="cls_004"><span class="cls_004">+--------+-------+------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:201.84px" class="cls_004"><span class="cls_004">Effects of the instruction:  R</span></div>
+<div style="position:absolute;left:298.80px;top:201.84px" class="cls_004"><span class="cls_004">&lt;-- [R</span></div>
+<div style="position:absolute;left:345.60px;top:201.84px" class="cls_004"><span class="cls_004">] - [R</span></div>
+<div style="position:absolute;left:392.40px;top:201.84px" class="cls_004"><span class="cls_004">];  PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:288.00px;top:210.84px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:342.00px;top:210.84px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:388.80px;top:210.84px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:237.60px;top:213.84px" class="cls_010"><span class="cls_010">(If overflow then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:225.84px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">sub R</span></div>
+<div style="position:absolute;left:234.00px;top:225.84px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:252.00px;top:225.84px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:230.40px;top:234.84px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:248.40px;top:234.84px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:266.40px;top:234.84px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:261.90px" class="cls_005"><span class="cls_005">4.</span><span class="cls_004"> </span><span class="cls_010">subtract without overflow:</span><span class="cls_005"> subu</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:72.00px;top:273.96px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">sub</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:286.02px" class="cls_004"><span class="cls_004">- funct=35</span></div>
+<div style="position:absolute;left:144.00px;top:295.02px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:298.02px" class="cls_004"><span class="cls_004">- overflow ignored</span></div>
+<div style="position:absolute;left:72.00px;top:334.02px" class="cls_005"><span class="cls_005">5. </span><span class="cls_010">multiply:</span><span class="cls_005"> mul</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:346.08px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:358.08px" class="cls_004"><span class="cls_004">R-type format | 000000 |</span></div>
+<div style="position:absolute;left:266.40px;top:358.08px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:295.20px;top:358.08px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:352.80px;top:358.08px" class="cls_004"><span class="cls_004">| 00000</span></div>
+<div style="position:absolute;left:410.40px;top:358.08px" class="cls_004"><span class="cls_004">| 00000 | 011000 |</span></div>
+<div style="position:absolute;left:273.60px;top:367.08px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:324.00px;top:367.08px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:172.80px;top:370.08px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:394.08px" class="cls_004"><span class="cls_004">Effects of the instruction:Hi||Lo &lt;-- [R</span></div>
+<div style="position:absolute;left:363.60px;top:394.08px" class="cls_004"><span class="cls_004">] * [R</span></div>
+<div style="position:absolute;left:410.40px;top:394.08px" class="cls_004"><span class="cls_004">]; PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:360.00px;top:403.08px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:406.80px;top:403.08px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:72.00px;top:406.08px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">mult R</span></div>
+<div style="position:absolute;left:241.20px;top:406.08px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:237.60px;top:415.08px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:255.60px;top:415.08px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:442.14px" class="cls_005"><span class="cls_005">6. </span><span class="cls_010">unsigned multiply:</span><span class="cls_005"> mulu</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:72.00px;top:454.20px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">mut</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:466.26px" class="cls_004"><span class="cls_004">- funct = 25</span></div>
+<div style="position:absolute;left:158.40px;top:475.26px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:478.26px" class="cls_004"><span class="cls_004">- contents of R</span></div>
+<div style="position:absolute;left:180.00px;top:478.26px" class="cls_009"><span class="cls_009">s</span><span class="cls_004"> and R</span><span class="cls_009">t</span><span class="cls_004"> are considered as unsigned integers</span></div>
+<div style="position:absolute;left:72.00px;top:514.26px" class="cls_005"><span class="cls_005">7. </span><span class="cls_010">divide:</span><span class="cls_005"> div</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:526.32px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:538.32px" class="cls_004"><span class="cls_004">R-type format | 000000 |</span></div>
+<div style="position:absolute;left:266.40px;top:538.32px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:294.00px;top:538.32px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:322.80px;top:538.32px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:351.60px;top:538.32px" class="cls_004"><span class="cls_004">| 00000</span></div>
+<div style="position:absolute;left:410.10px;top:538.32px" class="cls_004"><span class="cls_004">| 00000 | 011010 |</span></div>
+<div style="position:absolute;left:273.60px;top:547.32px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:330.00px;top:547.32px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:172.80px;top:550.32px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:574.32px" class="cls_004"><span class="cls_004">Effects of the instruction: Lo &lt;-- [R</span></div>
+<div style="position:absolute;left:342.00px;top:574.32px" class="cls_004"><span class="cls_004">] / [R</span></div>
+<div style="position:absolute;left:388.80px;top:574.32px" class="cls_004"><span class="cls_004">];  Hi &lt;-- [R</span></div>
+<div style="position:absolute;left:486.00px;top:574.32px" class="cls_004"><span class="cls_004">]mod[R</span></div>
+<div style="position:absolute;left:532.80px;top:574.32px" class="cls_004"><span class="cls_004">]</span></div>
+<div style="position:absolute;left:338.40px;top:583.32px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:385.20px;top:583.32px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:482.40px;top:583.32px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:529.20px;top:583.32px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:273.60px;top:586.32px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:598.32px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">div R</span></div>
+<div style="position:absolute;left:234.00px;top:598.32px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:230.40px;top:607.32px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:248.40px;top:607.32px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:634.38px" class="cls_005"><span class="cls_005">8. </span><span class="cls_010">unsigned divide:</span><span class="cls_005"> divu</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:72.00px;top:646.44px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">div</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:658.50px" class="cls_004"><span class="cls_004">- funct = 27</span></div>
+<div style="position:absolute;left:158.40px;top:667.50px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:670.50px" class="cls_004"><span class="cls_004">- contents of R</span></div>
+<div style="position:absolute;left:190.80px;top:670.50px" class="cls_004"><span class="cls_004">and R</span></div>
+<div style="position:absolute;left:237.60px;top:670.50px" class="cls_004"><span class="cls_004">are considered as unsigned integers</span></div>
+<div style="position:absolute;left:180.00px;top:679.50px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:226.80px;top:679.50px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">2</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-306px;top:1604px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:72.00px;top:69.66px" class="cls_005"><span class="cls_005">9. </span><span class="cls_010">set less than:</span><span class="cls_005"> slt</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:81.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:93.72px" class="cls_004"><span class="cls_004">R-type format | 000000 |</span></div>
+<div style="position:absolute;left:266.40px;top:93.72px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:294.00px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:322.80px;top:93.72px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:351.60px;top:93.72px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:409.20px;top:93.72px" class="cls_004"><span class="cls_004">| 00000 | 101010 |</span></div>
+<div style="position:absolute;left:273.60px;top:102.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:330.00px;top:102.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:380.40px;top:102.72px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:105.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:129.72px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:72.00px;top:141.72px" class="cls_004"><span class="cls_004">if [R</span></div>
+<div style="position:absolute;left:111.60px;top:141.72px" class="cls_004"><span class="cls_004">] &lt; [R</span></div>
+<div style="position:absolute;left:158.40px;top:141.72px" class="cls_004"><span class="cls_004">] then R</span></div>
+<div style="position:absolute;left:226.80px;top:141.72px" class="cls_004"><span class="cls_004">&lt;-- 0</span><span class="cls_009"><sup>31</sup></span><span class="cls_004"> || 1 else R</span></div>
+<div style="position:absolute;left:367.20px;top:141.72px" class="cls_004"><span class="cls_004">&lt;-- 0</span><span class="cls_009"><sup>32</sup></span><span class="cls_004">; PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:108.00px;top:150.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:154.80px;top:150.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:216.00px;top:150.72px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:356.40px;top:150.72px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:72.00px;top:153.72px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">slt R</span></div>
+<div style="position:absolute;left:234.00px;top:153.72px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:252.00px;top:153.72px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:230.40px;top:162.72px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:248.40px;top:162.72px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:266.40px;top:162.72px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:189.78px" class="cls_005"><span class="cls_005">10. </span><span class="cls_010">set less than unsigned:</span><span class="cls_005"> sltu</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:72.00px;top:201.84px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">slt</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:213.90px" class="cls_004"><span class="cls_004">- funct = 43</span></div>
+<div style="position:absolute;left:158.40px;top:222.90px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:225.90px" class="cls_004"><span class="cls_004">- contents of R</span></div>
+<div style="position:absolute;left:190.80px;top:225.90px" class="cls_004"><span class="cls_004">and R</span></div>
+<div style="position:absolute;left:237.60px;top:225.90px" class="cls_004"><span class="cls_004">are considered as unsigned integers.</span></div>
+<div style="position:absolute;left:180.00px;top:234.90px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:226.80px;top:234.90px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:72.00px;top:261.90px" class="cls_005"><span class="cls_005">11.</span><span class="cls_004"> </span><span class="cls_010">logical and:</span><span class="cls_004"> </span><span class="cls_005">and</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:273.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:285.96px" class="cls_004"><span class="cls_004">R-type format | 000000 |</span></div>
+<div style="position:absolute;left:266.40px;top:285.96px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:298.80px;top:285.96px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:352.80px;top:285.96px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:410.40px;top:285.96px" class="cls_004"><span class="cls_004">| 00000 | 100100 |</span></div>
+<div style="position:absolute;left:273.60px;top:294.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:294.96px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:381.60px;top:294.96px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:297.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:321.96px" class="cls_004"><span class="cls_004">Effects of the instruction:  R</span></div>
+<div style="position:absolute;left:298.80px;top:321.96px" class="cls_004"><span class="cls_004">&lt;-- [R</span></div>
+<div style="position:absolute;left:345.60px;top:321.96px" class="cls_004"><span class="cls_004">] AND [R</span></div>
+<div style="position:absolute;left:406.80px;top:321.96px" class="cls_004"><span class="cls_004">]; PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:288.00px;top:330.96px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:342.00px;top:330.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:403.20px;top:330.96px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:72.00px;top:333.96px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">and R</span></div>
+<div style="position:absolute;left:234.00px;top:333.96px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:252.00px;top:333.96px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:230.40px;top:342.96px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:248.40px;top:342.96px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:266.40px;top:342.96px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:370.02px" class="cls_005"><span class="cls_005">12</span></div>
+<div style="position:absolute;left:99.60px;top:370.02px" class="cls_005"><span class="cls_005">-</span></div>
+<div style="position:absolute;left:120.00px;top:370.02px" class="cls_005"><span class="cls_005">14.</span><span class="cls_004"> </span><span class="cls_010"> logical  or,  nor  &  exclusive  or:</span><span class="cls_004"> </span><span class="cls_005"> or</span><span class="cls_004">, </span><span class="cls_005"> nor</span><span class="cls_004">,  & </span><span class="cls_005"> xor</span></div>
+<div style="position:absolute;left:72.00px;top:382.08px" class="cls_004"><span class="cls_004">instructions</span></div>
+<div style="position:absolute;left:72.00px;top:394.08px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">and</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:406.14px" class="cls_004"><span class="cls_004">- funct=37</span></div>
+<div style="position:absolute;left:162.00px;top:406.14px" class="cls_004"><span class="cls_004">for </span><span class="cls_005">or</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:144.00px;top:415.14px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:418.20px" class="cls_004"><span class="cls_004">- funct=39</span></div>
+<div style="position:absolute;left:162.00px;top:418.20px" class="cls_004"><span class="cls_004">for </span><span class="cls_005">nor</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:144.00px;top:427.20px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:430.26px" class="cls_004"><span class="cls_004">- funct=40</span></div>
+<div style="position:absolute;left:162.00px;top:430.26px" class="cls_004"><span class="cls_004">for </span><span class="cls_005">xor</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:144.00px;top:439.26px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:442.32px" class="cls_004"><span class="cls_004">- appropriate logical function performed instead of logical </span><span class="cls_005">and</span></div>
+<div style="position:absolute;left:72.00px;top:478.38px" class="cls_005"><span class="cls_005">15. </span><span class="cls_010">addition immediate with overflow:</span><span class="cls_005"> addi</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:490.44px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:79.20px;top:502.44px" class="cls_004"><span class="cls_004">I-type format:| 001000 |</span></div>
+<div style="position:absolute;left:273.60px;top:502.44px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:298.80px;top:502.44px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:360.00px;top:502.44px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:417.60px;top:502.44px" class="cls_004"><span class="cls_004">immediate</span></div>
+<div style="position:absolute;left:532.80px;top:502.44px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:280.80px;top:511.44px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:511.44px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:514.44px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:538.44px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:187.20px;top:550.44px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:205.20px;top:550.44px" class="cls_004"><span class="cls_004">&lt;-- [R</span></div>
+<div style="position:absolute;left:252.00px;top:550.44px" class="cls_004"><span class="cls_004">] + ([I</span></div>
+<div style="position:absolute;left:309.60px;top:550.44px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>16 </sup></span><span class="cls_004">||</span></div>
+<div style="position:absolute;left:349.20px;top:550.44px" class="cls_004"><span class="cls_004">[I</span></div>
+<div style="position:absolute;left:381.60px;top:550.44px" class="cls_004"><span class="cls_004">]);  PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:194.40px;top:559.44px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:248.40px;top:559.44px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:302.40px;top:559.44px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:363.60px;top:559.44px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:187.20px;top:562.44px" class="cls_010"><span class="cls_010">(If overflow then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:574.44px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">addi R</span></div>
+<div style="position:absolute;left:241.20px;top:574.44px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:259.20px;top:574.44px" class="cls_005"><span class="cls_005">,immediate</span></div>
+<div style="position:absolute;left:237.60px;top:583.44px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:255.60px;top:583.44px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:610.50px" class="cls_005"><span class="cls_005">16.</span><span class="cls_004"> </span><span class="cls_010">addition immediate without overflow:</span><span class="cls_005"> addiu</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:72.00px;top:622.56px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">addi</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:634.62px" class="cls_004"><span class="cls_004">- op-code=9</span></div>
+<div style="position:absolute;left:151.20px;top:643.62px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:646.62px" class="cls_004"><span class="cls_004">- overflow ignored</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">3</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-306px;top:2406px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:72.00px;top:69.66px" class="cls_005"><span class="cls_005">17. </span><span class="cls_010">set less than immediate:</span><span class="cls_005"> slti</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:81.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:93.72px" class="cls_004"><span class="cls_004">I-type format: | 001010 |</span></div>
+<div style="position:absolute;left:273.60px;top:93.72px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:298.80px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:327.60px;top:93.72px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:360.00px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:417.60px;top:93.72px" class="cls_004"><span class="cls_004">immediate</span></div>
+<div style="position:absolute;left:532.80px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:280.80px;top:102.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:334.80px;top:102.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:105.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:129.72px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:93.60px;top:141.72px" class="cls_004"><span class="cls_004">if [R</span></div>
+<div style="position:absolute;left:133.20px;top:141.72px" class="cls_004"><span class="cls_004">] &lt; ([I</span></div>
+<div style="position:absolute;left:190.80px;top:141.72px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>16</sup></span></div>
+<div style="position:absolute;left:212.40px;top:141.72px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:266.40px;top:141.72px" class="cls_004"><span class="cls_004">]) then R</span></div>
+<div style="position:absolute;left:342.00px;top:141.72px" class="cls_004"><span class="cls_004">&lt;-- 0</span><span class="cls_009"><sup>31</sup></span><span class="cls_004">|| 1 else</span></div>
+<div style="position:absolute;left:471.60px;top:141.72px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:489.60px;top:141.72px" class="cls_004"><span class="cls_004">&lt;-- 0</span><span class="cls_009"><sup>32</sup></span></div>
+<div style="position:absolute;left:129.60px;top:150.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:183.60px;top:150.72px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:248.40px;top:150.72px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:331.20px;top:150.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:478.80px;top:150.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:100.80px;top:153.72px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:165.72px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">slti R</span></div>
+<div style="position:absolute;left:241.20px;top:165.72px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:259.20px;top:165.72px" class="cls_005"><span class="cls_005">,immediate</span></div>
+<div style="position:absolute;left:237.60px;top:174.72px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:255.60px;top:174.72px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:201.78px" class="cls_005"><span class="cls_005">18. </span><span class="cls_010">set less than immediate unsigned:</span><span class="cls_005"> sltiu</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:72.00px;top:213.84px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">slti</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:225.90px" class="cls_004"><span class="cls_004">- op-code = 11</span></div>
+<div style="position:absolute;left:172.80px;top:234.90px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:237.90px" class="cls_004"><span class="cls_004">- contents in the comparison are considered as unsigned integers.</span></div>
+<div style="position:absolute;left:72.00px;top:273.90px" class="cls_005"><span class="cls_005">19. </span><span class="cls_010">logical and immediate:</span><span class="cls_005"> andi</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:285.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:79.20px;top:297.96px" class="cls_004"><span class="cls_004">I-type format:| 001100 |</span></div>
+<div style="position:absolute;left:273.60px;top:297.96px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:298.80px;top:297.96px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:360.00px;top:297.96px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:432.00px;top:297.96px" class="cls_004"><span class="cls_004">immediate</span></div>
+<div style="position:absolute;left:532.80px;top:297.96px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:280.80px;top:306.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:306.96px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:309.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:333.96px" class="cls_004"><span class="cls_004">Effects of the instruction: R</span></div>
+<div style="position:absolute;left:291.60px;top:333.96px" class="cls_004"><span class="cls_004">&lt;-- [R</span></div>
+<div style="position:absolute;left:338.40px;top:333.96px" class="cls_004"><span class="cls_004">] AND (0</span><span class="cls_009"><sup>16</sup></span><span class="cls_004"> || [I</span></div>
+<div style="position:absolute;left:464.40px;top:333.96px" class="cls_004"><span class="cls_004">]);</span></div>
+<div style="position:absolute;left:280.80px;top:342.96px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:334.80px;top:342.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:446.40px;top:342.96px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:273.60px;top:345.96px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:357.96px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">andi R</span></div>
+<div style="position:absolute;left:241.20px;top:357.96px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:259.20px;top:357.96px" class="cls_005"><span class="cls_005">,immediate</span></div>
+<div style="position:absolute;left:237.60px;top:366.96px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:255.60px;top:366.96px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:394.02px" class="cls_005"><span class="cls_005">20-21.</span><span class="cls_004"> </span><span class="cls_010">logical or immediate & xor immediate:</span><span class="cls_004"> </span><span class="cls_005">ori</span><span class="cls_004">, & </span><span class="cls_005">xori</span><span class="cls_004"> instr.</span></div>
+<div style="position:absolute;left:72.00px;top:406.08px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">andi</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:418.14px" class="cls_004"><span class="cls_004">- op-code=13</span></div>
+<div style="position:absolute;left:176.40px;top:418.14px" class="cls_004"><span class="cls_004">for </span><span class="cls_005">ori</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:158.40px;top:427.14px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:430.20px" class="cls_004"><span class="cls_004">- op-code=14</span></div>
+<div style="position:absolute;left:176.40px;top:430.20px" class="cls_004"><span class="cls_004">for </span><span class="cls_005">xori</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:158.40px;top:439.20px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:442.26px" class="cls_004"><span class="cls_004">- appropriate logical function performed instead of logical </span><span class="cls_005">and</span></div>
+<div style="position:absolute;left:72.00px;top:478.32px" class="cls_005"><span class="cls_005">22. </span><span class="cls_004">load word</span><span class="cls_010">:</span><span class="cls_005"> lw</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:490.38px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:502.38px" class="cls_004"><span class="cls_004">I-type format: | 100011 | R</span></div>
+<div style="position:absolute;left:306.00px;top:502.38px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:360.00px;top:502.38px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:424.80px;top:502.38px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:502.38px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:511.38px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:334.80px;top:511.38px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:514.38px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:526.38px" class="cls_004"><span class="cls_004">Effects of the instruction: R</span></div>
+<div style="position:absolute;left:291.60px;top:526.38px" class="cls_004"><span class="cls_004">&lt;-- M{[R</span></div>
+<div style="position:absolute;left:352.80px;top:526.38px" class="cls_004"><span class="cls_004">] + [I</span></div>
+<div style="position:absolute;left:403.20px;top:526.38px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>16</sup></span></div>
+<div style="position:absolute;left:424.80px;top:526.38px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:478.80px;top:526.38px" class="cls_004"><span class="cls_004">]}</span></div>
+<div style="position:absolute;left:280.80px;top:535.38px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:349.20px;top:535.38px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:396.00px;top:535.38px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:460.80px;top:535.38px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:273.60px;top:538.38px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:122.40px;top:550.38px" class="cls_010"><span class="cls_010">(If an illegal memory address then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:562.38px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">lw R</span></div>
+<div style="position:absolute;left:226.80px;top:562.38px" class="cls_005"><span class="cls_005">,offset(R</span></div>
+<div style="position:absolute;left:295.20px;top:562.38px" class="cls_005"><span class="cls_005">)</span></div>
+<div style="position:absolute;left:223.20px;top:571.38px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:291.60px;top:571.38px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:598.44px" class="cls_005"><span class="cls_005">23. </span><span class="cls_004">store word</span><span class="cls_010">:</span><span class="cls_005"> sw</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:610.50px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:622.50px" class="cls_004"><span class="cls_004">I-type format: | 101011 | R</span></div>
+<div style="position:absolute;left:298.80px;top:622.50px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:360.00px;top:622.50px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:424.80px;top:622.50px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:622.50px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:631.50px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:631.50px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:634.50px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:658.50px" class="cls_004"><span class="cls_004">Effects of the instruction: M{[R</span></div>
+<div style="position:absolute;left:306.00px;top:658.50px" class="cls_004"><span class="cls_004">] + [I</span></div>
+<div style="position:absolute;left:356.40px;top:658.50px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>16</sup></span></div>
+<div style="position:absolute;left:378.00px;top:658.50px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:432.00px;top:658.50px" class="cls_004"><span class="cls_004">]} &lt;-- [R</span></div>
+<div style="position:absolute;left:500.40px;top:658.50px" class="cls_004"><span class="cls_004">]</span></div>
+<div style="position:absolute;left:302.40px;top:667.50px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:349.20px;top:667.50px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:414.00px;top:667.50px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:496.80px;top:667.50px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:273.60px;top:670.50px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:122.40px;top:682.50px" class="cls_010"><span class="cls_010">(If an illegal memory address then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:694.50px" class="cls_004"><span class="cls_004">Assembly format:</span><span class="cls_005"> sw R</span></div>
+<div style="position:absolute;left:226.80px;top:694.50px" class="cls_005"><span class="cls_005">,offset(R</span></div>
+<div style="position:absolute;left:295.20px;top:694.50px" class="cls_005"><span class="cls_005">)</span></div>
+<div style="position:absolute;left:223.20px;top:703.50px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:291.60px;top:703.50px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">4</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-306px;top:3208px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:72.00px;top:69.66px" class="cls_005"><span class="cls_005">24. </span><span class="cls_004">load unsigned byte</span><span class="cls_010">:</span><span class="cls_005"> lbu</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:81.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:93.72px" class="cls_004"><span class="cls_004">I-type format: | 100100 | R</span></div>
+<div style="position:absolute;left:298.80px;top:93.72px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:360.00px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:424.80px;top:93.72px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:102.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:102.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:105.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:129.72px" class="cls_004"><span class="cls_004">Effects of the instruction: R</span></div>
+<div style="position:absolute;left:284.40px;top:129.72px" class="cls_004"><span class="cls_004">&lt;-- 0</span><span class="cls_009"><sup>24</sup></span><span class="cls_004"> || m{[R</span></div>
+<div style="position:absolute;left:388.80px;top:129.72px" class="cls_004"><span class="cls_004">] + [I</span></div>
+<div style="position:absolute;left:439.20px;top:129.72px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>16</sup></span></div>
+<div style="position:absolute;left:460.80px;top:129.72px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:514.80px;top:129.72px" class="cls_004"><span class="cls_004">]}</span></div>
+<div style="position:absolute;left:280.80px;top:138.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:385.20px;top:138.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:432.00px;top:138.72px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:496.80px;top:138.72px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:273.60px;top:141.72px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:129.60px;top:153.72px" class="cls_010"><span class="cls_010">(If an illegal memory address then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:165.72px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">lbu R</span></div>
+<div style="position:absolute;left:234.00px;top:165.72px" class="cls_005"><span class="cls_005">,offset(R</span></div>
+<div style="position:absolute;left:302.40px;top:165.72px" class="cls_005"><span class="cls_005">)</span></div>
+<div style="position:absolute;left:230.40px;top:174.72px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:298.80px;top:174.72px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:201.78px" class="cls_005"><span class="cls_005">25. </span><span class="cls_004">load byte</span><span class="cls_010">:</span><span class="cls_005"> lb</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:72.00px;top:213.84px" class="cls_004"><span class="cls_004">Identical as </span><span class="cls_005">lbu</span><span class="cls_004"> instruction, except:</span></div>
+<div style="position:absolute;left:72.00px;top:225.90px" class="cls_004"><span class="cls_004">- leftmost 24 bits of R</span></div>
+<div style="position:absolute;left:250.08px;top:225.90px" class="cls_004"><span class="cls_004">are loaded by a value of leftmost bit of</span></div>
+<div style="position:absolute;left:239.04px;top:234.90px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:72.00px;top:237.90px" class="cls_004"><span class="cls_004">the byte instead of zeros</span></div>
+<div style="position:absolute;left:72.00px;top:249.90px" class="cls_004"><span class="cls_004">- op-code =32</span></div>
+<div style="position:absolute;left:165.60px;top:258.90px" class="cls_009"><span class="cls_009">dec</span></div>
+<div style="position:absolute;left:72.00px;top:285.90px" class="cls_005"><span class="cls_005">26. </span><span class="cls_004">store byte</span><span class="cls_010">:</span><span class="cls_005"> sb</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:297.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:309.96px" class="cls_004"><span class="cls_004">I-type format: | 101000 | R</span></div>
+<div style="position:absolute;left:298.80px;top:309.96px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:360.00px;top:309.96px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:424.80px;top:309.96px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:309.96px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:318.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:327.60px;top:318.96px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:321.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:345.96px" class="cls_004"><span class="cls_004">Effects of the instruction: m{[R</span></div>
+<div style="position:absolute;left:306.00px;top:345.96px" class="cls_004"><span class="cls_004">] + [I</span></div>
+<div style="position:absolute;left:356.40px;top:345.96px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>16</sup></span></div>
+<div style="position:absolute;left:378.00px;top:345.96px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:432.00px;top:345.96px" class="cls_004"><span class="cls_004">]} &lt;-- [R</span></div>
+<div style="position:absolute;left:500.40px;top:345.96px" class="cls_004"><span class="cls_004">]</span></div>
+<div style="position:absolute;left:302.40px;top:354.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:349.20px;top:354.96px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:414.00px;top:354.96px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:496.80px;top:354.96px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:507.60px;top:354.96px" class="cls_009"><span class="cls_009">7..0</span></div>
+<div style="position:absolute;left:273.60px;top:357.96px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:122.40px;top:369.96px" class="cls_010"><span class="cls_010">(If an illegal memory address then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:381.96px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">sb R</span></div>
+<div style="position:absolute;left:226.80px;top:381.96px" class="cls_005"><span class="cls_005">,offset(R</span></div>
+<div style="position:absolute;left:295.20px;top:381.96px" class="cls_005"><span class="cls_005">)</span></div>
+<div style="position:absolute;left:223.20px;top:390.96px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:291.60px;top:390.96px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:418.02px" class="cls_005"><span class="cls_005">27. </span><span class="cls_010">load upper immediate:</span><span class="cls_005"> lui</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:430.08px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:442.08px" class="cls_004"><span class="cls_004">I-type format: | 001111 | 00000 |  R</span></div>
+<div style="position:absolute;left:360.00px;top:442.08px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:424.80px;top:442.08px" class="cls_004"><span class="cls_004">immediate</span></div>
+<div style="position:absolute;left:532.80px;top:442.08px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:331.20px;top:451.08px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:454.08px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:466.08px" class="cls_004"><span class="cls_004">Effects of the instruction: R</span></div>
+<div style="position:absolute;left:291.60px;top:466.08px" class="cls_004"><span class="cls_004">&lt;-- [I</span></div>
+<div style="position:absolute;left:349.20px;top:466.08px" class="cls_004"><span class="cls_004">] || 0</span><span class="cls_009"><sup>16</sup></span><span class="cls_004">; PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:280.80px;top:475.08px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:334.80px;top:475.08px" class="cls_009"><span class="cls_009">15-0</span></div>
+<div style="position:absolute;left:72.00px;top:478.08px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">lui R</span></div>
+<div style="position:absolute;left:234.00px;top:478.08px" class="cls_005"><span class="cls_005">,immediate</span></div>
+<div style="position:absolute;left:230.40px;top:487.08px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:514.14px" class="cls_005"><span class="cls_005">28. </span><span class="cls_010">branch on equal:</span><span class="cls_005"> beq</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:526.20px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:538.20px" class="cls_004"><span class="cls_004">I-type format: | 000100 | R</span></div>
+<div style="position:absolute;left:306.00px;top:538.20px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:360.00px;top:538.20px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:424.80px;top:538.20px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:538.20px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:547.20px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:334.80px;top:547.20px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:550.20px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:574.20px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:72.00px;top:586.20px" class="cls_004"><span class="cls_004">if [R</span></div>
+<div style="position:absolute;left:111.60px;top:586.20px" class="cls_004"><span class="cls_004">] = [R</span></div>
+<div style="position:absolute;left:158.40px;top:586.20px" class="cls_004"><span class="cls_004">] then PC &lt;-- [PC] + 4 + ([I</span></div>
+<div style="position:absolute;left:367.20px;top:586.20px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>14</sup></span></div>
+<div style="position:absolute;left:388.80px;top:586.20px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:442.80px;top:586.20px" class="cls_004"><span class="cls_004">] || 0</span><span class="cls_009"><sup>2</sup></span><span class="cls_004">)</span></div>
+<div style="position:absolute;left:108.00px;top:595.20px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:154.80px;top:595.20px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:360.00px;top:595.20px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:424.80px;top:595.20px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:201.60px;top:598.20px" class="cls_004"><span class="cls_004">(i.e. PC &lt;-- [PC] + 4 + 4*offset)</span></div>
+<div style="position:absolute;left:144.00px;top:610.20px" class="cls_004"><span class="cls_004">else PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:622.20px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">beq R</span></div>
+<div style="position:absolute;left:234.00px;top:622.20px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:252.00px;top:622.20px" class="cls_005"><span class="cls_005">,offset</span></div>
+<div style="position:absolute;left:230.40px;top:631.20px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:248.40px;top:631.20px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">5</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-306px;top:4010px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:72.00px;top:69.66px" class="cls_005"><span class="cls_005">29. </span><span class="cls_010">branch on not equal:</span><span class="cls_005"> bne</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:81.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:93.72px" class="cls_004"><span class="cls_004">I-type format: | 000101 | R</span></div>
+<div style="position:absolute;left:306.00px;top:93.72px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:360.00px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:432.00px;top:93.72px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:102.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:334.80px;top:102.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:105.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:129.72px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:72.00px;top:141.72px" class="cls_004"><span class="cls_004">if [R</span></div>
+<div style="position:absolute;left:111.60px;top:141.72px" class="cls_004"><span class="cls_004">] &lt;> [R</span></div>
+<div style="position:absolute;left:165.60px;top:141.72px" class="cls_004"><span class="cls_004">] then PC &lt;-- [PC] + 4 + ([I</span></div>
+<div style="position:absolute;left:374.40px;top:141.72px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>14</sup></span></div>
+<div style="position:absolute;left:396.00px;top:141.72px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:450.00px;top:141.72px" class="cls_004"><span class="cls_004">] || 0</span><span class="cls_009"><sup>2</sup></span><span class="cls_004">)</span></div>
+<div style="position:absolute;left:108.00px;top:150.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:162.00px;top:150.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:367.20px;top:150.72px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:432.00px;top:150.72px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:144.00px;top:153.72px" class="cls_004"><span class="cls_004">else PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:165.72px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">bne R</span></div>
+<div style="position:absolute;left:234.00px;top:165.72px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:252.00px;top:165.72px" class="cls_005"><span class="cls_005">,offset</span></div>
+<div style="position:absolute;left:230.40px;top:174.72px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:248.40px;top:174.72px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:201.78px" class="cls_005"><span class="cls_005">30. </span><span class="cls_010">branch on less than or equal zero:</span><span class="cls_005"> blez</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:213.84px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:225.84px" class="cls_004"><span class="cls_004">I-type format: | 000110 |  R</span></div>
+<div style="position:absolute;left:306.00px;top:225.84px" class="cls_004"><span class="cls_004">| 00000</span></div>
+<div style="position:absolute;left:360.00px;top:225.84px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:432.00px;top:225.84px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:225.84px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:273.60px;top:234.84px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:180.00px;top:237.84px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:261.84px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:72.00px;top:273.84px" class="cls_004"><span class="cls_004">if [R</span></div>
+<div style="position:absolute;left:111.60px;top:273.84px" class="cls_004"><span class="cls_004">] </span><span class="cls_020">&lt;</span><span class="cls_004"> 0 then PC &lt;-- [PC] + 4 + ([I</span></div>
+<div style="position:absolute;left:349.20px;top:273.84px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>14</sup></span></div>
+<div style="position:absolute;left:370.80px;top:273.84px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:424.80px;top:273.84px" class="cls_004"><span class="cls_004">] || 0</span><span class="cls_009"><sup>2</sup></span><span class="cls_004">)</span></div>
+<div style="position:absolute;left:108.00px;top:282.84px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:342.00px;top:282.84px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:406.80px;top:282.84px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:144.00px;top:285.84px" class="cls_004"><span class="cls_004">else PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:297.84px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">blez R</span></div>
+<div style="position:absolute;left:241.20px;top:297.84px" class="cls_005"><span class="cls_005">,offset</span></div>
+<div style="position:absolute;left:237.60px;top:306.84px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:333.90px" class="cls_005"><span class="cls_005">31. </span><span class="cls_010">branch on greater than zero:</span><span class="cls_005"> bgtz</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:345.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:357.96px" class="cls_004"><span class="cls_004">I-type format: |000111 |  R</span></div>
+<div style="position:absolute;left:298.80px;top:357.96px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:320.40px;top:357.96px" class="cls_004"><span class="cls_004">00000</span></div>
+<div style="position:absolute;left:360.00px;top:357.96px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:432.00px;top:357.96px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:357.96px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:366.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:180.00px;top:369.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:393.96px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:72.00px;top:405.96px" class="cls_004"><span class="cls_004">if [R</span></div>
+<div style="position:absolute;left:111.60px;top:405.96px" class="cls_004"><span class="cls_004">] > 0 then PC &lt;-- [PC] + 4 + ([I</span></div>
+<div style="position:absolute;left:349.20px;top:405.96px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>14</sup></span></div>
+<div style="position:absolute;left:370.80px;top:405.96px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:424.80px;top:405.96px" class="cls_004"><span class="cls_004">] || 0</span><span class="cls_009"><sup>2</sup></span><span class="cls_004">)</span></div>
+<div style="position:absolute;left:108.00px;top:414.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:342.00px;top:414.96px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:406.80px;top:414.96px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:144.00px;top:417.96px" class="cls_004"><span class="cls_004">else PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:429.96px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">bgtz R</span></div>
+<div style="position:absolute;left:241.20px;top:429.96px" class="cls_005"><span class="cls_005">,offset</span></div>
+<div style="position:absolute;left:237.60px;top:438.96px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:466.02px" class="cls_005"><span class="cls_005">32. </span><span class="cls_010">branch on less than zero:</span><span class="cls_005"> bltz</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:478.08px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:490.08px" class="cls_004"><span class="cls_004">I-type format: |000001</span></div>
+<div style="position:absolute;left:244.80px;top:490.08px" class="cls_004"><span class="cls_004">|  R</span></div>
+<div style="position:absolute;left:306.00px;top:490.08px" class="cls_004"><span class="cls_004">| 00000</span></div>
+<div style="position:absolute;left:360.00px;top:490.08px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:432.00px;top:490.08px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:490.08px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:273.60px;top:499.08px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:180.00px;top:502.08px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:514.08px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:72.00px;top:526.08px" class="cls_004"><span class="cls_004">if [R</span></div>
+<div style="position:absolute;left:111.60px;top:526.08px" class="cls_004"><span class="cls_004">] &lt; 0 then PC &lt;-- [PC] + 4 + ([I</span></div>
+<div style="position:absolute;left:349.20px;top:526.08px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>14</sup></span></div>
+<div style="position:absolute;left:370.80px;top:526.08px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:424.80px;top:526.08px" class="cls_004"><span class="cls_004">] || 0</span><span class="cls_009"><sup>2</sup></span><span class="cls_004">)</span></div>
+<div style="position:absolute;left:108.00px;top:535.08px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:342.00px;top:535.08px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:406.80px;top:535.08px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:144.00px;top:538.08px" class="cls_004"><span class="cls_004">else PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:550.08px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">bltz R</span></div>
+<div style="position:absolute;left:241.20px;top:550.08px" class="cls_005"><span class="cls_005">,offset</span></div>
+<div style="position:absolute;left:237.60px;top:559.08px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:586.14px" class="cls_005"><span class="cls_005">33. </span><span class="cls_010">jump:</span><span class="cls_005"> j</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:165.60px;top:598.20px" class="cls_004"><span class="cls_004">+--------+-----------------------------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:610.20px" class="cls_004"><span class="cls_004">J-type format|000010</span></div>
+<div style="position:absolute;left:230.40px;top:610.20px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:345.60px;top:610.20px" class="cls_004"><span class="cls_004">jump_target</span></div>
+<div style="position:absolute;left:532.80px;top:610.20px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:165.60px;top:622.20px" class="cls_004"><span class="cls_004">+--------+-----------------------------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:646.20px" class="cls_004"><span class="cls_004">Effects of the instruction: PC &lt;-- [PC</span></div>
+<div style="position:absolute;left:367.20px;top:646.20px" class="cls_004"><span class="cls_004">] || [I</span></div>
+<div style="position:absolute;left:435.60px;top:646.20px" class="cls_004"><span class="cls_004">] || 0</span><span class="cls_009"><sup>2</sup></span></div>
+<div style="position:absolute;left:345.60px;top:655.20px" class="cls_009"><span class="cls_009">31..28</span></div>
+<div style="position:absolute;left:417.60px;top:655.20px" class="cls_009"><span class="cls_009">25..0</span></div>
+<div style="position:absolute;left:72.00px;top:658.20px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">j jump_target</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">6</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-306px;top:4812px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:72.00px;top:69.66px" class="cls_005"><span class="cls_005">34. </span><span class="cls_010">jump and link:</span><span class="cls_005"> jal</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:165.60px;top:81.72px" class="cls_004"><span class="cls_004">+--------+-----------------------------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:93.72px" class="cls_004"><span class="cls_004">J-type format|000011</span></div>
+<div style="position:absolute;left:230.40px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:345.60px;top:93.72px" class="cls_004"><span class="cls_004">jump_target</span></div>
+<div style="position:absolute;left:532.80px;top:93.72px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:165.60px;top:105.72px" class="cls_004"><span class="cls_004">+--------+-----------------------------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:129.72px" class="cls_004"><span class="cls_004">Effects of the instruction: R</span></div>
+<div style="position:absolute;left:295.20px;top:129.72px" class="cls_004"><span class="cls_004">&lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:280.80px;top:138.72px" class="cls_009"><span class="cls_009">31</span></div>
+<div style="position:absolute;left:273.60px;top:141.72px" class="cls_004"><span class="cls_004">PC &lt;-- [PC</span></div>
+<div style="position:absolute;left:367.20px;top:141.72px" class="cls_004"><span class="cls_004">] || [I</span></div>
+<div style="position:absolute;left:435.60px;top:141.72px" class="cls_004"><span class="cls_004">] || 0</span><span class="cls_009"><sup>2</sup></span></div>
+<div style="position:absolute;left:345.60px;top:150.72px" class="cls_009"><span class="cls_009">31..28</span></div>
+<div style="position:absolute;left:417.60px;top:150.72px" class="cls_009"><span class="cls_009">25..0</span></div>
+<div style="position:absolute;left:72.00px;top:153.72px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">jal jump_target</span></div>
+<div style="position:absolute;left:72.00px;top:189.78px" class="cls_005"><span class="cls_005">35. </span><span class="cls_010">jump register:</span><span class="cls_005"> jr</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:201.84px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:213.84px" class="cls_004"><span class="cls_004">R-type format | 000000 |</span></div>
+<div style="position:absolute;left:266.40px;top:213.84px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:291.60px;top:213.84px" class="cls_004"><span class="cls_004">| 00000</span></div>
+<div style="position:absolute;left:349.20px;top:213.84px" class="cls_004"><span class="cls_004">| 00000 | 00000 | 001000 |</span></div>
+<div style="position:absolute;left:273.60px;top:222.84px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:172.80px;top:225.84px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:249.84px" class="cls_004"><span class="cls_004">Effects of the instruction: PC &lt;-- [R</span></div>
+<div style="position:absolute;left:342.00px;top:249.84px" class="cls_004"><span class="cls_004">]</span></div>
+<div style="position:absolute;left:338.40px;top:258.84px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:72.00px;top:261.84px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">jr R</span></div>
+<div style="position:absolute;left:223.20px;top:270.84px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:297.90px" class="cls_005"><span class="cls_005">36. </span><span class="cls_010">jump and link register:</span><span class="cls_005"> jalr</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:309.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:321.96px" class="cls_004"><span class="cls_004">R-type format | 000000 |</span></div>
+<div style="position:absolute;left:266.40px;top:321.96px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:291.60px;top:321.96px" class="cls_004"><span class="cls_004">| 00000</span></div>
+<div style="position:absolute;left:349.20px;top:321.96px" class="cls_004"><span class="cls_004">| R</span></div>
+<div style="position:absolute;left:403.20px;top:321.96px" class="cls_004"><span class="cls_004">| 00000 | 001001 |</span></div>
+<div style="position:absolute;left:273.60px;top:330.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:370.80px;top:330.96px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:333.96px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:357.96px" class="cls_004"><span class="cls_004">Effects of the instruction: R</span></div>
+<div style="position:absolute;left:291.60px;top:357.96px" class="cls_004"><span class="cls_004">&lt;-- [PC] + 4; PC &lt;-- [R</span></div>
+<div style="position:absolute;left:460.80px;top:357.96px" class="cls_004"><span class="cls_004">]</span></div>
+<div style="position:absolute;left:280.80px;top:366.96px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:457.20px;top:366.96px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:72.00px;top:369.96px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">jalr R</span></div>
+<div style="position:absolute;left:241.20px;top:369.96px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:237.60px;top:378.96px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:255.60px;top:378.96px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:406.02px" class="cls_005"><span class="cls_005">37. </span><span class="cls_010">no operation:</span><span class="cls_005"> nop</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:418.08px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:430.08px" class="cls_004"><span class="cls_004">R-type format | 000000 | 00000 | 00000</span></div>
+<div style="position:absolute;left:349.20px;top:430.08px" class="cls_004"><span class="cls_004">| 00000 | 00000 | 000000 |</span></div>
+<div style="position:absolute;left:172.80px;top:442.08px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:466.08px" class="cls_004"><span class="cls_004">Effects of the instruction: PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:478.08px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">nop</span></div>
+<div style="position:absolute;left:230.40px;top:478.08px" class="cls_004"><span class="cls_004">(= </span><span class="cls_005">sll R</span></div>
+<div style="position:absolute;left:291.60px;top:478.08px" class="cls_005"><span class="cls_005">,0</span><span class="cls_004">  shift logical left 0)</span></div>
+<div style="position:absolute;left:288.00px;top:487.08px" class="cls_011"><span class="cls_011">0</span></div>
+<div style="position:absolute;left:72.00px;top:514.14px" class="cls_005"><span class="cls_005">38. </span><span class="cls_010">move from Hi:</span><span class="cls_005"> mfhi</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:526.20px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:538.20px" class="cls_004"><span class="cls_004">R-type format | 000000 | 00000 | 00000</span></div>
+<div style="position:absolute;left:349.20px;top:538.20px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:378.00px;top:538.20px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:410.40px;top:538.20px" class="cls_004"><span class="cls_004">| 00000 | 010000 |</span></div>
+<div style="position:absolute;left:385.20px;top:547.20px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:550.20px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:574.20px" class="cls_004"><span class="cls_004">Effects of the instruction:  R</span></div>
+<div style="position:absolute;left:302.40px;top:574.20px" class="cls_004"><span class="cls_004">&lt;-- [Hi];  PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:288.00px;top:583.20px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:72.00px;top:586.20px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">mfhi R</span></div>
+<div style="position:absolute;left:237.60px;top:595.20px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:72.00px;top:622.26px" class="cls_005"><span class="cls_005">39. </span><span class="cls_010">move from Lo:</span><span class="cls_005"> mflo</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:634.32px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:646.32px" class="cls_004"><span class="cls_004">R-type format | 000000 | 00000 | 00000</span></div>
+<div style="position:absolute;left:352.80px;top:646.32px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:388.80px;top:646.32px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:410.40px;top:646.32px" class="cls_004"><span class="cls_004">| 00000 | 010010 |</span></div>
+<div style="position:absolute;left:396.00px;top:655.32px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:658.32px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:682.32px" class="cls_004"><span class="cls_004">Effects of the instruction:  R</span></div>
+<div style="position:absolute;left:302.40px;top:682.32px" class="cls_004"><span class="cls_004">&lt;-- [Lo];  PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:288.00px;top:691.32px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:72.00px;top:694.32px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">mflo R</span></div>
+<div style="position:absolute;left:237.60px;top:703.32px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">7</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-306px;top:5614px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:72.00px;top:69.24px" class="cls_018"><span class="cls_018">Exception Handling</span></div>
+<div style="position:absolute;left:72.00px;top:83.64px" class="cls_004"><span class="cls_004">When a condition for any exception</span></div>
+<div style="position:absolute;left:340.20px;top:83.64px" class="cls_004"><span class="cls_004">(overflow, illegal op-code,</span></div>
+<div style="position:absolute;left:72.00px;top:95.64px" class="cls_004"><span class="cls_004">division by zero, etc.) occurs the following </span><span class="cls_020">hardware</span><span class="cls_004"> exception</span></div>
+<div style="position:absolute;left:72.00px;top:107.64px" class="cls_004"><span class="cls_004">processing is performed:</span></div>
+<div style="position:absolute;left:100.80px;top:131.64px" class="cls_004"><span class="cls_004">EPC &lt;-- [PC]</span></div>
+<div style="position:absolute;left:205.20px;top:143.64px" class="cls_004"><span class="cls_004">/</span></div>
+<div style="position:absolute;left:201.60px;top:155.64px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:223.20px;top:155.64px" class="cls_004"><span class="cls_004">0</span><span class="cls_009"><sup>28</sup></span></div>
+<div style="position:absolute;left:244.80px;top:155.64px" class="cls_004"><span class="cls_004">|| 1010</span></div>
+<div style="position:absolute;left:324.00px;top:155.64px" class="cls_004"><span class="cls_004">if illegal op-code (10)</span></div>
+<div style="position:absolute;left:100.80px;top:167.64px" class="cls_004"><span class="cls_004">Cause_Reg &lt;-- |</span></div>
+<div style="position:absolute;left:223.20px;top:167.64px" class="cls_004"><span class="cls_004">0</span><span class="cls_009"><sup>28</sup></span></div>
+<div style="position:absolute;left:244.80px;top:167.64px" class="cls_004"><span class="cls_004">|| 1100</span></div>
+<div style="position:absolute;left:324.00px;top:167.64px" class="cls_004"><span class="cls_004">if overflow (12)</span></div>
+<div style="position:absolute;left:201.60px;top:179.64px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:223.20px;top:179.64px" class="cls_004"><span class="cls_004">0</span><span class="cls_009"><sup>29</sup></span></div>
+<div style="position:absolute;left:244.80px;top:179.64px" class="cls_004"><span class="cls_004">|| 100</span></div>
+<div style="position:absolute;left:324.00px;top:179.64px" class="cls_004"><span class="cls_004">if illegal memory address (4)</span></div>
+<div style="position:absolute;left:204.00px;top:191.64px" class="cls_004"><span class="cls_004">\</span></div>
+<div style="position:absolute;left:232.80px;top:191.64px" class="cls_004"><span class="cls_004">……………</span></div>
+<div style="position:absolute;left:319.20px;top:191.64px" class="cls_004"><span class="cls_004">etc.</span></div>
+<div style="position:absolute;left:100.80px;top:203.64px" class="cls_004"><span class="cls_004">PC &lt;-- 80000180</span></div>
+<div style="position:absolute;left:208.80px;top:212.64px" class="cls_009"><span class="cls_009">hex</span></div>
+<div style="position:absolute;left:72.00px;top:239.64px" class="cls_005"><span class="cls_005">40. </span><span class="cls_010">move from EPC:</span><span class="cls_005"> mfepc</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:251.70px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:263.70px" class="cls_004"><span class="cls_004">R-type format | 010000 | 00000 |</span></div>
+<div style="position:absolute;left:324.00px;top:263.70px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:352.80px;top:263.70px" class="cls_004"><span class="cls_004">| 01110 | 00000 | 000000 |</span></div>
+<div style="position:absolute;left:331.20px;top:272.70px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:172.80px;top:275.70px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:299.70px" class="cls_004"><span class="cls_004">Effects of the instruction:  R</span></div>
+<div style="position:absolute;left:302.40px;top:299.70px" class="cls_004"><span class="cls_004">&lt;-- [EPC];  PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:288.00px;top:308.70px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:72.00px;top:311.70px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">mfepc R</span></div>
+<div style="position:absolute;left:270.00px;top:311.70px" class="cls_004"><span class="cls_004">(This is mfc0 Rt,CP0reg14)</span></div>
+<div style="position:absolute;left:244.80px;top:320.70px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:347.76px" class="cls_005"><span class="cls_005">41. </span><span class="cls_010">move from Cause_Reg:</span><span class="cls_005"> mfco</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:359.82px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:371.82px" class="cls_004"><span class="cls_004">R-type format | 010000 | 00000 |</span></div>
+<div style="position:absolute;left:324.00px;top:371.82px" class="cls_004"><span class="cls_004">R</span></div>
+<div style="position:absolute;left:352.80px;top:371.82px" class="cls_004"><span class="cls_004">| 01101 | 00000 | 000000 |</span></div>
+<div style="position:absolute;left:331.20px;top:380.82px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:383.82px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:407.82px" class="cls_004"><span class="cls_004">Effects of the instruction:  R</span></div>
+<div style="position:absolute;left:302.40px;top:407.82px" class="cls_004"><span class="cls_004">&lt;-- [Cause_Reg];  PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:288.00px;top:416.82px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:72.00px;top:419.82px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">mfco R</span></div>
+<div style="position:absolute;left:270.00px;top:419.82px" class="cls_004"><span class="cls_004">(This is mfc0 Rt,CP0reg13)</span></div>
+<div style="position:absolute;left:237.60px;top:428.82px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:455.46px" class="cls_018"><span class="cls_018">Floating Point Instructions</span></div>
+<div style="position:absolute;left:72.00px;top:481.86px" class="cls_005"><span class="cls_005">42.</span><span class="cls_004"> load word</span><span class="cls_010"> into co-processor 1:</span><span class="cls_005"> lwc1</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:493.92px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:505.92px" class="cls_004"><span class="cls_004">I-type format: | 110001 | R</span></div>
+<div style="position:absolute;left:306.00px;top:505.92px" class="cls_004"><span class="cls_004">|  f</span></div>
+<div style="position:absolute;left:360.00px;top:505.92px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:424.80px;top:505.92px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:505.92px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:514.92px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:334.80px;top:514.92px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:517.92px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:541.92px" class="cls_004"><span class="cls_004">Effects of the instruction: f</span></div>
+<div style="position:absolute;left:291.60px;top:541.92px" class="cls_004"><span class="cls_004">&lt;-- M{[R</span></div>
+<div style="position:absolute;left:352.80px;top:541.92px" class="cls_004"><span class="cls_004">] + [I</span></div>
+<div style="position:absolute;left:403.20px;top:541.92px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>16</sup></span></div>
+<div style="position:absolute;left:424.80px;top:541.92px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:478.80px;top:541.92px" class="cls_004"><span class="cls_004">]}</span></div>
+<div style="position:absolute;left:280.80px;top:550.92px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:349.20px;top:550.92px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:396.00px;top:550.92px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:460.80px;top:550.92px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:273.60px;top:553.92px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:565.92px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">lwc1 f</span></div>
+<div style="position:absolute;left:241.20px;top:565.92px" class="cls_005"><span class="cls_005">,offset(R</span></div>
+<div style="position:absolute;left:309.60px;top:565.92px" class="cls_005"><span class="cls_005">)</span></div>
+<div style="position:absolute;left:237.60px;top:574.92px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:306.00px;top:574.92px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:72.00px;top:601.98px" class="cls_005"><span class="cls_005">43. </span><span class="cls_004">store word from co-processor 1</span><span class="cls_010">:</span><span class="cls_005"> swc1</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:180.00px;top:614.04px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:626.04px" class="cls_004"><span class="cls_004">I-type format: | 111001 | R</span></div>
+<div style="position:absolute;left:306.00px;top:626.04px" class="cls_004"><span class="cls_004">|  f</span></div>
+<div style="position:absolute;left:360.00px;top:626.04px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:424.80px;top:626.04px" class="cls_004"><span class="cls_004">offset</span></div>
+<div style="position:absolute;left:532.80px;top:626.04px" class="cls_004"><span class="cls_004">|</span></div>
+<div style="position:absolute;left:266.40px;top:635.04px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:334.80px;top:635.04px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:180.00px;top:638.04px" class="cls_004"><span class="cls_004">+--------+-------+-------+-----------------------+</span></div>
+<div style="position:absolute;left:72.00px;top:662.04px" class="cls_004"><span class="cls_004">Effects of the instruction: M{[R</span></div>
+<div style="position:absolute;left:306.00px;top:662.04px" class="cls_004"><span class="cls_004">] + [I</span></div>
+<div style="position:absolute;left:356.40px;top:662.04px" class="cls_004"><span class="cls_004">]</span><span class="cls_009"><sup>16</sup></span></div>
+<div style="position:absolute;left:378.00px;top:662.04px" class="cls_004"><span class="cls_004">|| [I</span></div>
+<div style="position:absolute;left:432.00px;top:662.04px" class="cls_004"><span class="cls_004">]} &lt;-- [f</span></div>
+<div style="position:absolute;left:500.40px;top:662.04px" class="cls_004"><span class="cls_004">]</span></div>
+<div style="position:absolute;left:302.40px;top:671.04px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:349.20px;top:671.04px" class="cls_009"><span class="cls_009">15</span></div>
+<div style="position:absolute;left:414.00px;top:671.04px" class="cls_009"><span class="cls_009">15..0</span></div>
+<div style="position:absolute;left:496.80px;top:671.04px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:273.60px;top:674.04px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:72.00px;top:686.04px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">swc1 f</span></div>
+<div style="position:absolute;left:241.20px;top:686.04px" class="cls_005"><span class="cls_005">,offset(R</span></div>
+<div style="position:absolute;left:309.60px;top:686.04px" class="cls_005"><span class="cls_005">)</span></div>
+<div style="position:absolute;left:237.60px;top:695.04px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:306.00px;top:695.04px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">8</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-306px;top:6416px;width:612px;height:792px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:72.00px;top:81.66px" class="cls_005"><span class="cls_005">44.</span><span class="cls_004"> </span><span class="cls_010">addition single precision:</span><span class="cls_005"> add.s</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:93.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:105.72px" class="cls_004"><span class="cls_004">R-type format | 010001 | 00000 |  f</span></div>
+<div style="position:absolute;left:352.80px;top:105.72px" class="cls_004"><span class="cls_004">|  f</span></div>
+<div style="position:absolute;left:410.40px;top:105.72px" class="cls_004"><span class="cls_004">|  f</span></div>
+<div style="position:absolute;left:471.60px;top:105.72px" class="cls_004"><span class="cls_004">|000000 |</span></div>
+<div style="position:absolute;left:324.00px;top:114.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:381.60px;top:114.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:439.20px;top:114.72px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:117.72px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:153.72px" class="cls_004"><span class="cls_004">Effects of the instruction:</span></div>
+<div style="position:absolute;left:288.00px;top:153.72px" class="cls_004"><span class="cls_004">f</span></div>
+<div style="position:absolute;left:306.00px;top:153.72px" class="cls_004"><span class="cls_004">&lt;-- [f</span></div>
+<div style="position:absolute;left:352.80px;top:153.72px" class="cls_004"><span class="cls_004">] + [f</span></div>
+<div style="position:absolute;left:399.60px;top:153.72px" class="cls_004"><span class="cls_004">];  PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:295.20px;top:162.72px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:349.20px;top:162.72px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:396.00px;top:162.72px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:237.60px;top:165.72px" class="cls_010"><span class="cls_010">(If overflow then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:177.72px" class="cls_004"><span class="cls_004">Assembly format: </span><span class="cls_005">add.s R</span></div>
+<div style="position:absolute;left:248.40px;top:177.72px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:266.40px;top:177.72px" class="cls_005"><span class="cls_005">,R</span></div>
+<div style="position:absolute;left:244.80px;top:186.72px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:262.80px;top:186.72px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:280.80px;top:186.72px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:213.78px" class="cls_005"><span class="cls_005">45.</span><span class="cls_004"> </span><span class="cls_010">addition double precision:</span><span class="cls_005"> add.d</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:172.80px;top:225.84px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:237.84px" class="cls_004"><span class="cls_004">R-type format | 010001 | 00001 |  f</span></div>
+<div style="position:absolute;left:352.80px;top:237.84px" class="cls_004"><span class="cls_004">|  f</span></div>
+<div style="position:absolute;left:410.40px;top:237.84px" class="cls_004"><span class="cls_004">|  f</span></div>
+<div style="position:absolute;left:471.60px;top:237.84px" class="cls_004"><span class="cls_004">|0000000|</span></div>
+<div style="position:absolute;left:324.00px;top:246.84px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:381.60px;top:246.84px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:439.20px;top:246.84px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:172.80px;top:249.84px" class="cls_004"><span class="cls_004">+--------+-------+-------+-------+-------+--------+</span></div>
+<div style="position:absolute;left:72.00px;top:273.84px" class="cls_004"><span class="cls_004">Effects of the instruction:f</span></div>
+<div style="position:absolute;left:277.20px;top:273.84px" class="cls_004"><span class="cls_004">||f</span></div>
+<div style="position:absolute;left:309.60px;top:273.84px" class="cls_004"><span class="cls_004">&lt;-- [f</span></div>
+<div style="position:absolute;left:356.40px;top:273.84px" class="cls_004"><span class="cls_004">]||[f</span></div>
+<div style="position:absolute;left:403.20px;top:273.84px" class="cls_004"><span class="cls_004">] + [f</span></div>
+<div style="position:absolute;left:450.00px;top:273.84px" class="cls_004"><span class="cls_004">]||[f</span></div>
+<div style="position:absolute;left:496.80px;top:273.84px" class="cls_004"><span class="cls_004">];</span></div>
+<div style="position:absolute;left:273.60px;top:282.84px" class="cls_009"><span class="cls_009">d</span></div>
+<div style="position:absolute;left:298.80px;top:282.84px" class="cls_009"><span class="cls_009">d+1</span></div>
+<div style="position:absolute;left:352.80px;top:282.84px" class="cls_009"><span class="cls_009">s</span></div>
+<div style="position:absolute;left:392.40px;top:282.84px" class="cls_009"><span class="cls_009">s+1</span></div>
+<div style="position:absolute;left:446.40px;top:282.84px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:486.00px;top:282.84px" class="cls_009"><span class="cls_009">t+1</span></div>
+<div style="position:absolute;left:273.60px;top:285.84px" class="cls_004"><span class="cls_004">PC &lt;-- [PC] + 4</span></div>
+<div style="position:absolute;left:252.00px;top:297.84px" class="cls_010"><span class="cls_010">(If overflow then exception processing)</span></div>
+<div style="position:absolute;left:72.00px;top:309.84px" class="cls_004"><span class="cls_004">Assembly format: add.d </span><span class="cls_005">f</span></div>
+<div style="position:absolute;left:248.40px;top:309.84px" class="cls_005"><span class="cls_005">,f</span></div>
+<div style="position:absolute;left:266.40px;top:309.84px" class="cls_005"><span class="cls_005">,f</span></div>
+<div style="position:absolute;left:244.80px;top:318.84px" class="cls_011"><span class="cls_011">d</span></div>
+<div style="position:absolute;left:262.80px;top:318.84px" class="cls_011"><span class="cls_011">s</span></div>
+<div style="position:absolute;left:280.80px;top:318.84px" class="cls_011"><span class="cls_011">t</span></div>
+<div style="position:absolute;left:72.00px;top:343.92px" class="cls_005"><span class="cls_005">45.</span><span class="cls_007"> </span><span class="cls_010">subtract single precision:</span><span class="cls_005"> sub.s</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:93.60px;top:357.96px" class="cls_004"><span class="cls_004">Similar as add.s but with funct=1</span></div>
+<div style="position:absolute;left:72.00px;top:395.94px" class="cls_005"><span class="cls_005">46.</span><span class="cls_007"> </span><span class="cls_010">subtract double precision:</span><span class="cls_005"> sub.d</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:93.60px;top:409.98px" class="cls_004"><span class="cls_004">Similar as add.d but with funct=1</span></div>
+<div style="position:absolute;left:72.00px;top:447.96px" class="cls_005"><span class="cls_005">47.</span><span class="cls_007"> </span><span class="cls_010">multiply single precision:</span><span class="cls_005"> mul.s</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:93.60px;top:462.00px" class="cls_004"><span class="cls_004">Similar as add.s but with funct=2</span></div>
+<div style="position:absolute;left:72.00px;top:499.98px" class="cls_005"><span class="cls_005">48.</span><span class="cls_007"> </span><span class="cls_010">multiply double precision:</span><span class="cls_005"> mul.d</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:93.60px;top:514.02px" class="cls_004"><span class="cls_004">Similar as add.d but with funct=2</span></div>
+<div style="position:absolute;left:72.00px;top:552.00px" class="cls_005"><span class="cls_005">49.</span><span class="cls_007"> </span><span class="cls_010">divide single precision:</span><span class="cls_005"> div.s</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:93.60px;top:566.04px" class="cls_004"><span class="cls_004">Similar as add.s but with funct=3</span></div>
+<div style="position:absolute;left:72.00px;top:604.02px" class="cls_005"><span class="cls_005">50.</span><span class="cls_007"> </span><span class="cls_010">divide double precision:</span><span class="cls_005"> div.d</span><span class="cls_004"> instruction</span></div>
+<div style="position:absolute;left:93.60px;top:618.06px" class="cls_004"><span class="cls_004">Similar as add.d but with funct=3</span></div>
+<div style="position:absolute;left:303.48px;top:743.76px" class="cls_012"><span class="cls_012">9</span></div>
+</div>
+
+</body>
+</html>
