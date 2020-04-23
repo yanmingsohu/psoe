@@ -9,6 +9,8 @@ rom/*
 Release
 Debug
 demo/*
+.DS_Store
+.vscode/**
 
 *.dll
 *.db

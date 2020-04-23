@@ -10,3 +10,9 @@
 [submodule "deps/UGM"]
 	path = deps/UGM
 	url = https://github.com/Ubpa/UGM
+[submodule "deps/rtaudio"]
+	path = deps/rtaudio
+	url = https://github.com/thestk/rtaudio.git
+[submodule "deps/r8brain"]
+	path = deps/r8brain
+	url = https://github.com/avaneev/r8brain-free-src.git
