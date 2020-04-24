@@ -4,7 +4,8 @@
 
 // https://sourceforge.net/p/predef/wiki/Architectures/
 #if defined(__amd64__)
-  #define JMP_CODE_LEN 5
+  #define X86_64
+  #include "asm_x86-64.h"
 #elif defined(__i386__)
   #error "Cannot support x86-32bit"
 #elif defined(__arm__)
@@ -16,7 +17,15 @@
 
 namespace ps1e {
 
-// Write 'jmp' code to mem[byte 5 length], jump to 'where'
-void make_jump(void* mem, void* where);
+// x32:func(ecx, edx, stack...)
+// x64:func(ecx, edx, r8d, r9d, stack...)
+#define asm_func __cdecl
+
+typedef int OpCodeLen;
+typedef void (asm_func *AsmFuncPf)();
+
+// Write 'jmp' code to mem[JMP_CODE_LEN], jump to 'where'
+OpCodeLen make_jump(void* mem, void* where);
+OpCodeLen make_mov_ecx(void *mem, u32 val);
 
 }

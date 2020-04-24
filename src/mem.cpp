@@ -13,7 +13,7 @@ void* Mem::addrPoint(u32 addr) {
         error(addr, "bad mem");
       }
       #endif
-      return &ram[addr & 0x003F'FFFF];
+      return ram.point(addr & 0x003F'FFFF);
     
     case 0xB:
       #ifdef SAFE_MEM
@@ -26,7 +26,7 @@ void* Mem::addrPoint(u32 addr) {
         return 0;
       }
       #endif
-      return &bios[addr & 0x0007'FFFF];
+      return bios.point(addr & 0x0007'FFFF);
   }
   return 0;
 }
