@@ -6,4 +6,6 @@ SOURCES = \
 	src/test.cpp \
 	src/mem.cpp \
 	src/cpu.cpp \
-	src/asm_x86-64.cpp
+	src/asm_x86-64.cpp \
+	src/system.cpp \
+	src/mips.cpp \

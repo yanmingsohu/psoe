@@ -14,7 +14,7 @@ typedef union {
     u32 a0;   // r04 - r07
     u32 a1, a2, a3;
     u32 t0;   // r08 - r15
-    u32 t1, t2, t3, t4, t5, t6;
+    u32 t1, t2, t3, t4, t5, t6, t7;
     u32 s0;   // r16 - r23
     u32 s1, s2, s3, s4, s5, s6, s7; 
     u32 t8;   // r24

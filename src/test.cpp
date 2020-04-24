@@ -5,6 +5,7 @@
 
 #include "cpu.h"
 #include "asm.h"
+#include "mips.h"
 
 using namespace ps1e;
 
@@ -19,6 +20,16 @@ static void tsize(int s, int t, char const* msg) {
   if (s != t) {
     char tmsg[255];
     sprintf(tmsg, "Bad %s size %d!=%d", msg, s, t);
+    panic(tmsg);
+  }
+}
+
+
+template<class T>
+static void eq(T a, T b, char const* errmsg) {
+  if (a != b) {
+    char tmsg[255];
+    sprintf(tmsg, "Not EQ %s, %d != %d", errmsg, a, b);
     panic(tmsg);
   }
 }
@@ -82,7 +93,7 @@ static void test_jmp() {
 }
 
 
-void test_mem_jit() {
+static void test_mem_jit() {
   MemJit mj;
   for (int i=0; i<3; ++i) {
     void* p1  = mj.get(0x100);
@@ -98,9 +109,20 @@ void test_mem_jit() {
 }
 
 
+static void test_mips() {
+  tsize(sizeof(instruction_st), 4, "mips instruction struct");
+  // addi $sp, $sp, -8
+  mips_instruction i = 0x23bdfff8;
+  DisassemblyMips t; 
+  mips_decode(i, &t);
+  eq(t.reg.sp, (u32)-8, "addi sp");
+}
+
+
 void test() {
   test_reg();
   test_jmp();
   test_mem_jit();
+  test_mips();
   printf("Test all passd\n");
 }

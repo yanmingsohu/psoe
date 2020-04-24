@@ -14,14 +14,21 @@ union IndexTable {
 };
 
 
-template<int RamSize>
-class ExecMapper {
+template<int RamSize> class ExecMapper {
 private:
-  u8 ram[RamSize];
+  typedef void (asm_func *Run)(u32 index);
+
+  u8 ram;
   IndexTable *native_asm;
 
 public:
-  void exec(u32 addr);
+  ExecMapper() {
+  }
+
+  void exec(u32 addr) {
+    Run run = native_asm[addr];
+    run(addr);
+  }
 
   u8* point(u32 addr) {
     return &ram[addr];
