@@ -3,7 +3,7 @@
 
 namespace ps1e {
 
-void* Mem::addrPoint(u32 addr) {
+void* MMU::addrPoint(u32 addr) {
   switch (addr >> 24) {
     case 0x0:
     case 0x8:
@@ -34,7 +34,7 @@ void* Mem::addrPoint(u32 addr) {
 }
 
 
-void Mem::error(u32 addr, char const* cause) {
+void MMU::error(u32 addr, char const* cause) {
   //TODO: cpu int
   printf("Mem Err %s: %x", cause, addr);
 }

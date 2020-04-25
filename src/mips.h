@@ -111,14 +111,14 @@ public:
   // $ra = pc + 4; pc = (0xF000'0000 & pc) | (i << 2)
   virtual void jal(u32 i) = 0;
   // pc = $s;
-  virtual void jr(mips_reg s);
+  virtual void jr(mips_reg s) = 0;
   // $d = pc + 4; pc = $s;
-  virtual void jalr(mips_reg d, mips_reg s);
+  virtual void jalr(mips_reg d, mips_reg s) = 0;
   // $d = HI
-  virtual void mfhi(mips_reg d);
-  virtual void mflo(mips_reg d);
+  virtual void mfhi(mips_reg d) = 0;
+  virtual void mflo(mips_reg d) = 0;
   // $t = cop0[d];
-  virtual void mfc0(mips_reg t, mips_reg d);
+  virtual void mfc0(mips_reg t, mips_reg d) = 0;
 };
 
 

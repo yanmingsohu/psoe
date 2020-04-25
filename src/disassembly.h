@@ -23,7 +23,7 @@ public:
   }
 
   void run() {
-    u32 code = *((u32*)ram[pc]);
+    u32 code = *((u32*)(&ram[pc]));
     if (!mips_decode(code, this)) {
       exception(MispException::opcode);
     }

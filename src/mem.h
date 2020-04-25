@@ -36,7 +36,7 @@ public:
 };
 
 
-class Mem {
+class MMU {
 public:
   static const int RAM_SIZE  = 0x200000;
   static const int BIOS_SIZE = 0x80000;
