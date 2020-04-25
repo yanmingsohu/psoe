@@ -23,6 +23,9 @@ namespace ps1e {
 // Check bound when read/write memory 
 #define SAFE_MEM 
 #define RED(s) "\x1b[31m" s "\033[0m"
+#define SIGNEL_MASK32 0b1000'0000'0000'0000'0000'0000'0000'0000
+#define SIGNEL_MASK16 0b1000'0000'0000'0000
+#define SIGNEL_MASK8  0b1000'0000
 
 using s8 = int8_t;
 using u8 = uint8_t;
@@ -97,6 +100,24 @@ public:
   void* get(size_t);
   // 释放内存
   void free(void*);
+};
+
+
+template<class T> class Overflow {
+private:
+  T s, neq;
+  T mask;
+public:
+  Overflow(T x, T y) {
+    mask = (1 << (sizeof(T)*8 - 1));
+    s = (x & y) & mask;
+    neq = (x ^ y) & mask;
+    // printf("O mask %x s %x\n", mask, neq);
+  }
+  bool check(T result) {
+    if (neq) return false;
+    return s ^ (result & mask);
+  }
 };
 
 

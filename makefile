@@ -11,7 +11,8 @@ BINARY = bin/ps1
 OBJPATH = bin/obj
 SOURCES =
 
-# === setting SOURCES === #
+# ===--- setting SOURCES ---=== #
+include src/test/makefile
 include src/makefile
 
 
@@ -32,7 +33,7 @@ $(OBJPATH)/%.o: %.cpp
 
 .PHONY : clean dir all
 clean:
-	rm -rf bin
+	rm -rf bin/*
 
 dir:
 	@-mkdir -p $(dir $(OBJECTS))

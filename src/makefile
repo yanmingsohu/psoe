@@ -1,9 +1,8 @@
 # Run "make" in project root dir.
 
-SOURCES = \
+SOURCES += \
 	src/util.cpp \
 	src/main.cpp \
-	src/test.cpp \
 	src/mem.cpp \
 	src/cpu.cpp \
 	src/asm_x86-64.cpp \

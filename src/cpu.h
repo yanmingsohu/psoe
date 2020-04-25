@@ -3,8 +3,13 @@
 
 namespace ps1e {
 
+
+extern const char*  MipsRegName[];
+
+
 typedef union {
-  u32 r[32];
+  u32 u[32];
+  s32 s[32];
 
   struct {
     u32 zero; // r00

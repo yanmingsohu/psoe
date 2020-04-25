@@ -2,10 +2,9 @@
 #include <cstdlib>
 #include "util.h"
 #include "cpu.h"
+#include "test/test.h"
 
 using namespace ps1e;
-
-void test();
 
 
 int main() {
@@ -14,7 +13,7 @@ int main() {
     return 1;
   }
 
-  test();
+  ps1e_t::test();
 
   printf("ok\n\n");
   return 0;
