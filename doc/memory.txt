@@ -14,9 +14,7 @@ PSX的内存由4个512k 60ns SRAM芯片组成，可创建2兆字节的系统内�
 # PSX内存映射
 
 0x0000_0000-0x0000_ffff   内核（64K）
-0x0001_0000
-0x001f_ffff
-用户记忆（1.9兆）
+0x0001_0000-0x001f_ffff   用户记忆（1.9兆）
 
 0x1f00_0000-0x1f00_ffff   并行端口（64K）
 0x1f80_0000-0x1f80_03ff   便笺本（1024字节）
@@ -30,14 +28,16 @@ PSX的内存由4个512k 60ns SRAM芯片组成，可创建2兆字节的系统内�
 0x1f80_10d0 DMA通道5 PIO
 0x1f80_10e0 DMA通道6 GPU OTC（反向清除订购表）
 
-0x8000_0000
-0x801f_ffff
-内核和用户内存镜像（2 Meg）
-缓存
-
-0xa000_0000
-0xa01f_ffff
-内核和用户内存镜像（2 Meg）
-未缓存
-
+0x8000_0000-0x801f_ffff 内核和用户内存镜像（2 Meg） 缓存
+0xa000_0000-0xa01f_ffff 内核和用户内存镜像（2 Meg） 未缓存
 0xbfc0_0000-0xbfc7_ffff   BIOS（512K）
+
+cpu 复位, 程序指针指向 0xbfc0_0000
+
+
+Program   ‘‘segment’’   Physical        Description    
+0x8000 0000 kseg0       0x0000 0000     TLB miss on kuseg reference only.
+0x8000 0080 kseg0       0x0000 0080     All other exceptions.
+0xbfc0 0100 kseg1       0x1fc0 0100     Uncached alternative kuseg TLBmiss entry point (used if SR bitBEV set).
+0xbfc0 0180 kseg1       0x1fc0 0180     Uncached alternative for all otherexceptions, used if SR bit BEV set).
+0xbfc0 0000 kseg1       0x1fc0 0000     The ‘‘reset exception’’.
