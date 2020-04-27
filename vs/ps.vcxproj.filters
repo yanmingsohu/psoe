@@ -38,6 +38,9 @@
     <ClInclude Include="..\src\gpu.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\dma.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">
@@ -62,6 +65,9 @@
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="..\src\gpu.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dma.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
