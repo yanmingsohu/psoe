@@ -7,6 +7,7 @@ void test_reg() {
   tsize(sizeof(Cop0SR), 4, "cop0 sr");
   tsize(sizeof(Cop0Reg), 16*4, "cop0 reg");
   tsize(sizeof(MipsReg), 32*4, "mips reg");
+  tsize(sizeof(Cop0Cause), 4, "cop0 cause");
 
   Cop0SR sr = {0};
 
