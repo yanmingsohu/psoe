@@ -3,6 +3,7 @@
 #include "../cpu.h"
 #include "../asm.h"
 #include "../mips.h"
+#include "../gpu.h"
 
 namespace ps1e_t {
 
@@ -22,6 +23,9 @@ void test_disassembly();
 void test_cpu();
 void test_jit();
 void test_util();
+void test_gpu();
+void test_dma();
+
 void test();
 
 }

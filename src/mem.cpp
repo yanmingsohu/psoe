@@ -3,7 +3,7 @@
 
 namespace ps1e {
 
-MMU::MMU(MemJit& memjit) : ram(memjit), bios(memjit) {
+MMU::MMU(MemJit& memjit) : ram(memjit), bios(memjit), dmadev{0}, dma_dpcr{0} {
 }
 
 
@@ -90,6 +90,43 @@ bool MMU::loadBios(char const* filename) {
   }
   printf("Bios loaded.\n");
   return true;
+}
+
+
+bool MMU::set_dma_dev(DMADev* dd) {
+  u32 num = dd->number();
+  if (num >= DMA_LEN) {
+    return false;
+  }
+  dmadev[num] = dd;
+}
+
+
+void MMU::set_dma_dev_status() {
+  for (int n = 0; n < DMA_LEN; ++n) {
+    DMADev* dd = dmadev[n];
+    if (!dd) continue;
+    dd->set_priority((dma_dpcr.v >> (n * 4)) & 0b0111);
+    change_running_state(dd);
+  }
+}
+
+
+void MMU::send_irq(DMADev* dd) {
+  u32 flag_mask = (1 << (dd->number() + 24));
+  irq.v |= flag_mask;
+  if (has_irq()) {
+    //TODO: send irq to cpu
+  }
+}
+
+
+void MMU::change_running_state(DMADev* dd) {
+  if ((dd->mask() & dma_dpcr.v) == 0) {
+    dd->stop();
+    return;
+  }
+  dd->start(this);
 }
 
 }

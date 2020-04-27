@@ -28,6 +28,7 @@ void test() {
   test_cpu();
   test_jit();
   test_util();
+  test_dma();
   test_disassembly();
   printf("Test all passd\n");
 }
