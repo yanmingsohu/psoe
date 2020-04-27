@@ -49,9 +49,6 @@
     <ClCompile Include="..\src\cpu.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\main.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\mem.cpp">
       <Filter>core</Filter>
     </ClCompile>

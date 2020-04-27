@@ -4,10 +4,10 @@
 
 #include "test.h"
 
-namespace ps1e_t {
-
 using namespace ps1e;
+using namespace ps1e_t;
 
+namespace ps1e_t {
 
 void panic(char const* msg) {
   printf(RED("Fail:")" %s\n", msg);
@@ -23,14 +23,20 @@ void tsize(int s, int t, char const* msg) {
   }
 }
 
+}
 
-void test() {
+
+int main() {
+  if (!check_little_endian()) {
+    printf("Cannot support little endian CPU");
+    return 1;
+  }
+
   test_cpu();
   test_jit();
   test_util();
   test_dma();
   test_disassembly();
   printf("Test all passd\n");
-}
-
+  return 0;
 }

@@ -26,6 +26,4 @@ void test_util();
 void test_gpu();
 void test_dma();
 
-void test();
-
 }
