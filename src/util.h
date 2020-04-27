@@ -22,7 +22,8 @@ namespace ps1e {
 
 // Check bound when read/write memory 
 #define SAFE_MEM 
-#define RED(s) "\x1b[31m" s "\033[0m"
+#define RED(s)  "\x1b[31m" s "\033[0m"
+#define BLUE(s) "\x1b[34m" s "\033[0m"
 #define SIGNEL_MASK32 0b1000'0000'0000'0000'0000'0000'0000'0000
 #define SIGNEL_MASK16 0b1000'0000'0000'0000
 #define SIGNEL_MASK8  0b1000'0000
@@ -121,8 +122,25 @@ public:
 };
 
 
+template<class F> class FuncLocal {
+private:
+  F release;
+public:
+  FuncLocal(F f) : release(f) {}
+  virtual ~FuncLocal() {
+    release();
+  }
+};
+
+
+template<class F> FuncLocal<F> createFuncLocal(F f) {
+  return FuncLocal<F> (f);
+}
+
+
 bool check_little_endian();
 void* melloc_exec(size_t size, void* near = 0);
 bool free_exec(void* p, size_t size = 0);
+size_t get_page_size();
 
 }

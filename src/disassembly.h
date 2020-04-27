@@ -64,14 +64,14 @@ public:
   }
 
   // 硬件中断 1-6
-  void set_hard_exception(u8 setbit) {
+  inline void set_hard_exception(u8 setbit) {
     cop0.cause.ip |= 1 << (setbit + 2);
     if (!cop0.sr.exl) {
       exception(ExeCodeTable::INT);
     }
   }
 
-  void clr_hard_exception(u8 bit) {
+  inline void clr_hard_exception(u8 bit) {
     cop0.cause.ip &= ~(1 << (bit + 2));
   }
 

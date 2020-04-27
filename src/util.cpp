@@ -8,6 +8,8 @@
 #include <unistd.h>
 #elif defined(WIN_NT)
 #include <windows.h>
+#include <memoryapi.h>
+#include <stdlib.h>
 #endif
 
 namespace ps1e {
@@ -26,11 +28,25 @@ bool check_little_endian() {
 }
 
 
-void* melloc_exec(size_t size, void* near) {
+void* melloc_exec(size_t size, void* near_addr) {
 #if defined(LINUX) || defined(MACOS)
-  return mmap(near, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
+  return mmap(near_addr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON, -1, 0);
 #elif defined(WIN_NT)
-  return VirtualAlloc(neer, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  /*size_t pps = get_page_size();
+  void* a = VirtualAlloc(near_addr, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+  if (!a) {
+    while (GetLastError() == ERROR_INVALID_ADDRESS) {
+      near_addr = (u8*)near_addr + pps;
+      a = VirtualAlloc(near_addr, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+      printf("-- %x %x %x\n", near_addr, a, GetLastError());
+    }
+  }
+  printf("%x %x %d\n", near_addr, a, GetLastError());
+  return a;*/
+  void * p = malloc(size);
+  DWORD old;
+  VirtualProtect(p, size, PAGE_EXECUTE_READWRITE, &old);
+  return p;
 #else
   #error "Cannot support this OS"
 #endif
@@ -41,7 +57,9 @@ bool free_exec(void* p, size_t size) {
 #if defined(LINUX) || defined(MACOS)
   return 0 == munmap(p, size);
 #elif defined(WIN_NT)
-  return VirtualFree(p, 0, MEM_RELEASE);
+  //return VirtualFree(p, 0, MEM_RELEASE);
+  free(p);
+  return true;
 #else
   #error "Cannot support this OS"
 #endif
@@ -61,20 +79,20 @@ size_t get_page_size() {
 }
 
 
-MemBlock::MemBlock(void* near) : used(0) {
+MemBlock::MemBlock(void* near_addr) : used(0) {
   size = get_page_size();
-  used = addr = (u8*) melloc_exec(size, near);
+  used = addr = (u8*) melloc_exec(size, near_addr);
   if (!addr) {
     throw std::bad_alloc();
   }
 }
 
 
-MemBlock::MemBlock(void* near, size_t s) : used(0), size(s) {
+MemBlock::MemBlock(void* near_addr, size_t s) : used(0), size(s) {
   if (!s) {
     throw std::invalid_argument("Size must bigger than zero");
   }
-  used = addr = (u8*) melloc_exec(size, near);
+  used = addr = (u8*) melloc_exec(size, near_addr);
   if (!addr) {
     throw std::bad_alloc();
   }

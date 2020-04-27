@@ -8,9 +8,17 @@ namespace ps1e_t {
 using namespace ps1e;
 
 #ifdef WIN_NT
-#include <conio.h>
+  #include <conio.h>
+  int _getc() {
+    int c = _getch();
+    printf("\n");
+    return c;
+  }
 #elif defined(LINUX) || defined(MACOS)
-#include <curses.h>
+  #include <curses.h>
+  int _getc() {
+    return getchar();
+  }
 #endif
 
 
@@ -27,6 +35,9 @@ void test_cpu_help() {
 // https://github.com/oscourse-tsinghua/cpu-testcase
 // https://github.com/YurongYou/MIPS-CPU-Test-Cases
 void test_mips() {
+  tsize(sizeof(instruction_st::R), 4, "mips instruction struct R");
+  tsize(sizeof(instruction_st::J), 4, "mips instruction struct J");
+  tsize(sizeof(instruction_st::I), 4, "mips instruction struct I");
   tsize(sizeof(instruction_st), 4, "mips instruction struct");
 }
 
@@ -34,13 +45,15 @@ void test_mips() {
 void test_bios() {
   MemJit mmjit;
   MMU mmu(mmjit);
-  mmu.loadBios("demo/SCPH1000.BIN");
+  if (!mmu.loadBios("demo/SCPH1000.BIN")) {
+    panic("load bios fail");
+  }
   DisassemblyMips t(mmu); 
   t.reset();
   test_cpu_help();
 
   for (;;) {
-    int c = getchar();
+    int c = _getc();
     switch (c) {
       case 'r':
         t.reset();
@@ -52,6 +65,7 @@ void test_bios() {
         break;
 
       case 'n':
+      case 0xD:
       case 0xA:
         for (int i=10; i>0; --i) {
           t.next();
@@ -82,8 +96,8 @@ void test_bios() {
 
 
 void test_disassembly() {
-  test_bios();
   test_mips();
+  test_bios();
 }
 
 }

@@ -91,7 +91,7 @@ public:
   u16 read16(psmem addr);
   u8 read8(psmem addr);
 
-  void loadBios(char const* filename);
+  bool loadBios(char const* filename);
 };
 
 }

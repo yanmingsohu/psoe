@@ -49,9 +49,19 @@ void test_overflow() {
 }
 
 
+void test_local() {
+  int a = 1;
+  {
+    auto c = createFuncLocal([&a] { ++a; });
+  }
+  eq(a, 2, "local function");
+}
+
+
 void test_util() {
   test_mem_jit();
   test_overflow();
+  test_local();
 }
 
 }

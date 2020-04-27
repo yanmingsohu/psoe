@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="core">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\asm.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\asm_x86-64.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\cpu.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\disassembly.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mem.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mips.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\system.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\util.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\gpu.h">
+      <Filter>core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\asm_x86-64.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cpu.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\main.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mips.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\system.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\util.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gpu.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\makefile">
+      <Filter>core</Filter>
+    </None>
+    <None Include="..\doc\MIPS.html">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="..\doc\MIPS-2.html">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="..\doc\MIPS-addi.md">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="..\doc\psx.html">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="..\doc\R3000.html">
+      <Filter>资源文件</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\doc\cdinfo.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="..\doc\exe-format.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="..\doc\gpu.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="..\doc\gte.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="..\doc\memory.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="..\doc\spu.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+    <Text Include="..\doc\system.txt">
+      <Filter>资源文件</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

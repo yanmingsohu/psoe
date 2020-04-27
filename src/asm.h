@@ -3,7 +3,7 @@
 #include "util.h"
 
 // https://sourceforge.net/p/predef/wiki/Architectures/
-#if defined(__amd64__)
+#if defined(__amd64__) || defined(_M_X64)
   #define X86_64
   #include "asm_x86-64.h"
 #elif defined(__i386__)
