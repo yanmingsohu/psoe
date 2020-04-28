@@ -1,4 +1,5 @@
 #include "util.h"
+#include <stdio.h>
 #include <exception>
 #include <new>
 #include <stdexcept>
@@ -13,6 +14,8 @@
 #endif
 
 namespace ps1e {
+
+LogLevel log_level = LogLevel::all;
 
 
 bool check_little_endian() {
@@ -205,5 +208,40 @@ void MemJit::free(void* p) {
     delete bl;
   }
 }
+
+
+#define warp_printf(fmt, color_prifix) \
+  char f[1000] = ""; \
+  sprintf(f, "%s%s\033[0m", color_prifix, fmt); \
+  va_list __args; \
+  va_start(__args, fmt); \
+  vprintf(f, __args); \
+  va_end(__args) \
+
+
+void debug(const char* format, ...) {
+  if (log_level > LogLevel::debug) return;
+  warp_printf(format, "\x1b[1;30m");
+}
+
+
+void info(const char* format, ...) {
+  if (log_level > LogLevel::info) return;
+  warp_printf(format, "\x1b[32m");
+}
+
+
+void warn(const char* format, ...) {
+  if (log_level > LogLevel::warn) return;
+  warp_printf(format, "\x1b[33m");
+}
+
+
+void error(const char* format, ...) {
+  if (log_level > LogLevel::error) return;
+  warp_printf(format, "\x1b[31m");
+}
+
+#undef warp_printf
 
 }

@@ -1,5 +1,4 @@
 #include <string.h>
-#include <stdio.h>
 #include <cstdlib>
 
 #include "test.h"
@@ -10,7 +9,7 @@ using namespace ps1e_t;
 namespace ps1e_t {
 
 void panic(char const* msg) {
-  printf(RED("Fail:")" %s\n", msg);
+  error("Fail: %s\n", msg);
   exit(1);
 }
 
@@ -27,8 +26,9 @@ void tsize(int s, int t, char const* msg) {
 
 
 int main() {
+  log_level = LogLevel::all;
   if (!check_little_endian()) {
-    printf("Cannot support little endian CPU");
+    error("Cannot support little endian CPU\n");
     return 1;
   }
 
@@ -37,6 +37,6 @@ int main() {
   test_util();
   test_dma();
   test_disassembly();
-  printf("Test all passd\n");
+  info("Test all passd\n");
   return 0;
 }

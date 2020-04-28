@@ -56,7 +56,7 @@ public:
   static const u32 BIOS_SIZE = 0x0008'0000;
   static const u32 BOOT_ADDR = 0xBFC0'0000;
   static const u32 DMA_CTRL  = 0x1F80'10F0;
-  static const u32 DMA_INT   = 0x1F80'10F4;
+  static const u32 DMA_IRQ   = 0x1F80'10F4;
   static const u32 DMA_LEN   = 8;
   static const u32 DMA_MASK  = 0x1F80'108F;
 
@@ -93,7 +93,7 @@ public:
         dma_dpcr.v = v;
         set_dma_dev_status();
         return;
-      case DMA_INT:
+      case DMA_IRQ:
         irq.v = v;
         return;
     }
@@ -102,7 +102,7 @@ public:
       u32 devnum = (addr & 0x70) >> 4;
       DMADev* dd = dmadev[devnum];
       if (!dd) {
-        printf(RED("DMA Device Not exist %x: %x"), devnum, v);
+        warn("DMA Device Not exist %x: %x", devnum, v);
         return;
       }
       switch (addr & 0xF) {
@@ -118,7 +118,7 @@ public:
           }
           break;
         default:
-          printf(RED("Unknow DMA address %x: %x"), devnum, v);
+          warn("Unknow DMA address %x: %x", devnum, v);
       }
       return;
     }
@@ -129,7 +129,7 @@ public:
       return;
     }
     //TODO
-    printf("WRIT BUS %x %x\n", addr, v);
+    warn("WRIT BUS %x %x\n", addr, v);
   }
 
 
@@ -137,16 +137,14 @@ public:
     switch (addr) {
       case DMA_CTRL:
         return dma_dpcr.v;
-      case DMA_INT:
-        printf("Unknow DMA INT");
-        //TODO: DMA INT
+      case DMA_IRQ:
         return irq.v;
     }
 
     if (isDMA(addr)) {
       DMADev* dd = dmadev[(addr & 0x70) >> 4];
       if (!dd) {
-        printf(RED("DMA Device Not exist %x"), addr);
+        warn("DMA Device Not exist %x", addr);
         return 0;
       }
       switch (addr & 0xF) {
@@ -157,7 +155,7 @@ public:
         case 0x8:
           return (T) dd->read_status();
         default:
-          printf(RED("Unknow DMA address %x"), addr);
+          warn("Unknow DMA address %x", addr);
       }
       return 0;
     }
@@ -167,7 +165,7 @@ public:
       return *tp;
     }
     //TODO
-    printf("READ BUS %x\n", addr);
+    warn("READ BUS %x\n", addr);
     return 0;
   }
 

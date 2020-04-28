@@ -86,7 +86,7 @@ private:
     if (cop0.sr.erl == 1) return;
     if (!has_exception()) return;
 
-    printf("Got exception %x\n", cop0.cause.ExcCode);
+    debug("Got exception %x\n", cop0.cause.ExcCode);
 
     if (cop0.sr.bev) {
       // if tlb 0xBFC0'0100
@@ -542,48 +542,50 @@ private:
   }
 
   inline void rx(char const* iname, mips_reg s, mips_reg t) {
-    printf("%08x | %08x %6s H/L, $%s, $%s \t\t # $%s=%x, $%s=%x\n", 
+    debug("%08x | %08x %6s H/L, $%s, $%s \t\t # $%s=%x, $%s=%x\n", 
       pc, mmu.read32(pc), iname, rname(s), rname(t), 
       rname(s), reg.u[s], rname(t), reg.u[t]);
   }
 
   inline void rr(char const* iname, mips_reg d, mips_reg s, mips_reg t) {
-    printf("%08x | %08x %6s $%s, $%s, $%s \t\t # $%s=%x, $%s=%x, $%s=%x\n", 
+    debug("%08x | %08x %6s $%s, $%s, $%s \t\t # $%s=%x, $%s=%x, $%s=%x\n",
       pc, mmu.read32(pc), iname, rname(d), rname(s), rname(t),
       rname(d), reg.u[d], rname(s), reg.u[s], rname(t), reg.u[t]);
   }
 
   inline void ii(char const* iname, mips_reg t, mips_reg s, s16 i) {
-    printf("%08x | %08x %6s $%s, $%s, 0x%x \t\t # $%s=%x, $%s=%x\n", 
+    debug("%08x | %08x %6s $%s, $%s, 0x%x \t\t # $%s=%x, $%s=%x\n",
       pc, mmu.read32(pc), iname, rname(t), rname(s), i,
       rname(t), reg.u[t], rname(s), reg.u[s]);
   }
 
   inline void iw(char const* iname, mips_reg t, mips_reg s, s16 i) {
-    printf("%08x | %08x %6s [$%s + 0x%x], $%s\t\t # $%s=%x, $%s=%x\n", 
+    debug("%08x | %08x %6s [$%s + 0x%x], $%s\t\t # $%s=%x, $%s=%x\n",
       pc, mmu.read32(pc), iname, rname(s), i, rname(t),
       rname(t), reg.u[t], rname(s), reg.u[s]);
   }
 
   inline void i2(char const* iname, mips_reg t, s16 i) {
-    printf("%08x | %08x %6s $%s, 0x%x\t\t # $%s=%x\n", 
+    debug("%08x | %08x %6s $%s, 0x%x\t\t # $%s=%x\n",
       pc, mmu.read32(pc), iname, rname(t), i, rname(t), reg.u[t]);
   }
 
   inline void jj(char const* iname, u32 i) {
-    printf("%08x | %08x %6s 0x%x\t\t # %x\n", pc, mmu.read32(pc), iname, i, i<<2);
+    debug("%08x | %08x %6s 0x%x\t\t # %x\n", pc, mmu.read32(pc), iname, i, i<<2);
   }
 
   inline void j1(char const* iname, mips_reg s) {
-    printf("%08x | %08x %6s %s\t\t # $%s=%x\n", 
+    debug("%08x | %08x %6s %s\t\t # $%s=%x\n",
       pc, mmu.read32(pc), iname, rname(s), rname(s), reg.u[s]);
   }
 
   inline const char* rname(mips_reg s) {
+    #ifdef SAFE_MEM
     if (s & (~0x1f)) {
-      printf("! Invaild reg index %d\n", s);
+      error("! Invaild reg index %d\n", s);
       return 0;
     }
+    #endif
     return MipsRegName[s];
   }
 };

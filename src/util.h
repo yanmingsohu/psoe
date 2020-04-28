@@ -37,6 +37,15 @@ using u32 = uint32_t;
 using s64 = int64_t;
 using u64 = uint64_t;
 
+enum class LogLevel {
+  all,
+  debug,
+  info,
+  warn,
+  error,
+};
+extern LogLevel log_level;
+
 //
 // 固定内存块分配器, 任何操作失败都可以抛出 std::exception 异常 
 // 适合于小/固定内存分配
@@ -142,5 +151,10 @@ bool check_little_endian();
 void* melloc_exec(size_t size, void* near = 0);
 bool free_exec(void* p, size_t size = 0);
 size_t get_page_size();
+
+void debug(const char* format, ...);
+void info(const char* format, ...);
+void warn(const char* format, ...);
+void error(const char* format, ...);
 
 }

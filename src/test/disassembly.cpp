@@ -57,7 +57,7 @@ void test_bios() {
     switch (c) {
       case 'r':
         t.reset();
-        printf("reset\n");
+        info("reset\n");
         break;
 
       case 'h':
@@ -87,7 +87,7 @@ void test_bios() {
         break;
 
       default:
-        printf("Unknow %c(%x)\n", c, c);
+        warn("Unknow %c(%x)\n", c, c);
         test_cpu_help();
         break;
     }
