@@ -23,8 +23,10 @@ void Bus::set_dma_dev_status() {
 
 
 void Bus::send_dma_irq(DMADev* dd) {
-  u32 flag_mask = (1 << (static_cast<u32>(dd->number()) + 24));
-  dma_irq.v |= flag_mask;
+  u32 flag_mask = (1 << static_cast<u32>(dd->number()));
+  if (flag_mask & dma_irq.dd_enable) {
+    dma_irq.dd_flag |= flag_mask;
+  }
   if (has_dma_irq()) {
     send_irq(IrqDevMask::dma);
   }

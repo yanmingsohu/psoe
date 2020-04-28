@@ -7,10 +7,13 @@ namespace ps1e {
 extern const char*  MipsRegName[];
 
 
-//TODO: ! 这里不完整 ?
+// Cpu Cause Reg 8-15
+// bit: 8 7 6 5 4 3 2 1
+// use: - - - - - H s s
+// ps 把硬件中断放在一个单独的芯片上做管理
 enum class CpuCauseInt : u8 {
   software = 1,
-  hardware = 1<<1,
+  hardware = 1<<2,
 };
 
 
@@ -67,6 +70,7 @@ typedef union {
 } Cop0SR;
 
 
+#define COP_CAUSE_RW_MASK 0b0000'0000'0000'0000'0000'0011'0000'0000
 typedef union {
   u32 v; 
   struct {

@@ -479,7 +479,11 @@ private:
 
   void mtc0(mips_reg t, mips_reg d) override {
     i2("MTC0", t, d);
-    cop0.r[d] = reg.u[t];
+    if (d == 13) {
+      cop0.r[d] = (reg.u[t] & COP0_CAUSE_RW_MASK) | (cop0.r[d] & ~COP0_CAUSE_RW_MASK);
+    } else {
+      cop0.r[d] = reg.u[t];
+    }
     pc += 4;
   }
 

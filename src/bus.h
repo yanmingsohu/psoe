@@ -116,6 +116,9 @@ public:
 
       case DMA_IRQ_ADDR:
         dma_irq.v = v; // & DMA_IRQ_WRITE_MASK; ÐèÒªÇå³ý flag
+        if (v & (1 << 31)) {
+          dma_irq.dd_flag = 0;
+        }
         return;
 
       case IRQ_STATUS_ADDR:
@@ -205,8 +208,8 @@ private:
   void change_running_state(DMADev* dd);
 
   u32 has_dma_irq() {
-    return dma_irq.master_flag = dma_irq.master_enable 
-                              && (dma_irq.dd_enable & dma_irq.dd_flag);
+    return dma_irq.master_flag = dma_irq.force || (dma_irq.master_enable 
+                              && (dma_irq.dd_enable & dma_irq.dd_flag));
   }
 
   inline bool isDMA(psmem addr) {
