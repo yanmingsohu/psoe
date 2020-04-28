@@ -3,8 +3,6 @@
 namespace ps1e {
 
 
-// https://alanhogan.com/asu/assembler.php
-// https://opencores.org/projects/plasma/opcodes
 bool mips_decode(mips_instruction op, InstructionReceiver* r) {
   instruction_st i(op);
 

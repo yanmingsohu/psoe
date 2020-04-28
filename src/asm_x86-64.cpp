@@ -1,8 +1,7 @@
 #include "asm.h"
 #include <stdio.h>
 
-// https://defuse.ca/online-x86-assembler.htm#disassembly
-// http://www.mathemainzel.info/files/x86asmref.html
+
 namespace ps1e {
 #ifdef X86_64
 
