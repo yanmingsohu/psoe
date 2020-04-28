@@ -15,6 +15,14 @@ namespace ps1e {
 class MMU;
 
 
+enum class ChcrMode : u32 {
+  Manual     = 0, // 单块传输
+  Request    = 1, // 传输连续的数据流
+  LinkedList = 2, // 传输链表, GPU only
+  Reserved   = 3,
+};
+
+
 //  0 1 1 1 0 0 0  1 0 1 1 1 0 1 1  1 0 0 0 0 0 1 1  1 0 0 0 0 0 0 1 1 : Can Write
 // 31 - - - - - - 24 - - - - - - - 16 - - - - - - -  8 - - - 4 - - - 0
 //        T       B    <cw >   < dw >           <m>  C             S Dir
@@ -27,7 +35,7 @@ union DMAChcr {
     u32 step      : 1; // 
     u32        _3 : 6; // 
     u32 chopping  : 1; // 
-    u32 mode      : 2; // enum ChcrMode
+    ChcrMode mode : 2; //
     u32        _4 : 5; // 
     u32 dma_wsize : 3; // 
     u32        _7 : 1; // 
@@ -38,14 +46,6 @@ union DMAChcr {
     u32 trigger   : 1; // 1: 触发传输, 传输开始后置0
     u32        _5 : 3; // 
   };
-};
-
-
-enum ChcrMode {
-  Manual     = 0,
-  Request    = 1, // 传输连续的数据流
-  LinkedList = 2, // 传输链表, GPU only
-  Reserved   = 3,
 };
 
 
@@ -108,7 +108,7 @@ union DMADpcr {
 };
 
 
-enum dma_chcr_dir {
+enum class dma_chcr_dir {
   DEV_TO_RAM   = 0,
   DEV_FROM_RAM = 1,
 };
@@ -118,6 +118,8 @@ class DMADev {
 private:
   u32 _mask;
   u32 priority;
+  bool running;
+  MMU* mmu;
 
 protected:
   u32 base;
@@ -125,18 +127,26 @@ protected:
   u32 blocksize;
   DMAChcr chcr;
 
+  // DMA 传输过程, 由设备调用该方法开始 DMA 传输,
+  // 应该在单独的线程中执行
+  void transport();
+
 public:
-  DMADev() {
+  DMADev() : priority(0), running(false), mmu(0) {
     _mask = 1 << (number() * 4);
   }
 
   virtual ~DMADev() {};
+
+  // 子类重写该方法返回设备号 0-6
   virtual u32 number() = 0;
+  // 子类重写, 对传输方向支持返回 true
+  virtual bool support(dma_chcr_dir dir) = 0;
 
-  void stop() {}
-
-  // 在单独的线程中
-  bool start(MMU* mmu);
+  // 停止 DMA 传输
+  void stop();
+  // 使 DMA 启动传输, 因为传输线程独立, 并不保证立即运行
+  void start(MMU* mmu);
 
   void set_priority(u32 p) {
     priority = p;

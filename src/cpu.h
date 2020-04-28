@@ -104,7 +104,7 @@ typedef union {
 } Cop0Reg;
 
 
-enum ExeCodeTable {
+enum class ExeCodeTable {
   INT  = 0,   // 外部中断
   MOD  = 1,   // TLB 修改异常
   TLBL = 2,   // TLB 加载失败

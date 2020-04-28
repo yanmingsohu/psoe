@@ -9,7 +9,7 @@ typedef u32 mips_instruction;
 typedef u8  mips_reg;
 
 
-#pragma pack(21)
+#pragma pack(1)
 union instruction_st {
   mips_instruction i;
 
@@ -39,7 +39,7 @@ union instruction_st {
 
   instruction_st(mips_instruction _i) : i(_i) {}
 };
-#pragma pack(0)
+#pragma pack()
 
 
 class InstructionReceiver {

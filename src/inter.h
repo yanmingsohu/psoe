@@ -7,7 +7,7 @@
 namespace ps1e {
 
 
-class DisassemblyMips : public InstructionReceiver {
+class InterpreterMips : public InstructionReceiver {
 private:
   MMU& mmu;
   MipsReg reg;
@@ -20,7 +20,7 @@ private:
   u32 slot_out_pc;
 
 public:
-  DisassemblyMips(MMU& _mmu) : mmu(_mmu), reg({0}), cop0({0}), 
+  InterpreterMips(MMU& _mmu) : mmu(_mmu), reg({0}), cop0({0}),
                                pc(0), hi(0), lo(0), jump_delay_slot(0),
                                slot_delay_time(0) {
   }
@@ -138,13 +138,13 @@ private:
 
   void mul(mips_reg s, mips_reg t) override {
     rx("MUL", s, t);
-    sethl(reg.s[s] * reg.s[t]);
+    sethl(static_cast<s64>(reg.s[s]) * reg.s[t]);
     pc += 4;
   }
 
   void mulu(mips_reg s, mips_reg t) override {
     rx("MULu", s, t);
-    sethl(reg.u[s] * reg.u[t]);
+    sethl(static_cast<u64>(reg.u[s]) * reg.u[t]);
     pc += 4;
   }
 
@@ -525,7 +525,7 @@ private:
   void exception(ExeCodeTable e) {
     cop0.sr.exl = 1;
     cop0.cause.wp = 1;
-    cop0.cause.ExcCode = e;
+    cop0.cause.ExcCode = static_cast<u32>(e);
     if (slot_delay_time) {
       cop0.cause.bd = 1;
       cop0.epc = pc - 4; 

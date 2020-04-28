@@ -112,7 +112,7 @@ void MMU::set_dma_dev_status() {
 }
 
 
-void MMU::send_irq(DMADev* dd) {
+void MMU::send_dma_irq(DMADev* dd) {
   u32 flag_mask = (1 << (dd->number() + 24));
   irq.v |= flag_mask;
   if (has_irq()) {

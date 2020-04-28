@@ -41,7 +41,7 @@ struct Command {
 };
 
 
-enum CommandEnum {
+enum class CommandEnum {
   rst_gpu    = 0x00, // reset gpu, sets status to $14802000
   rst_buffer = 0x01, // reset command buffer
   rst_irq    = 0x02, // reset IRQ
@@ -71,6 +71,10 @@ public:
 
   u32 number() {
     return DMA_NUM;
+  }
+
+  bool support(dma_chcr_dir dir) {
+    return false;
   }
 };
 

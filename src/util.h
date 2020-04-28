@@ -20,7 +20,8 @@ namespace ps1e {
   #define MACOS
 #endif 
 
-// Check bound when read/write memory 
+// Check bound when read/write memory; 
+// Remove it when debug over.
 #define SAFE_MEM 
 #define RED(s)  "\x1b[31m" s "\033[0m"
 #define BLUE(s) "\x1b[34m" s "\033[0m"
@@ -147,9 +148,9 @@ template<class F> FuncLocal<F> createFuncLocal(F f) {
 }
 
 
-bool check_little_endian();
-void* melloc_exec(size_t size, void* near = 0);
-bool free_exec(void* p, size_t size = 0);
+bool   check_little_endian();
+void*  melloc_exec(size_t size, void* near = 0);
+bool   free_exec(void* p, size_t size = 0);
 size_t get_page_size();
 
 void debug(const char* format, ...);

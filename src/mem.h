@@ -49,6 +49,21 @@ public:
 };
 
 
+enum class IrqMask : u32 {
+  vblank  = 1,
+  gpu     = 1 << 1,
+  cdrom   = 1 << 2,
+  dma     = 1 << 3,
+  dotclk  = 1 << 4,
+  hblank  = 1 << 5,
+  sysclk  = 1 << 6,
+  pad_mm  = 1 << 7,
+  sio     = 1 << 8,
+  spu     = 1 << 9,
+  pio     = 1 << 10,
+};
+
+
 class MMU {
 public:
   typedef u32 psmem;
@@ -84,7 +99,7 @@ public:
   bool loadBios(char const* filename);
 
   // dma 传输结束后被调用, 发送中断
-  void send_irq(DMADev*);
+  void send_dma_irq(DMADev*);
 
 
   template<class T> void write(psmem addr, T v) {

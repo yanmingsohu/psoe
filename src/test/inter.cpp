@@ -1,7 +1,7 @@
 #include "test.h"
 #include "../util.h"
 #include "../mips.h"
-#include "../disassembly.h"
+#include "../inter.h"
 
 
 namespace ps1e_t {
@@ -42,13 +42,14 @@ void test_mips() {
 }
 
 
-void test_bios() {
+void test_mips_inter() {
   MemJit mmjit;
   MMU mmu(mmjit);
   if (!mmu.loadBios("demo/SCPH1000.BIN")) {
     panic("load bios fail");
   }
-  DisassemblyMips t(mmu); 
+
+  InterpreterMips t(mmu);
   t.reset();
   test_cpu_help();
 
@@ -97,7 +98,7 @@ void test_bios() {
 
 void test_disassembly() {
   test_mips();
-  test_bios();
+  test_mips_inter();
 }
 
 }

@@ -5,4 +5,4 @@ SOURCES += \
 	src/test/jit.cpp \
 	src/test/cpu.cpp \
 	src/test/util.cpp \
-	src/test/disassembly.cpp \
+	src/test/inter.cpp \
