@@ -3,13 +3,14 @@
 #include "util.h"
 #include "mips.h"
 #include "mem.h"
+#include "bus.h"
 
 namespace ps1e {
 
 
 class InterpreterMips : public InstructionReceiver {
 private:
-  MMU& mmu;
+  Bus& bus;
   MipsReg reg;
   Cop0Reg cop0;
   u32 pc;
@@ -20,7 +21,7 @@ private:
   u32 slot_out_pc;
 
 public:
-  InterpreterMips(MMU& _mmu) : mmu(_mmu), reg({0}), cop0({0}),
+  InterpreterMips(Bus& _bus) : bus(_bus), reg({0}), cop0({0}),
                                pc(0), hi(0), lo(0), jump_delay_slot(0),
                                slot_delay_time(0) {
   }
@@ -53,7 +54,7 @@ public:
     }
 
     reg.zero = 0;
-    u32 code = mmu.read32(pc);
+    u32 code = bus.read32(pc);
     if (!mips_decode(code, this)) {
       exception(ExeCodeTable::RI);
     }
@@ -252,7 +253,7 @@ private:
       exception(ExeCodeTable::ADEL);
       return;
     }
-    reg.u[t] = mmu.read32(addr);
+    reg.u[t] = bus.read32(addr);
     pc += 4;
   }
 
@@ -263,25 +264,25 @@ private:
       exception(ExeCodeTable::ADES);
       return;
     }
-    mmu.write32(addr, reg.u[t]);
+    bus.write32(addr, reg.u[t]);
     pc += 4;
   }
 
   void lb(mips_reg t, mips_reg s, s32 i) override {
     ii("LB", t, s, i);
-    reg.s[t] = (s8) mmu.read8(reg.u[s] + i);
+    reg.s[t] = (s8) bus.read8(reg.u[s] + i);
     pc += 4;
   }
 
   void lbu(mips_reg t, mips_reg s, s32 i) override {
     ii("LBu", t, s, i);
-    reg.u[t] = mmu.read8(reg.u[s] + i);
+    reg.u[t] = bus.read8(reg.u[s] + i);
     pc += 4;
   }
 
   void sb(mips_reg t, mips_reg s, s32 i) override {
     iw("SB", t, s, i);
-    mmu.write8(reg.u[s] + i, 0xFF & reg.u[t]);
+    bus.write8(reg.u[s] + i, 0xFF & reg.u[t]);
     pc += 4;
   }
 
@@ -292,7 +293,7 @@ private:
       exception(ExeCodeTable::ADEL);
       return;
     }
-    reg.s[t] = mmu.read16(addr);
+    reg.s[t] = bus.read16(addr);
     pc += 4;
   }
 
@@ -303,7 +304,7 @@ private:
       exception(ExeCodeTable::ADEL);
       return;
     }
-    reg.u[t] = mmu.read16(addr);
+    reg.u[t] = bus.read16(addr);
     pc += 4;
   }
 
@@ -314,7 +315,7 @@ private:
       exception(ExeCodeTable::ADES);
       return;
     }
-    mmu.write16(addr, reg.u[t]);
+    bus.write16(addr, reg.u[t]);
     pc += 4;
   }
 
@@ -543,40 +544,40 @@ private:
 
   inline void rx(char const* iname, mips_reg s, mips_reg t) {
     debug("%08x | %08x %6s H/L, $%s, $%s \t\t # $%s=%x, $%s=%x\n", 
-      pc, mmu.read32(pc), iname, rname(s), rname(t), 
+      pc, bus.read32(pc), iname, rname(s), rname(t), 
       rname(s), reg.u[s], rname(t), reg.u[t]);
   }
 
   inline void rr(char const* iname, mips_reg d, mips_reg s, mips_reg t) {
     debug("%08x | %08x %6s $%s, $%s, $%s \t\t # $%s=%x, $%s=%x, $%s=%x\n",
-      pc, mmu.read32(pc), iname, rname(d), rname(s), rname(t),
+      pc, bus.read32(pc), iname, rname(d), rname(s), rname(t),
       rname(d), reg.u[d], rname(s), reg.u[s], rname(t), reg.u[t]);
   }
 
   inline void ii(char const* iname, mips_reg t, mips_reg s, s16 i) {
     debug("%08x | %08x %6s $%s, $%s, 0x%x \t\t # $%s=%x, $%s=%x\n",
-      pc, mmu.read32(pc), iname, rname(t), rname(s), i,
+      pc, bus.read32(pc), iname, rname(t), rname(s), i,
       rname(t), reg.u[t], rname(s), reg.u[s]);
   }
 
   inline void iw(char const* iname, mips_reg t, mips_reg s, s16 i) {
     debug("%08x | %08x %6s [$%s + 0x%x], $%s\t\t # $%s=%x, $%s=%x\n",
-      pc, mmu.read32(pc), iname, rname(s), i, rname(t),
+      pc, bus.read32(pc), iname, rname(s), i, rname(t),
       rname(t), reg.u[t], rname(s), reg.u[s]);
   }
 
   inline void i2(char const* iname, mips_reg t, s16 i) {
     debug("%08x | %08x %6s $%s, 0x%x\t\t # $%s=%x\n",
-      pc, mmu.read32(pc), iname, rname(t), i, rname(t), reg.u[t]);
+      pc, bus.read32(pc), iname, rname(t), i, rname(t), reg.u[t]);
   }
 
   inline void jj(char const* iname, u32 i) {
-    debug("%08x | %08x %6s 0x%x\t\t # %x\n", pc, mmu.read32(pc), iname, i, i<<2);
+    debug("%08x | %08x %6s 0x%x\t\t # %x\n", pc, bus.read32(pc), iname, i, i<<2);
   }
 
   inline void j1(char const* iname, mips_reg s) {
     debug("%08x | %08x %6s %s\t\t # $%s=%x\n",
-      pc, mmu.read32(pc), iname, rname(s), rname(s), reg.u[s]);
+      pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
   }
 
   inline const char* rname(mips_reg s) {

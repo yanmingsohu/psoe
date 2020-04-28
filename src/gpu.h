@@ -66,7 +66,7 @@ private:
   GpuCtrl ct;
 
 public:
-  GPU() : ct{0} {
+  GPU(Bus& bus) : DMADev(bus), ct{0} {
   }
 
   u32 number() {

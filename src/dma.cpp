@@ -1,10 +1,10 @@
 #include "dma.h"
 #include "mem.h"
+#include "bus.h"
 
 namespace ps1e {
 
-void DMADev::start(MMU* mmu) {
-  this->mmu = mmu;
+void DMADev::start() {
   running = true;
 }
 
@@ -15,7 +15,7 @@ void DMADev::stop() {
 
 
 void DMADev::transport() {
-  if (running == false || chcr.trigger == 0 || chcr.busy_enb == 1 || mmu == 0)
+  if (running == false || chcr.trigger == 0 || chcr.busy_enb == 1)
     return;
 
   if (!support( static_cast<dma_chcr_dir>(chcr.dir) )) {
@@ -27,7 +27,7 @@ void DMADev::transport() {
   chcr.trigger = 0;
   // DOing soming...
   chcr.busy_enb = 0;
-  mmu->send_dma_irq(this);
+  bus.send_dma_irq(this);
 }
 
 }

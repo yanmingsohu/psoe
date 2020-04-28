@@ -38,6 +38,8 @@ using u32 = uint32_t;
 using s64 = int64_t;
 using u64 = uint64_t;
 
+typedef u32 psmem;
+
 enum class LogLevel {
   all,
   debug,

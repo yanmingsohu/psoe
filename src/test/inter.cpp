@@ -49,7 +49,8 @@ void test_mips_inter() {
     panic("load bios fail");
   }
 
-  InterpreterMips t(mmu);
+  Bus bus(mmu);
+  InterpreterMips t(bus);
   t.reset();
   test_cpu_help();
 

@@ -20,9 +20,6 @@
     <ClInclude Include="..\src\cpu.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\disassembly.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\mem.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -39,6 +36,9 @@
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="..\src\dma.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\inter.h">
       <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
@@ -67,34 +67,22 @@
     <ClCompile Include="..\src\dma.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\bus.h">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bus.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\makefile">
       <Filter>core</Filter>
     </None>
-    <None Include="..\doc\MIPS.html">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="..\doc\MIPS-2.html">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="..\doc\MIPS-addi.md">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="..\doc\psx.html">
-      <Filter>资源文件</Filter>
-    </None>
-    <None Include="..\doc\R3000.html">
+    <None Include="..\README.md">
       <Filter>资源文件</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\doc\cdinfo.txt">
-      <Filter>资源文件</Filter>
-    </Text>
-    <Text Include="..\doc\exe-format.txt">
-      <Filter>资源文件</Filter>
-    </Text>
     <Text Include="..\doc\gpu.txt">
       <Filter>资源文件</Filter>
     </Text>

@@ -13,6 +13,7 @@ namespace ps1e {
 // dma6 : GPU OTC
 
 class MMU;
+class Bus;
 
 
 enum class ChcrMode : u32 {
@@ -119,20 +120,20 @@ private:
   u32 _mask;
   u32 priority;
   bool running;
-  MMU* mmu;
 
 protected:
   u32 base;
   u32 blocks;
   u32 blocksize;
   DMAChcr chcr;
+  Bus& bus;
 
   // DMA 传输过程, 由设备调用该方法开始 DMA 传输,
   // 应该在单独的线程中执行
   void transport();
 
 public:
-  DMADev() : priority(0), running(false), mmu(0) {
+  DMADev(Bus& _bus) : priority(0), running(false), bus(_bus) {
     _mask = 1 << (number() * 4);
   }
 
@@ -146,7 +147,7 @@ public:
   // 停止 DMA 传输
   void stop();
   // 使 DMA 启动传输, 因为传输线程独立, 并不保证立即运行
-  void start(MMU* mmu);
+  void start();
 
   void set_priority(u32 p) {
     priority = p;

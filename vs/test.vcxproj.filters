@@ -18,9 +18,6 @@
     <ClCompile Include="..\src\test\cpu.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\test\disassembly.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\test\jit.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -34,6 +31,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\src\test\dma.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\test\inter.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

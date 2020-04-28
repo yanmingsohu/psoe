@@ -22,7 +22,7 @@
     <ClInclude Include="..\src\asm.h" />
     <ClInclude Include="..\src\asm_x86-64.h" />
     <ClInclude Include="..\src\cpu.h" />
-    <ClInclude Include="..\src\disassembly.h" />
+    <ClInclude Include="..\src\inter.h" />
     <ClInclude Include="..\src\dma.h" />
     <ClInclude Include="..\src\gpu.h" />
     <ClInclude Include="..\src\mem.h" />
@@ -32,6 +32,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp" />
+    <ClCompile Include="..\src\bus.cpp" />
+    <ClCompile Include="..\src\bus.h" />
     <ClCompile Include="..\src\cpu.cpp" />
     <ClCompile Include="..\src\dma.cpp" />
     <ClCompile Include="..\src\gpu.cpp" />
@@ -41,16 +43,10 @@
     <ClCompile Include="..\src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\doc\MIPS-2.html" />
-    <None Include="..\doc\MIPS-addi.md" />
-    <None Include="..\doc\MIPS.html" />
-    <None Include="..\doc\psx.html" />
-    <None Include="..\doc\R3000.html" />
+    <None Include="..\README.md" />
     <None Include="..\src\makefile" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\doc\cdinfo.txt" />
-    <Text Include="..\doc\exe-format.txt" />
     <Text Include="..\doc\gpu.txt" />
     <Text Include="..\doc\gte.txt" />
     <Text Include="..\doc\memory.txt" />
