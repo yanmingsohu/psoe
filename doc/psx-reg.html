@@ -1,0 +1,920 @@
+<html>
+<head><meta http-equiv=Content-Type content="text/html; charset=UTF-8">
+<style type="text/css">
+<!--
+body {zoom:1.5;}
+span.cls_011{font-family:Courier New,serif;font-size:16.1px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: underline}
+div.cls_011{font-family:Courier New,serif;font-size:16.1px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+span.cls_003{font-family:Courier New,serif;font-size:8.0px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_003{font-family:Courier New,serif;font-size:8.0px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_012{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: underline}
+div.cls_012{font-family:Courier New,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+span.cls_005{font-family:Courier New,serif;font-size:10.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_005{font-family:Courier New,serif;font-size:10.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_006{font-family:Courier New,serif;font-size:9.2px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_006{font-family:Courier New,serif;font-size:9.2px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_008{font-family:Arial,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_008{font-family:Arial,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_007{font-family:Times,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+div.cls_007{font-family:Times,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:normal;text-decoration: none}
+span.cls_009{font-family:Times,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: none}
+div.cls_009{font-family:Times,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: none}
+span.cls_013{font-family:Times,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: line-through}
+div.cls_013{font-family:Times,serif;font-size:12.1px;color:rgb(0,0,0);font-weight:normal;font-style:italic;text-decoration: none}
+span.cls_014{font-family:Courier New,serif;font-size:9.2px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: underline}
+div.cls_014{font-family:Courier New,serif;font-size:9.2px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+span.cls_010{font-family:Courier New,serif;font-size:9.2px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+div.cls_010{font-family:Courier New,serif;font-size:9.2px;color:rgb(0,0,0);font-weight:bold;font-style:normal;text-decoration: none}
+-->
+</style>
+<script type="text/javascript" src="cd341740-88e6-11ea-8b25-0cc47a792c0a_id_cd341740-88e6-11ea-8b25-0cc47a792c0a_files/wz_jsgraphics.js"></script>
+</head>
+<body>
+<div style="position:absolute;left:50%;margin-left:-297px;top:0px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:240.00px;top:68.36px" class="cls_011"><span class="cls_011">PSX-Register</span></div>
+<div style="position:absolute;left:252.00px;top:87.80px" class="cls_003"><span class="cls_003">hacked by bITmASTER</span></div>
+<div style="position:absolute;left:230.40px;top:96.44px" class="cls_003"><span class="cls_003">eMail: bITmASTER@bigfoot.com</span></div>
+<div style="position:absolute;left:70.80px;top:115.88px" class="cls_003"><span class="cls_003">last update: 09.07.99</span></div>
+<div style="position:absolute;left:261.60px;top:123.99px" class="cls_012"><span class="cls_012">VAG-Format</span></div>
+<div style="position:absolute;left:70.80px;top:159.17px" class="cls_005"><span class="cls_005">VAG-Sample-Group</span></div>
+<div style="position:absolute;left:70.80px;top:180.77px" class="cls_005"><span class="cls_005">Eine Sample-Group besteht aus 16 Bytes.</span></div>
+<div style="position:absolute;left:70.80px;top:202.37px" class="cls_005"><span class="cls_005">typedef struct {</span></div>
+<div style="position:absolute;left:106.32px;top:213.17px" class="cls_005"><span class="cls_005">unsigned char pack_info;</span></div>
+<div style="position:absolute;left:106.32px;top:223.97px" class="cls_005"><span class="cls_005">unsigned char flags;</span></div>
+<div style="position:absolute;left:106.32px;top:234.77px" class="cls_005"><span class="cls_005">unsigned char packed[14];</span></div>
+<div style="position:absolute;left:70.80px;top:245.57px" class="cls_005"><span class="cls_005">}</span></div>
+<div style="position:absolute;left:70.80px;top:267.17px" class="cls_005"><span class="cls_005">pack_info:</span></div>
+<div style="position:absolute;left:70.80px;top:277.97px" class="cls_005"><span class="cls_005">höherwertiges Nibble:</span></div>
+<div style="position:absolute;left:212.88px;top:277.97px" class="cls_005"><span class="cls_005">Predictor-Nummer</span></div>
+<div style="position:absolute;left:70.80px;top:288.77px" class="cls_005"><span class="cls_005">niederwertiges Nibble:  Shiftfactor</span></div>
+<div style="position:absolute;left:70.80px;top:310.37px" class="cls_005"><span class="cls_005">flags:</span></div>
+<div style="position:absolute;left:70.80px;top:321.17px" class="cls_005"><span class="cls_005">0x07: Sample-Ende</span></div>
+<div style="position:absolute;left:70.80px;top:331.97px" class="cls_005"><span class="cls_005">0x02: Samples gehören zu Repeat-Teil</span></div>
+<div style="position:absolute;left:70.80px;top:342.77px" class="cls_005"><span class="cls_005">0x06: Repeat-Start</span></div>
+<div style="position:absolute;left:70.80px;top:364.37px" class="cls_005"><span class="cls_005">0x04: Repeat-Point</span></div>
+<div style="position:absolute;left:70.80px;top:375.17px" class="cls_005"><span class="cls_005">0x03: Sample-Ende, beginne neu bei Repeat-Start</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:852px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:70.80px;top:69.56px" class="cls_003"><span class="cls_003">Register Size:</span></div>
+<div style="position:absolute;left:70.80px;top:78.20px" class="cls_003"><span class="cls_003">short:</span></div>
+<div style="position:absolute;left:106.32px;top:78.20px" class="cls_003"><span class="cls_003">2 Bytes</span></div>
+<div style="position:absolute;left:70.80px;top:86.84px" class="cls_003"><span class="cls_003">int:</span></div>
+<div style="position:absolute;left:106.32px;top:86.84px" class="cls_003"><span class="cls_003">4 Bytes</span></div>
+<div style="position:absolute;left:254.40px;top:105.75px" class="cls_012"><span class="cls_012">SPU-Register</span></div>
+<div style="position:absolute;left:70.80px;top:131.74px" class="cls_006"><span class="cls_006">0x1f8010c0</span></div>
+<div style="position:absolute;left:138.00px;top:131.74px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:131.74px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:131.74px" class="cls_006"><span class="cls_006">SPU-DMA Memory-Address</span></div>
+<div style="position:absolute;left:70.80px;top:142.06px" class="cls_006"><span class="cls_006">0x1f801c04</span></div>
+<div style="position:absolute;left:138.00px;top:142.06px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:142.06px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:142.06px" class="cls_006"><span class="cls_006">b15...b0</span></div>
+<div style="position:absolute;left:209.04px;top:151.66px" class="cls_006"><span class="cls_006">b31...b16:</span></div>
+<div style="position:absolute;left:280.08px;top:151.66px" class="cls_006"><span class="cls_006">DMA-Block-Size (n * 64</span></div>
+<div style="position:absolute;left:209.04px;top:161.26px" class="cls_006"><span class="cls_006">Bytes)</span></div>
+<div style="position:absolute;left:70.80px;top:171.58px" class="cls_006"><span class="cls_006">0x1f801c08</span></div>
+<div style="position:absolute;left:138.00px;top:171.58px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:171.58px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:171.58px" class="cls_006"><span class="cls_006">b24 = 1: Start DMA</span></div>
+<div style="position:absolute;left:255.12px;top:181.18px" class="cls_006"><span class="cls_006">when transfer complete b24</span></div>
+<div style="position:absolute;left:209.04px;top:190.78px" class="cls_006"><span class="cls_006">switch to 0</span></div>
+<div style="position:absolute;left:70.80px;top:212.86px" class="cls_006"><span class="cls_006">0x1f8010f4</span></div>
+<div style="position:absolute;left:138.00px;top:212.86px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:212.86px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:212.86px" class="cls_006"><span class="cls_006">DMA Interrupt Control</span></div>
+<div style="position:absolute;left:173.52px;top:233.50px" class="cls_006"><span class="cls_006">b15</span></div>
+<div style="position:absolute;left:209.04px;top:233.50px" class="cls_006"><span class="cls_006">DMA channel ?? interrupt enable</span></div>
+<div style="position:absolute;left:70.80px;top:285.10px" class="cls_006"><span class="cls_006">0x1f801c00</span></div>
+<div style="position:absolute;left:138.00px;top:285.10px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:285.10px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:285.10px" class="cls_006"><span class="cls_006">Volume left Channel 0</span></div>
+<div style="position:absolute;left:209.04px;top:294.70px" class="cls_006"><span class="cls_006">b0...b13:</span></div>
+<div style="position:absolute;left:280.08px;top:294.70px" class="cls_006"><span class="cls_006">Volume (0...0x3fff)</span></div>
+<div style="position:absolute;left:209.04px;top:304.30px" class="cls_006"><span class="cls_006">b14:</span></div>
+<div style="position:absolute;left:280.08px;top:304.30px" class="cls_006"><span class="cls_006">Sign</span></div>
+<div style="position:absolute;left:70.80px;top:314.62px" class="cls_006"><span class="cls_006">0x1f801c02</span></div>
+<div style="position:absolute;left:138.00px;top:314.62px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:314.62px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:314.62px" class="cls_006"><span class="cls_006">Volume right Channel 0</span></div>
+<div style="position:absolute;left:209.04px;top:324.22px" class="cls_006"><span class="cls_006">b0...b13:</span></div>
+<div style="position:absolute;left:280.08px;top:324.22px" class="cls_006"><span class="cls_006">Volume (0...0x3fff)</span></div>
+<div style="position:absolute;left:209.04px;top:333.82px" class="cls_006"><span class="cls_006">b14:</span></div>
+<div style="position:absolute;left:280.08px;top:333.82px" class="cls_006"><span class="cls_006">Sign</span></div>
+<div style="position:absolute;left:70.80px;top:344.14px" class="cls_006"><span class="cls_006">0x1f801c04</span></div>
+<div style="position:absolute;left:138.00px;top:344.14px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:344.14px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:344.14px" class="cls_006"><span class="cls_006">Frequency</span></div>
+<div style="position:absolute;left:70.80px;top:354.46px" class="cls_006"><span class="cls_006">0x1f801c06</span></div>
+<div style="position:absolute;left:138.00px;top:354.46px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:354.46px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:354.46px" class="cls_006"><span class="cls_006">Startaddress Sound = SPU-Memory / 8</span></div>
+<div style="position:absolute;left:70.80px;top:364.78px" class="cls_006"><span class="cls_006">0x1f801c08</span></div>
+<div style="position:absolute;left:138.00px;top:364.78px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:364.78px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:364.78px" class="cls_006"><span class="cls_006">b7-b14 Attack-Rate (0x7f = nie)</span></div>
+<div style="position:absolute;left:209.04px;top:374.38px" class="cls_006"><span class="cls_006">b15: 1 Exponental</span></div>
+<div style="position:absolute;left:70.80px;top:384.70px" class="cls_006"><span class="cls_006">0x1f801c0a</span></div>
+<div style="position:absolute;left:138.00px;top:384.70px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:384.70px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:384.70px" class="cls_006"><span class="cls_006">ADSR2</span></div>
+<div style="position:absolute;left:70.80px;top:395.02px" class="cls_006"><span class="cls_006">0x1f801c0c</span></div>
+<div style="position:absolute;left:138.00px;top:395.02px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:395.02px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:395.02px" class="cls_006"><span class="cls_006">ADSR-Volume (0x0000 - 0x7fff)</span></div>
+<div style="position:absolute;left:70.80px;top:405.34px" class="cls_006"><span class="cls_006">0x1f801c0e</span></div>
+<div style="position:absolute;left:138.00px;top:405.34px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:405.34px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:405.34px" class="cls_006"><span class="cls_006">current repeat address</span></div>
+<div style="position:absolute;left:70.80px;top:425.98px" class="cls_006"><span class="cls_006">... weitere 23 mal für die Channels 1...23</span></div>
+<div style="position:absolute;left:70.80px;top:454.78px" class="cls_006"><span class="cls_006">s:</span></div>
+<div style="position:absolute;left:106.32px;top:454.78px" class="cls_006"><span class="cls_006">Anzahl der Samples für eine Periode</span></div>
+<div style="position:absolute;left:70.80px;top:464.38px" class="cls_006"><span class="cls_006">f:</span></div>
+<div style="position:absolute;left:106.32px;top:464.38px" class="cls_006"><span class="cls_006">gewünschte Wiedergabefrequenz</span></div>
+<div style="position:absolute;left:70.80px;top:473.98px" class="cls_006"><span class="cls_006">t:</span></div>
+<div style="position:absolute;left:106.32px;top:473.98px" class="cls_006"><span class="cls_006">Teilerfaktor</span></div>
+<div style="position:absolute;left:101.52px;top:494.36px" class="cls_008"><span class="cls_008">⋅</span></div>
+<div style="position:absolute;left:198.48px;top:494.36px" class="cls_007"><span class="cls_007">44100</span><span class="cls_008">⋅</span><span class="cls_009">t</span></div>
+<div style="position:absolute;left:72.24px;top:501.80px" class="cls_009"><span class="cls_009">t</span></div>
+<div style="position:absolute;left:79.20px;top:494.36px" class="cls_008"><span class="cls_008">=</span><span class="cls_009"> </span><span class="cls_013"> s f</span></div>
+<div style="position:absolute;left:122.40px;top:501.80px" class="cls_008"><span class="cls_008">⋅ </span><span class="cls_007">4096</span></div>
+<div style="position:absolute;left:179.04px;top:501.80px" class="cls_009"><span class="cls_009">f</span></div>
+<div style="position:absolute;left:187.92px;top:501.80px" class="cls_008"><span class="cls_008">=</span></div>
+<div style="position:absolute;left:89.52px;top:511.16px" class="cls_007"><span class="cls_007">44100</span></div>
+<div style="position:absolute;left:200.64px;top:511.16px" class="cls_007"><span class="cls_007">4096</span><span class="cls_008">⋅</span><span class="cls_009">s</span></div>
+<div style="position:absolute;left:70.80px;top:554.38px" class="cls_006"><span class="cls_006">0x1f801d80</span></div>
+<div style="position:absolute;left:138.00px;top:554.38px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:554.38px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:554.38px" class="cls_006"><span class="cls_006">MasterVolume left (0x0000-0x3fff)</span></div>
+<div style="position:absolute;left:70.80px;top:564.70px" class="cls_006"><span class="cls_006">0x1f801d82</span></div>
+<div style="position:absolute;left:138.00px;top:564.70px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:564.70px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:564.70px" class="cls_006"><span class="cls_006">MasterVolume right (0x0000-0x3fff)</span></div>
+<div style="position:absolute;left:70.80px;top:575.02px" class="cls_006"><span class="cls_006">0x1f801d84</span></div>
+<div style="position:absolute;left:138.00px;top:575.02px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:575.02px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:575.02px" class="cls_006"><span class="cls_006">ReverbDepth left (0x0000-0x7fff) , b15=1:</span></div>
+<div style="position:absolute;left:209.04px;top:584.62px" class="cls_006"><span class="cls_006">inverted</span></div>
+<div style="position:absolute;left:70.80px;top:594.94px" class="cls_006"><span class="cls_006">0x1f801d86</span></div>
+<div style="position:absolute;left:138.00px;top:594.94px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:594.94px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:594.94px" class="cls_006"><span class="cls_006">ReverbDepth right (0x0000-0x7fff), b15=1:</span></div>
+<div style="position:absolute;left:209.04px;top:604.54px" class="cls_006"><span class="cls_006">inverted</span></div>
+<div style="position:absolute;left:70.80px;top:614.86px" class="cls_006"><span class="cls_006">0x1f801d88</span></div>
+<div style="position:absolute;left:138.00px;top:614.86px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:614.86px" class="cls_006"><span class="cls_006">w</span></div>
+<div style="position:absolute;left:209.04px;top:614.86px" class="cls_006"><span class="cls_006">start sound play</span></div>
+<div style="position:absolute;left:209.04px;top:624.46px" class="cls_006"><span class="cls_006">b0 = 1 start channel 0</span></div>
+<div style="position:absolute;left:209.04px;top:634.06px" class="cls_006"><span class="cls_006">b1 = 1 start channel 1</span></div>
+<div style="position:absolute;left:209.04px;top:643.66px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:643.66px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:643.66px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:643.66px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:643.66px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:643.66px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:653.26px" class="cls_006"><span class="cls_006">b15 = 1 start channel 15</span></div>
+<div style="position:absolute;left:70.80px;top:663.58px" class="cls_006"><span class="cls_006">0x1f801d8a</span></div>
+<div style="position:absolute;left:138.00px;top:663.58px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:663.58px" class="cls_006"><span class="cls_006">w</span></div>
+<div style="position:absolute;left:209.04px;top:663.58px" class="cls_006"><span class="cls_006">start sound play</span></div>
+<div style="position:absolute;left:209.04px;top:673.18px" class="cls_006"><span class="cls_006">b0 = 1 start channel 16</span></div>
+<div style="position:absolute;left:209.04px;top:682.78px" class="cls_006"><span class="cls_006">b1 = 1 start channel 17</span></div>
+<div style="position:absolute;left:209.04px;top:692.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:692.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:692.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:692.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:692.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:692.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:701.98px" class="cls_006"><span class="cls_006">b7 = 1 start channel 23</span></div>
+<div style="position:absolute;left:70.80px;top:712.30px" class="cls_006"><span class="cls_006">0x1f801d8c</span></div>
+<div style="position:absolute;left:138.00px;top:712.30px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:712.30px" class="cls_006"><span class="cls_006">w</span></div>
+<div style="position:absolute;left:209.04px;top:712.30px" class="cls_006"><span class="cls_006">stop sound play</span></div>
+<div style="position:absolute;left:209.04px;top:721.90px" class="cls_006"><span class="cls_006">b0 = 1 stop channel 0</span></div>
+<div style="position:absolute;left:209.04px;top:731.50px" class="cls_006"><span class="cls_006">b1 = 1 stop channel 1</span></div>
+<div style="position:absolute;left:209.04px;top:741.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:741.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:741.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:741.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:741.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:741.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:750.70px" class="cls_006"><span class="cls_006">b15 = 1</span></div>
+<div style="position:absolute;left:280.08px;top:750.70px" class="cls_006"><span class="cls_006">stop channel 15</span></div>
+<div style="position:absolute;left:70.80px;top:761.02px" class="cls_006"><span class="cls_006">0x1f801d8e</span></div>
+<div style="position:absolute;left:138.00px;top:761.02px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:761.02px" class="cls_006"><span class="cls_006">w</span></div>
+<div style="position:absolute;left:209.04px;top:761.02px" class="cls_006"><span class="cls_006">stop sound play</span></div>
+<div style="position:absolute;left:209.04px;top:770.62px" class="cls_006"><span class="cls_006">b0 = 1 stop channel 16</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:1704px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:209.04px;top:70.78px" class="cls_006"><span class="cls_006">b1 = 1 stop channel 17</span></div>
+<div style="position:absolute;left:209.04px;top:80.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:80.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:80.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:80.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:80.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:80.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:89.98px" class="cls_006"><span class="cls_006">b7 = 1 stop channel 23</span></div>
+<div style="position:absolute;left:70.80px;top:100.30px" class="cls_006"><span class="cls_006">0x1f801d90</span></div>
+<div style="position:absolute;left:138.00px;top:100.30px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:100.30px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:100.30px" class="cls_006"><span class="cls_006">set channel in FM-Modus</span></div>
+<div style="position:absolute;left:209.04px;top:109.90px" class="cls_006"><span class="cls_006">die Modulation kommt von Channel n-1</span></div>
+<div style="position:absolute;left:209.04px;top:119.50px" class="cls_006"><span class="cls_006">b0 = 1 channel 0</span></div>
+<div style="position:absolute;left:209.04px;top:129.10px" class="cls_006"><span class="cls_006">b1 = 1 channel 1</span></div>
+<div style="position:absolute;left:209.04px;top:138.70px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:138.70px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:138.70px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:138.70px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:329.44px;top:138.70px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:148.30px" class="cls_006"><span class="cls_006">b15 = 1</span></div>
+<div style="position:absolute;left:285.55px;top:148.30px" class="cls_006"><span class="cls_006">channel 15</span></div>
+<div style="position:absolute;left:70.80px;top:158.62px" class="cls_006"><span class="cls_006">0x1f801d92</span></div>
+<div style="position:absolute;left:138.00px;top:158.62px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:158.62px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:158.62px" class="cls_006"><span class="cls_006">set channel in FM-Modus</span></div>
+<div style="position:absolute;left:209.04px;top:168.22px" class="cls_006"><span class="cls_006">die Modulation kommt von Channel n-1</span></div>
+<div style="position:absolute;left:209.04px;top:177.82px" class="cls_006"><span class="cls_006">b0 = 1 channel 0</span></div>
+<div style="position:absolute;left:209.04px;top:187.42px" class="cls_006"><span class="cls_006">b1 = 1 channel 1</span></div>
+<div style="position:absolute;left:209.04px;top:197.02px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:197.02px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:197.02px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:197.02px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:329.44px;top:197.02px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:206.62px" class="cls_006"><span class="cls_006">b15 = 1</span></div>
+<div style="position:absolute;left:280.08px;top:206.62px" class="cls_006"><span class="cls_006">channel 15</span></div>
+<div style="position:absolute;left:70.80px;top:216.94px" class="cls_006"><span class="cls_006">0x1f801d94</span></div>
+<div style="position:absolute;left:138.00px;top:216.94px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:216.94px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:216.94px" class="cls_006"><span class="cls_006">use channel as noise generator</span></div>
+<div style="position:absolute;left:209.04px;top:226.54px" class="cls_006"><span class="cls_006">b0 = 1 start channel 0</span></div>
+<div style="position:absolute;left:209.04px;top:236.14px" class="cls_006"><span class="cls_006">b1 = 1 start channel 1</span></div>
+<div style="position:absolute;left:209.04px;top:245.74px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:245.74px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:245.74px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:245.74px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:245.74px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:245.74px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:255.34px" class="cls_006"><span class="cls_006">b15 = 1</span></div>
+<div style="position:absolute;left:280.08px;top:255.34px" class="cls_006"><span class="cls_006">start channel 15</span></div>
+<div style="position:absolute;left:70.80px;top:265.66px" class="cls_006"><span class="cls_006">0x1f801d96</span></div>
+<div style="position:absolute;left:138.00px;top:265.66px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:265.66px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:265.66px" class="cls_006"><span class="cls_006">use channel as noise generator</span></div>
+<div style="position:absolute;left:209.04px;top:275.26px" class="cls_006"><span class="cls_006">b0 = 1 start channel 16</span></div>
+<div style="position:absolute;left:209.04px;top:284.86px" class="cls_006"><span class="cls_006">b1 = 1 start channel 17</span></div>
+<div style="position:absolute;left:209.04px;top:294.46px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:294.46px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:294.46px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:294.46px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:294.46px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:294.46px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:304.06px" class="cls_006"><span class="cls_006">b7 = 1 start channel 23</span></div>
+<div style="position:absolute;left:70.80px;top:314.38px" class="cls_006"><span class="cls_006">0x1f801d98</span></div>
+<div style="position:absolute;left:138.00px;top:314.38px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:314.38px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:314.38px" class="cls_006"><span class="cls_006">set channel to reverb modus</span></div>
+<div style="position:absolute;left:209.04px;top:323.98px" class="cls_006"><span class="cls_006">(after sample end, the reverb modus</span></div>
+<div style="position:absolute;left:209.04px;top:333.58px" class="cls_006"><span class="cls_006">automatic switch off !!)</span></div>
+<div style="position:absolute;left:209.04px;top:343.18px" class="cls_006"><span class="cls_006">b0 = 1 start channel 0</span></div>
+<div style="position:absolute;left:209.04px;top:352.78px" class="cls_006"><span class="cls_006">b1 = 1 start channel 1</span></div>
+<div style="position:absolute;left:209.04px;top:362.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:362.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:362.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:362.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:362.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:362.38px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:371.98px" class="cls_006"><span class="cls_006">b15 = 1 start channel 15</span></div>
+<div style="position:absolute;left:70.80px;top:382.30px" class="cls_006"><span class="cls_006">0x1f801d9a</span></div>
+<div style="position:absolute;left:138.00px;top:382.30px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:382.30px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:382.30px" class="cls_006"><span class="cls_006">set channel to reverb modus</span></div>
+<div style="position:absolute;left:209.04px;top:391.90px" class="cls_006"><span class="cls_006">b0 = 1 start channel 16</span></div>
+<div style="position:absolute;left:209.04px;top:401.50px" class="cls_006"><span class="cls_006">b1 = 1 start channel 17</span></div>
+<div style="position:absolute;left:209.04px;top:411.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:411.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:411.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:411.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:411.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:411.10px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:420.70px" class="cls_006"><span class="cls_006">b7 = 1 start channel 23</span></div>
+<div style="position:absolute;left:70.80px;top:431.02px" class="cls_006"><span class="cls_006">0x1f801d9c</span></div>
+<div style="position:absolute;left:138.00px;top:431.02px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:431.02px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:431.02px" class="cls_006"><span class="cls_006">channel active</span></div>
+<div style="position:absolute;left:209.04px;top:440.62px" class="cls_006"><span class="cls_006">b0 = 0 channel 0 active</span></div>
+<div style="position:absolute;left:209.04px;top:450.22px" class="cls_006"><span class="cls_006">b1 = 0 channel 1 active</span></div>
+<div style="position:absolute;left:209.04px;top:459.82px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:459.82px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:459.82px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:459.82px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:459.82px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:459.82px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:469.42px" class="cls_006"><span class="cls_006">b15 = 0</span></div>
+<div style="position:absolute;left:280.08px;top:469.42px" class="cls_006"><span class="cls_006">channel 15 active</span></div>
+<div style="position:absolute;left:70.80px;top:479.74px" class="cls_006"><span class="cls_006">0x1f801d9e</span></div>
+<div style="position:absolute;left:138.00px;top:479.74px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:479.74px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:479.74px" class="cls_006"><span class="cls_006">channel active</span></div>
+<div style="position:absolute;left:209.04px;top:489.34px" class="cls_006"><span class="cls_006">b0 = 0 channel 16 active</span></div>
+<div style="position:absolute;left:209.04px;top:498.94px" class="cls_006"><span class="cls_006">b1 = 0 channel 17 active</span></div>
+<div style="position:absolute;left:209.04px;top:508.54px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:236.40px;top:508.54px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:252.82px;top:508.54px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:296.61px;top:508.54px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:356.81px;top:508.54px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:400.59px;top:508.54px" class="cls_006"><span class="cls_006">:</span></div>
+<div style="position:absolute;left:209.04px;top:518.14px" class="cls_006"><span class="cls_006">b7 = 0 channel 23 active</span></div>
+<div style="position:absolute;left:70.80px;top:528.46px" class="cls_006"><span class="cls_006">0x1f801da0</span></div>
+<div style="position:absolute;left:209.04px;top:528.46px" class="cls_006"><span class="cls_006">not used</span></div>
+<div style="position:absolute;left:70.80px;top:538.78px" class="cls_006"><span class="cls_006">0x1f801da2</span></div>
+<div style="position:absolute;left:209.04px;top:538.78px" class="cls_006"><span class="cls_006">start address Reverb Buffer</span></div>
+<div style="position:absolute;left:70.80px;top:549.10px" class="cls_006"><span class="cls_006">0x1f801da4</span></div>
+<div style="position:absolute;left:138.00px;top:549.10px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:549.10px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:549.10px" class="cls_006"><span class="cls_006">function unknow</span></div>
+<div style="position:absolute;left:70.80px;top:559.42px" class="cls_006"><span class="cls_006">0x1f801da6</span></div>
+<div style="position:absolute;left:138.00px;top:559.42px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:559.42px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:559.42px" class="cls_006"><span class="cls_006">SPU-Memory-Address</span></div>
+<div style="position:absolute;left:70.80px;top:569.74px" class="cls_006"><span class="cls_006">0x1f801da8</span></div>
+<div style="position:absolute;left:138.00px;top:569.74px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:569.74px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:569.74px" class="cls_006"><span class="cls_006">Data to SPU</span></div>
+<div style="position:absolute;left:70.80px;top:580.06px" class="cls_006"><span class="cls_006">0x1f801daa</span></div>
+<div style="position:absolute;left:138.00px;top:580.06px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:580.06px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:580.06px" class="cls_006"><span class="cls_006">Spu-Control1 (0xc000)</span></div>
+<div style="position:absolute;left:209.04px;top:589.66px" class="cls_006"><span class="cls_006">b14=0</span></div>
+<div style="position:absolute;left:248.16px;top:589.66px" class="cls_006"><span class="cls_006">DA-Converter mute</span></div>
+<div style="position:absolute;left:209.04px;top:599.26px" class="cls_006"><span class="cls_006">b13...b8:</span></div>
+<div style="position:absolute;left:280.08px;top:599.26px" class="cls_006"><span class="cls_006">Noise-Frequency</span></div>
+<div style="position:absolute;left:209.04px;top:608.86px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:209.04px;top:618.46px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:248.16px;top:618.46px" class="cls_006"><span class="cls_006">Reverb off</span></div>
+<div style="position:absolute;left:209.04px;top:628.06px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:248.16px;top:628.06px" class="cls_006"><span class="cls_006">Reverb on</span></div>
+<div style="position:absolute;left:209.04px;top:647.26px" class="cls_006"><span class="cls_006">b6:</span></div>
+<div style="position:absolute;left:248.16px;top:647.26px" class="cls_006"><span class="cls_006">SpuIQR</span></div>
+<div style="position:absolute;left:209.04px;top:666.46px" class="cls_006"><span class="cls_006">b5  b4</span></div>
+<div style="position:absolute;left:209.04px;top:676.06px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:226.80px;top:676.06px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:248.16px;top:676.06px" class="cls_006"><span class="cls_006">---</span></div>
+<div style="position:absolute;left:209.04px;top:685.66px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:226.80px;top:685.66px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:248.16px;top:685.66px" class="cls_006"><span class="cls_006">write SPU non-DMA</span></div>
+<div style="position:absolute;left:209.04px;top:695.26px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:226.80px;top:695.26px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:248.16px;top:695.26px" class="cls_006"><span class="cls_006">write SPU with DMA</span></div>
+<div style="position:absolute;left:209.04px;top:704.86px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:226.80px;top:704.86px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:248.16px;top:704.86px" class="cls_006"><span class="cls_006">read SPU with DMA</span></div>
+<div style="position:absolute;left:209.04px;top:733.66px" class="cls_006"><span class="cls_006">b3: EXT Reverb</span></div>
+<div style="position:absolute;left:209.04px;top:743.26px" class="cls_006"><span class="cls_006">b2: CD Reverb</span></div>
+<div style="position:absolute;left:209.04px;top:752.86px" class="cls_006"><span class="cls_006">b1: enable extern digital audio in put</span></div>
+<div style="position:absolute;left:209.04px;top:762.46px" class="cls_006"><span class="cls_006">b0: enable CD audio</span></div>
+<div style="position:absolute;left:70.80px;top:772.78px" class="cls_006"><span class="cls_006">0x1f801dac</span></div>
+<div style="position:absolute;left:138.00px;top:772.78px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:772.78px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:772.78px" class="cls_006"><span class="cls_006">Spu-Control2 (4)</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:2556px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:70.80px;top:70.78px" class="cls_006"><span class="cls_006">0x1f801dae</span></div>
+<div style="position:absolute;left:138.00px;top:70.78px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:70.78px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:70.78px" class="cls_006"><span class="cls_006">Spu-Status</span></div>
+<div style="position:absolute;left:209.04px;top:80.38px" class="cls_006"><span class="cls_006">b7:</span></div>
+<div style="position:absolute;left:244.56px;top:80.38px" class="cls_006"><span class="cls_006">1, SPU is ready for DMA-Transfer</span></div>
+<div style="position:absolute;left:209.04px;top:89.98px" class="cls_006"><span class="cls_006">b10:</span></div>
+<div style="position:absolute;left:244.56px;top:89.98px" class="cls_006"><span class="cls_006">wrdy</span></div>
+<div style="position:absolute;left:209.04px;top:99.58px" class="cls_006"><span class="cls_006">b11:</span></div>
+<div style="position:absolute;left:244.56px;top:99.58px" class="cls_006"><span class="cls_006">current decoded page</span></div>
+<div style="position:absolute;left:70.80px;top:109.90px" class="cls_006"><span class="cls_006">0x1f801db0</span></div>
+<div style="position:absolute;left:138.00px;top:109.90px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:109.90px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:109.90px" class="cls_006"><span class="cls_006">CD-Audio-Volume left</span></div>
+<div style="position:absolute;left:70.80px;top:120.22px" class="cls_006"><span class="cls_006">0x1f801db2</span></div>
+<div style="position:absolute;left:138.00px;top:120.22px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:120.22px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:120.22px" class="cls_006"><span class="cls_006">CD-Audio-Volume right</span></div>
+<div style="position:absolute;left:70.80px;top:130.54px" class="cls_006"><span class="cls_006">0x1f801db4</span></div>
+<div style="position:absolute;left:138.00px;top:130.54px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:130.54px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:130.54px" class="cls_006"><span class="cls_006">extern Volume left</span></div>
+<div style="position:absolute;left:70.80px;top:140.86px" class="cls_006"><span class="cls_006">0x1f801db6</span></div>
+<div style="position:absolute;left:138.00px;top:140.86px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:140.86px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:140.86px" class="cls_006"><span class="cls_006">extern Volume right</span></div>
+<div style="position:absolute;left:70.80px;top:151.18px" class="cls_006"><span class="cls_006">0x1f801db8</span></div>
+<div style="position:absolute;left:138.00px;top:151.18px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:151.18px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:151.18px" class="cls_006"><span class="cls_006">???</span></div>
+<div style="position:absolute;left:70.80px;top:161.50px" class="cls_006"><span class="cls_006">0x1f801dba</span></div>
+<div style="position:absolute;left:138.00px;top:161.50px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:161.50px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:161.50px" class="cls_006"><span class="cls_006">???</span></div>
+<div style="position:absolute;left:70.80px;top:171.82px" class="cls_006"><span class="cls_006">0x1f801dbc</span></div>
+<div style="position:absolute;left:70.80px;top:182.14px" class="cls_006"><span class="cls_006">0x1f801dbe</span></div>
+<div style="position:absolute;left:70.80px;top:192.46px" class="cls_006"><span class="cls_006">0x1f801dc0</span></div>
+<div style="position:absolute;left:209.04px;top:192.46px" class="cls_006"><span class="cls_006">SPU-Effects</span></div>
+<div style="position:absolute;left:70.80px;top:202.78px" class="cls_006"><span class="cls_006">0x1f801dc2</span></div>
+<div style="position:absolute;left:70.80px;top:213.10px" class="cls_006"><span class="cls_006">0x1f801dc4</span></div>
+<div style="position:absolute;left:209.04px;top:213.10px" class="cls_006"><span class="cls_006">Filter für verzögertes Signal</span></div>
+<div style="position:absolute;left:209.04px;top:222.70px" class="cls_006"><span class="cls_006">Tiefpaß</span></div>
+<div style="position:absolute;left:209.04px;top:232.30px" class="cls_006"><span class="cls_006">0x0000: niedrigste Grenzfrequenz</span></div>
+<div style="position:absolute;left:209.04px;top:241.90px" class="cls_006"><span class="cls_006">0x7fff: höchste Grenzfrequenz, keine</span></div>
+<div style="position:absolute;left:209.04px;top:251.50px" class="cls_006"><span class="cls_006">Filterwirkung</span></div>
+<div style="position:absolute;left:70.80px;top:261.82px" class="cls_006"><span class="cls_006">0x1f801dc6</span></div>
+<div style="position:absolute;left:209.04px;top:261.82px" class="cls_006"><span class="cls_006">Amplitude verzögertes Signal</span></div>
+<div style="position:absolute;left:209.04px;top:271.42px" class="cls_006"><span class="cls_006">0...32767</span></div>
+<div style="position:absolute;left:209.04px;top:281.02px" class="cls_006"><span class="cls_006">-32768...0 (invertiert)</span></div>
+<div style="position:absolute;left:70.80px;top:291.34px" class="cls_006"><span class="cls_006">0x1f801dc8</span></div>
+<div style="position:absolute;left:70.80px;top:301.66px" class="cls_006"><span class="cls_006">0x1f801dca</span></div>
+<div style="position:absolute;left:70.80px;top:311.98px" class="cls_006"><span class="cls_006">0x1f801dcc</span></div>
+<div style="position:absolute;left:70.80px;top:322.30px" class="cls_006"><span class="cls_006">0x1f801dce</span></div>
+<div style="position:absolute;left:70.80px;top:332.62px" class="cls_006"><span class="cls_006">0x1f801dd0</span></div>
+<div style="position:absolute;left:70.80px;top:342.94px" class="cls_006"><span class="cls_006">0x1f801dd2</span></div>
+<div style="position:absolute;left:70.80px;top:353.26px" class="cls_006"><span class="cls_006">0x1f801dd4</span></div>
+<div style="position:absolute;left:70.80px;top:363.58px" class="cls_006"><span class="cls_006">0x1f801dd6</span></div>
+<div style="position:absolute;left:70.80px;top:373.90px" class="cls_006"><span class="cls_006">0x1f801dd8</span></div>
+<div style="position:absolute;left:209.04px;top:373.90px" class="cls_006"><span class="cls_006">Delay, in 8er Steps (???)</span></div>
+<div style="position:absolute;left:70.80px;top:384.22px" class="cls_006"><span class="cls_006">0x1f801dda</span></div>
+<div style="position:absolute;left:70.80px;top:394.54px" class="cls_006"><span class="cls_006">0x1f801ddc</span></div>
+<div style="position:absolute;left:70.80px;top:404.86px" class="cls_006"><span class="cls_006">0x1f801dde</span></div>
+<div style="position:absolute;left:70.80px;top:415.18px" class="cls_006"><span class="cls_006">0x1f801de0</span></div>
+<div style="position:absolute;left:70.80px;top:425.50px" class="cls_006"><span class="cls_006">0x1f801de2</span></div>
+<div style="position:absolute;left:70.80px;top:435.82px" class="cls_006"><span class="cls_006">0x1f801de4</span></div>
+<div style="position:absolute;left:70.80px;top:446.14px" class="cls_006"><span class="cls_006">0x1f801de6</span></div>
+<div style="position:absolute;left:70.80px;top:456.46px" class="cls_006"><span class="cls_006">0x1f801de8</span></div>
+<div style="position:absolute;left:70.80px;top:466.78px" class="cls_006"><span class="cls_006">0x1f801dea</span></div>
+<div style="position:absolute;left:70.80px;top:477.10px" class="cls_006"><span class="cls_006">0x1f801dec</span></div>
+<div style="position:absolute;left:70.80px;top:487.42px" class="cls_006"><span class="cls_006">0x1f801dee</span></div>
+<div style="position:absolute;left:70.80px;top:497.74px" class="cls_006"><span class="cls_006">0x1f801df0</span></div>
+<div style="position:absolute;left:70.80px;top:508.06px" class="cls_006"><span class="cls_006">0x1f801df2</span></div>
+<div style="position:absolute;left:70.80px;top:518.38px" class="cls_006"><span class="cls_006">0x1f801df4</span></div>
+<div style="position:absolute;left:70.80px;top:528.70px" class="cls_006"><span class="cls_006">0x1f801df6</span></div>
+<div style="position:absolute;left:70.80px;top:539.02px" class="cls_006"><span class="cls_006">0x1f801df8</span></div>
+<div style="position:absolute;left:209.04px;top:539.02px" class="cls_006"><span class="cls_006">offset left ???</span></div>
+<div style="position:absolute;left:70.80px;top:549.34px" class="cls_006"><span class="cls_006">0x1f801dfa</span></div>
+<div style="position:absolute;left:70.80px;top:559.66px" class="cls_006"><span class="cls_006">0x1f801dfc</span></div>
+<div style="position:absolute;left:138.00px;top:559.66px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:209.04px;top:559.66px" class="cls_006"><span class="cls_006">signed short volume left</span></div>
+<div style="position:absolute;left:70.80px;top:569.98px" class="cls_006"><span class="cls_006">0x1f801dfe</span></div>
+<div style="position:absolute;left:138.00px;top:569.98px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:209.04px;top:569.98px" class="cls_006"><span class="cls_006">signed short volume right</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:3408px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:283.68px;top:79.10px" class="cls_014"><span class="cls_014">Timer</span></div>
+<div style="position:absolute;left:70.80px;top:98.86px" class="cls_006"><span class="cls_006">Timer-Frequenz: 33.872 MHz ??</span></div>
+<div style="position:absolute;left:158.37px;top:108.46px" class="cls_006"><span class="cls_006">33.868 MHz = 44100 * 256 * 3</span></div>
+<div style="position:absolute;left:281.04px;top:127.82px" class="cls_014"><span class="cls_014">Timer0</span></div>
+<div style="position:absolute;left:70.80px;top:149.02px" class="cls_006"><span class="cls_006">0x1f801100</span></div>
+<div style="position:absolute;left:138.00px;top:149.02px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:149.02px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:149.02px" class="cls_006"><span class="cls_006">Up-Counter, aktueller Zählerstand</span></div>
+<div style="position:absolute;left:70.80px;top:159.34px" class="cls_006"><span class="cls_006">0x1f801104</span></div>
+<div style="position:absolute;left:138.00px;top:159.34px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:159.34px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:159.34px" class="cls_006"><span class="cls_006">Timer-Mode-Register</span></div>
+<div style="position:absolute;left:70.80px;top:169.66px" class="cls_006"><span class="cls_006">0x1f801108</span></div>
+<div style="position:absolute;left:138.00px;top:169.66px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:169.66px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:169.66px" class="cls_006"><span class="cls_006">Zähler Endstand</span></div>
+<div style="position:absolute;left:70.80px;top:190.30px" class="cls_006"><span class="cls_006">Timer-Mode-Register</span></div>
+<div style="position:absolute;left:181.44px;top:210.94px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:351.36px;top:210.94px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:70.80px;top:221.26px" class="cls_006"><span class="cls_006">b0</span></div>
+<div style="position:absolute;left:102.72px;top:221.26px" class="cls_006"><span class="cls_006">Timer running</span></div>
+<div style="position:absolute;left:272.64px;top:221.26px" class="cls_006"><span class="cls_006">Timer Stop</span></div>
+<div style="position:absolute;left:70.80px;top:231.58px" class="cls_006"><span class="cls_006">b1</span></div>
+<div style="position:absolute;left:70.80px;top:241.90px" class="cls_006"><span class="cls_006">b2</span></div>
+<div style="position:absolute;left:70.80px;top:252.22px" class="cls_006"><span class="cls_006">b3</span></div>
+<div style="position:absolute;left:102.72px;top:252.22px" class="cls_006"><span class="cls_006">Timer zählt von 0 bis 65535</span></div>
+<div style="position:absolute;left:272.64px;top:252.22px" class="cls_006"><span class="cls_006">Timer zählt von 0 bis</span></div>
+<div style="position:absolute;left:272.64px;top:261.82px" class="cls_006"><span class="cls_006">Endstand</span></div>
+<div style="position:absolute;left:70.80px;top:272.14px" class="cls_006"><span class="cls_006">b4</span></div>
+<div style="position:absolute;left:272.64px;top:272.14px" class="cls_006"><span class="cls_006">Interrupt enable</span></div>
+<div style="position:absolute;left:70.80px;top:282.46px" class="cls_006"><span class="cls_006">b5</span></div>
+<div style="position:absolute;left:70.80px;top:292.78px" class="cls_006"><span class="cls_006">b6</span></div>
+<div style="position:absolute;left:272.64px;top:292.78px" class="cls_006"><span class="cls_006">Interrupt enable</span></div>
+<div style="position:absolute;left:70.80px;top:303.10px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:70.80px;top:313.42px" class="cls_006"><span class="cls_006">b8</span></div>
+<div style="position:absolute;left:102.72px;top:313.42px" class="cls_006"><span class="cls_006">Vorteiler: ?</span></div>
+<div style="position:absolute;left:272.64px;top:313.42px" class="cls_006"><span class="cls_006">Vorteiler: ?</span></div>
+<div style="position:absolute;left:281.04px;top:334.22px" class="cls_014"><span class="cls_014">Timer1</span></div>
+<div style="position:absolute;left:70.80px;top:355.42px" class="cls_006"><span class="cls_006">0x1f801110</span></div>
+<div style="position:absolute;left:138.00px;top:355.42px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:355.42px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:355.42px" class="cls_006"><span class="cls_006">Up-Counter, aktueller Zählerstand</span></div>
+<div style="position:absolute;left:70.80px;top:365.74px" class="cls_006"><span class="cls_006">0x1f801114</span></div>
+<div style="position:absolute;left:138.00px;top:365.74px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:365.74px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:365.74px" class="cls_006"><span class="cls_006">Timer-Mode-Register</span></div>
+<div style="position:absolute;left:70.80px;top:376.06px" class="cls_006"><span class="cls_006">0x1f801118</span></div>
+<div style="position:absolute;left:138.00px;top:376.06px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:376.06px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:376.06px" class="cls_006"><span class="cls_006">Zähler Endstand</span></div>
+<div style="position:absolute;left:70.80px;top:396.70px" class="cls_006"><span class="cls_006">Timer-Mode-Register</span></div>
+<div style="position:absolute;left:181.44px;top:417.34px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:351.36px;top:417.34px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:70.80px;top:427.66px" class="cls_006"><span class="cls_006">b0</span></div>
+<div style="position:absolute;left:102.72px;top:427.66px" class="cls_006"><span class="cls_006">Timer running</span></div>
+<div style="position:absolute;left:272.64px;top:427.66px" class="cls_006"><span class="cls_006">Timer Stop</span></div>
+<div style="position:absolute;left:70.80px;top:437.98px" class="cls_006"><span class="cls_006">b1</span></div>
+<div style="position:absolute;left:70.80px;top:448.30px" class="cls_006"><span class="cls_006">b2</span></div>
+<div style="position:absolute;left:70.80px;top:458.62px" class="cls_006"><span class="cls_006">b3</span></div>
+<div style="position:absolute;left:102.72px;top:458.62px" class="cls_006"><span class="cls_006">Timer zählt von 0 bis 65535</span></div>
+<div style="position:absolute;left:272.64px;top:458.62px" class="cls_006"><span class="cls_006">Timer zählt von 0 bis</span></div>
+<div style="position:absolute;left:272.64px;top:468.22px" class="cls_006"><span class="cls_006">Endstand</span></div>
+<div style="position:absolute;left:70.80px;top:478.54px" class="cls_006"><span class="cls_006">b4</span></div>
+<div style="position:absolute;left:272.64px;top:478.54px" class="cls_006"><span class="cls_006">Interrupt enable</span></div>
+<div style="position:absolute;left:70.80px;top:488.86px" class="cls_006"><span class="cls_006">b5</span></div>
+<div style="position:absolute;left:70.80px;top:499.18px" class="cls_006"><span class="cls_006">b6</span></div>
+<div style="position:absolute;left:272.64px;top:499.18px" class="cls_006"><span class="cls_006">Interrupt enable</span></div>
+<div style="position:absolute;left:70.80px;top:509.50px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:70.80px;top:519.82px" class="cls_006"><span class="cls_006">b8</span></div>
+<div style="position:absolute;left:102.72px;top:519.82px" class="cls_006"><span class="cls_006">Vorteiler: ?</span></div>
+<div style="position:absolute;left:272.64px;top:519.82px" class="cls_006"><span class="cls_006">Timer wird mit HBL getaktet</span></div>
+<div style="position:absolute;left:281.04px;top:540.62px" class="cls_014"><span class="cls_014">Timer2</span></div>
+<div style="position:absolute;left:70.80px;top:561.82px" class="cls_006"><span class="cls_006">0x1f801120</span></div>
+<div style="position:absolute;left:138.00px;top:561.82px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:561.82px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:561.82px" class="cls_006"><span class="cls_006">Up-Counter, aktueller Zählerstand</span></div>
+<div style="position:absolute;left:70.80px;top:572.14px" class="cls_006"><span class="cls_006">0x1f801124</span></div>
+<div style="position:absolute;left:138.00px;top:572.14px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:572.14px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:572.14px" class="cls_006"><span class="cls_006">Timer-Mode-Register</span></div>
+<div style="position:absolute;left:70.80px;top:582.46px" class="cls_006"><span class="cls_006">0x1f801128</span></div>
+<div style="position:absolute;left:138.00px;top:582.46px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:582.46px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:582.46px" class="cls_006"><span class="cls_006">Zähler Endstand</span></div>
+<div style="position:absolute;left:70.80px;top:603.10px" class="cls_006"><span class="cls_006">Timer-Mode-Register</span></div>
+<div style="position:absolute;left:181.44px;top:623.74px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:351.36px;top:623.74px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:70.80px;top:634.06px" class="cls_006"><span class="cls_006">b0</span></div>
+<div style="position:absolute;left:102.72px;top:634.06px" class="cls_006"><span class="cls_006">Timer running</span></div>
+<div style="position:absolute;left:272.64px;top:634.06px" class="cls_006"><span class="cls_006">Timer Stop</span></div>
+<div style="position:absolute;left:70.80px;top:644.38px" class="cls_006"><span class="cls_006">b1</span></div>
+<div style="position:absolute;left:70.80px;top:654.70px" class="cls_006"><span class="cls_006">b2</span></div>
+<div style="position:absolute;left:70.80px;top:665.02px" class="cls_006"><span class="cls_006">b3</span></div>
+<div style="position:absolute;left:102.72px;top:665.02px" class="cls_006"><span class="cls_006">Timer zählt von 0 bis 65535</span></div>
+<div style="position:absolute;left:272.64px;top:665.02px" class="cls_006"><span class="cls_006">Timer zählt von 0 bis</span></div>
+<div style="position:absolute;left:272.64px;top:674.62px" class="cls_006"><span class="cls_006">Endstand</span></div>
+<div style="position:absolute;left:70.80px;top:684.94px" class="cls_006"><span class="cls_006">b4</span></div>
+<div style="position:absolute;left:272.64px;top:684.94px" class="cls_006"><span class="cls_006">Interrupt enable</span></div>
+<div style="position:absolute;left:70.80px;top:695.26px" class="cls_006"><span class="cls_006">b5</span></div>
+<div style="position:absolute;left:70.80px;top:705.58px" class="cls_006"><span class="cls_006">b6</span></div>
+<div style="position:absolute;left:272.64px;top:705.58px" class="cls_006"><span class="cls_006">Interrupt enable</span></div>
+<div style="position:absolute;left:70.80px;top:715.90px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:70.80px;top:726.22px" class="cls_006"><span class="cls_006">b8</span></div>
+<div style="position:absolute;left:102.72px;top:726.22px" class="cls_006"><span class="cls_006">Vorteiler: ?</span></div>
+<div style="position:absolute;left:272.64px;top:726.22px" class="cls_006"><span class="cls_006">Vorteiler: ?</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:4260px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:247.92px;top:69.50px" class="cls_014"><span class="cls_014">Interrupt-Register</span></div>
+<div style="position:absolute;left:70.80px;top:100.30px" class="cls_006"><span class="cls_006">0x1f801070</span></div>
+<div style="position:absolute;left:138.00px;top:100.30px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:100.30px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:100.30px" class="cls_006"><span class="cls_006">Interrupt Acknowledge Register</span></div>
+<div style="position:absolute;left:70.80px;top:110.62px" class="cls_006"><span class="cls_006">0x1f801074</span></div>
+<div style="position:absolute;left:138.00px;top:110.62px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:110.62px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:110.62px" class="cls_006"><span class="cls_006">Interrupt Mask Register</span></div>
+<div style="position:absolute;left:186.72px;top:142.30px" class="cls_006"><span class="cls_006">1=on</span></div>
+<div style="position:absolute;left:312.48px;top:142.30px" class="cls_006"><span class="cls_006">HW-Desc</span></div>
+<div style="position:absolute;left:70.80px;top:152.62px" class="cls_006"><span class="cls_006">b0</span></div>
+<div style="position:absolute;left:102.72px;top:152.62px" class="cls_006"><span class="cls_006">Interrupt für VBL erlauben</span></div>
+<div style="position:absolute;left:300.00px;top:152.62px" class="cls_006"><span class="cls_006">0xf0000001</span></div>
+<div style="position:absolute;left:70.80px;top:162.94px" class="cls_006"><span class="cls_006">b1</span></div>
+<div style="position:absolute;left:102.72px;top:162.94px" class="cls_006"><span class="cls_006">GPU</span></div>
+<div style="position:absolute;left:300.00px;top:162.94px" class="cls_006"><span class="cls_006">0xf0000002</span></div>
+<div style="position:absolute;left:70.80px;top:173.26px" class="cls_006"><span class="cls_006">b2</span></div>
+<div style="position:absolute;left:102.72px;top:173.26px" class="cls_006"><span class="cls_006">CD-ROM</span></div>
+<div style="position:absolute;left:300.00px;top:173.26px" class="cls_006"><span class="cls_006">0xf0000003</span></div>
+<div style="position:absolute;left:70.80px;top:183.58px" class="cls_006"><span class="cls_006">b3</span></div>
+<div style="position:absolute;left:102.72px;top:183.58px" class="cls_006"><span class="cls_006">DMA-Controller</span></div>
+<div style="position:absolute;left:300.00px;top:183.58px" class="cls_006"><span class="cls_006">0xf0000004</span></div>
+<div style="position:absolute;left:70.80px;top:193.90px" class="cls_006"><span class="cls_006">b4</span></div>
+<div style="position:absolute;left:102.72px;top:193.90px" class="cls_006"><span class="cls_006">Interrupt für Timer0 erlauben</span></div>
+<div style="position:absolute;left:300.00px;top:193.90px" class="cls_006"><span class="cls_006">0xf0000005</span></div>
+<div style="position:absolute;left:70.80px;top:204.22px" class="cls_006"><span class="cls_006">b5</span></div>
+<div style="position:absolute;left:102.72px;top:204.22px" class="cls_006"><span class="cls_006">Interrupt für Timer1 erlauben</span></div>
+<div style="position:absolute;left:300.00px;top:204.22px" class="cls_006"><span class="cls_006">0xf0000006</span></div>
+<div style="position:absolute;left:70.80px;top:214.54px" class="cls_006"><span class="cls_006">b6</span></div>
+<div style="position:absolute;left:102.72px;top:214.54px" class="cls_006"><span class="cls_006">Interrupt für Timer2 erlauben</span></div>
+<div style="position:absolute;left:300.00px;top:214.54px" class="cls_006"><span class="cls_006">0xf0000007</span></div>
+<div style="position:absolute;left:70.80px;top:224.86px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:102.72px;top:224.86px" class="cls_006"><span class="cls_006">Controller</span></div>
+<div style="position:absolute;left:300.00px;top:224.86px" class="cls_006"><span class="cls_006">0xf0000008</span></div>
+<div style="position:absolute;left:70.80px;top:235.18px" class="cls_006"><span class="cls_006">b8</span></div>
+<div style="position:absolute;left:102.72px;top:235.18px" class="cls_006"><span class="cls_006">SIO</span></div>
+<div style="position:absolute;left:300.00px;top:235.18px" class="cls_006"><span class="cls_006">0xf0000009</span></div>
+<div style="position:absolute;left:70.80px;top:245.50px" class="cls_006"><span class="cls_006">b9</span></div>
+<div style="position:absolute;left:102.72px;top:245.50px" class="cls_006"><span class="cls_006">SPU</span></div>
+<div style="position:absolute;left:300.00px;top:245.50px" class="cls_006"><span class="cls_006">0xf000000a</span></div>
+<div style="position:absolute;left:70.80px;top:255.82px" class="cls_006"><span class="cls_006">b10</span></div>
+<div style="position:absolute;left:102.72px;top:255.82px" class="cls_006"><span class="cls_006">PIO</span></div>
+<div style="position:absolute;left:300.00px;top:255.82px" class="cls_006"><span class="cls_006">0xf000000b</span></div>
+<div style="position:absolute;left:70.80px;top:276.46px" class="cls_006"><span class="cls_006">For acknowledge an interrupt you must write ~(int-bit) to the i nterrupt</span></div>
+<div style="position:absolute;left:70.80px;top:286.06px" class="cls_006"><span class="cls_006">acknowledge register.</span></div>
+<div style="position:absolute;left:70.80px;top:295.66px" class="cls_006"><span class="cls_006">i.e. VBL</span></div>
+<div style="position:absolute;left:70.80px;top:314.86px" class="cls_006"><span class="cls_006">li</span></div>
+<div style="position:absolute;left:106.32px;top:314.86px" class="cls_006"><span class="cls_006">t0,0x1f800000</span></div>
+<div style="position:absolute;left:70.80px;top:324.46px" class="cls_006"><span class="cls_006">li</span></div>
+<div style="position:absolute;left:106.32px;top:324.46px" class="cls_006"><span class="cls_006">t1,~1</span></div>
+<div style="position:absolute;left:212.88px;top:324.46px" class="cls_006"><span class="cls_006"># ~1 = 0xfffffffe</span></div>
+<div style="position:absolute;left:70.80px;top:334.06px" class="cls_006"><span class="cls_006">sw</span></div>
+<div style="position:absolute;left:106.32px;top:334.06px" class="cls_006"><span class="cls_006">t1,0x1070(t0)</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:5112px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:289.20px;top:79.10px" class="cls_014"><span class="cls_014">SIO</span></div>
+<div style="position:absolute;left:70.80px;top:98.86px" class="cls_006"><span class="cls_006">The SIO has a 8 Byte FIFO. The SIO can read (write not tested) 1, 2, 4 or 8 bytes</span></div>
+<div style="position:absolute;left:70.80px;top:108.46px" class="cls_006"><span class="cls_006">at once. For use the multiple byte feature you must enable the RX interrupt. This</span></div>
+<div style="position:absolute;left:70.80px;top:118.06px" class="cls_006"><span class="cls_006">interrupt occurs after the sio has get 1, 2, 4 or 8 bytes. The interrupt service</span></div>
+<div style="position:absolute;left:70.80px;top:127.66px" class="cls_006"><span class="cls_006">routine must get the amount of bytes in following manner:</span></div>
+<div style="position:absolute;left:70.80px;top:148.30px" class="cls_006"><span class="cls_006">Buffersize</span></div>
+<div style="position:absolute;left:70.80px;top:158.62px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:159.36px;top:158.62px" class="cls_006"><span class="cls_006">li t0,0x1f800000</span></div>
+<div style="position:absolute;left:159.36px;top:168.22px" class="cls_006"><span class="cls_006">lb t1,0x1050(t0)</span></div>
+<div style="position:absolute;left:70.80px;top:178.54px" class="cls_006"><span class="cls_006">2</span></div>
+<div style="position:absolute;left:159.36px;top:178.54px" class="cls_006"><span class="cls_006">li t0,0x1f800000</span></div>
+<div style="position:absolute;left:159.36px;top:188.14px" class="cls_006"><span class="cls_006">lhu t1,0x1050(t0)</span></div>
+<div style="position:absolute;left:70.80px;top:198.46px" class="cls_006"><span class="cls_006">4</span></div>
+<div style="position:absolute;left:159.36px;top:198.46px" class="cls_006"><span class="cls_006">li t0,0x1f800000</span></div>
+<div style="position:absolute;left:159.36px;top:208.06px" class="cls_006"><span class="cls_006">lw t1,0x1050(t0)</span></div>
+<div style="position:absolute;left:70.80px;top:218.38px" class="cls_006"><span class="cls_006">8</span></div>
+<div style="position:absolute;left:159.36px;top:218.38px" class="cls_006"><span class="cls_006">li t0,0x1f800000</span></div>
+<div style="position:absolute;left:159.36px;top:227.98px" class="cls_006"><span class="cls_006">lw t1,0x1050(t0) # first 4 bytes</span></div>
+<div style="position:absolute;left:159.36px;top:237.58px" class="cls_006"><span class="cls_006">lw t1,0x1050(t0) # secound 4 bytes</span></div>
+<div style="position:absolute;left:70.80px;top:267.82px" class="cls_006"><span class="cls_006">This multiple byte feature avoids some interrupt load !</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:5964px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:70.80px;top:80.38px" class="cls_006"><span class="cls_006">0x1f801050</span></div>
+<div style="position:absolute;left:138.00px;top:80.38px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:80.38px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:80.54px" class="cls_010"><span class="cls_010">SIO-Data (8, 16 or 32 Bits)</span></div>
+<div style="position:absolute;left:70.80px;top:91.42px" class="cls_006"><span class="cls_006">0x1f801054</span></div>
+<div style="position:absolute;left:138.00px;top:91.42px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:91.42px" class="cls_006"><span class="cls_006">r</span></div>
+<div style="position:absolute;left:209.04px;top:91.58px" class="cls_010"><span class="cls_010">SIO Status</span></div>
+<div style="position:absolute;left:209.04px;top:102.46px" class="cls_006"><span class="cls_006">b0</span></div>
+<div style="position:absolute;left:230.16px;top:102.46px" class="cls_006"><span class="cls_006">ready for write byte ->TX</span></div>
+<div style="position:absolute;left:209.04px;top:112.78px" class="cls_006"><span class="cls_006">b1</span></div>
+<div style="position:absolute;left:230.16px;top:112.78px" class="cls_006"><span class="cls_006">ready for read byte  RX-></span></div>
+<div style="position:absolute;left:209.04px;top:123.10px" class="cls_006"><span class="cls_006">b2</span></div>
+<div style="position:absolute;left:230.16px;top:123.10px" class="cls_006"><span class="cls_006">?</span></div>
+<div style="position:absolute;left:209.04px;top:133.42px" class="cls_006"><span class="cls_006">b3</span></div>
+<div style="position:absolute;left:230.16px;top:133.42px" class="cls_006"><span class="cls_006">parity error</span></div>
+<div style="position:absolute;left:209.04px;top:143.74px" class="cls_006"><span class="cls_006">b4</span></div>
+<div style="position:absolute;left:230.16px;top:143.74px" class="cls_006"><span class="cls_006">overrun error</span></div>
+<div style="position:absolute;left:209.04px;top:154.06px" class="cls_006"><span class="cls_006">b5</span></div>
+<div style="position:absolute;left:230.16px;top:154.06px" class="cls_006"><span class="cls_006">frame error</span></div>
+<div style="position:absolute;left:209.04px;top:164.38px" class="cls_006"><span class="cls_006">b6</span></div>
+<div style="position:absolute;left:230.16px;top:164.38px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:209.04px;top:174.70px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:230.16px;top:174.70px" class="cls_006"><span class="cls_006">DSR</span></div>
+<div style="position:absolute;left:209.04px;top:185.02px" class="cls_006"><span class="cls_006">b8</span></div>
+<div style="position:absolute;left:230.16px;top:185.02px" class="cls_006"><span class="cls_006">CTS</span></div>
+<div style="position:absolute;left:209.04px;top:195.34px" class="cls_006"><span class="cls_006">b9</span></div>
+<div style="position:absolute;left:230.16px;top:195.34px" class="cls_006"><span class="cls_006">interrupt</span></div>
+<div style="position:absolute;left:70.80px;top:205.66px" class="cls_006"><span class="cls_006">0x1f801058</span></div>
+<div style="position:absolute;left:138.00px;top:205.66px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:205.66px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:205.82px" class="cls_010"><span class="cls_010">SIO Mode</span></div>
+<div style="position:absolute;left:209.04px;top:216.86px" class="cls_010"><span class="cls_010">b1</span></div>
+<div style="position:absolute;left:230.16px;top:216.86px" class="cls_010"><span class="cls_010">b0</span></div>
+<div style="position:absolute;left:250.32px;top:216.86px" class="cls_010"><span class="cls_010">Baudrate Prescaler</span></div>
+<div style="position:absolute;left:209.04px;top:227.74px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:230.16px;top:227.74px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:250.32px;top:227.74px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:209.04px;top:238.06px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:230.16px;top:238.06px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:250.32px;top:238.06px" class="cls_006"><span class="cls_006">16</span></div>
+<div style="position:absolute;left:209.04px;top:248.38px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:230.16px;top:248.38px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:250.32px;top:248.38px" class="cls_006"><span class="cls_006">64</span></div>
+<div style="position:absolute;left:209.04px;top:258.86px" class="cls_010"><span class="cls_010">b3</span></div>
+<div style="position:absolute;left:230.16px;top:258.86px" class="cls_010"><span class="cls_010">b2</span></div>
+<div style="position:absolute;left:250.32px;top:258.86px" class="cls_010"><span class="cls_010">char length</span></div>
+<div style="position:absolute;left:209.04px;top:269.74px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:230.16px;top:269.74px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:250.32px;top:269.74px" class="cls_006"><span class="cls_006">5 Bit</span></div>
+<div style="position:absolute;left:209.04px;top:280.06px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:230.16px;top:280.06px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:250.32px;top:280.06px" class="cls_006"><span class="cls_006">6 Bit</span></div>
+<div style="position:absolute;left:209.04px;top:290.38px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:230.16px;top:290.38px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:250.32px;top:290.38px" class="cls_006"><span class="cls_006">7 Bit</span></div>
+<div style="position:absolute;left:209.04px;top:300.70px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:230.16px;top:300.70px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:250.32px;top:300.70px" class="cls_006"><span class="cls_006">8 Bit</span></div>
+<div style="position:absolute;left:209.04px;top:311.18px" class="cls_010"><span class="cls_010">b4</span></div>
+<div style="position:absolute;left:230.16px;top:311.18px" class="cls_010"><span class="cls_010">parity</span></div>
+<div style="position:absolute;left:209.04px;top:322.06px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:230.16px;top:322.06px" class="cls_006"><span class="cls_006">off</span></div>
+<div style="position:absolute;left:209.04px;top:332.38px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:230.16px;top:332.38px" class="cls_006"><span class="cls_006">on</span></div>
+<div style="position:absolute;left:209.04px;top:342.86px" class="cls_010"><span class="cls_010">b5</span></div>
+<div style="position:absolute;left:230.16px;top:342.86px" class="cls_010"><span class="cls_010">parity mode</span></div>
+<div style="position:absolute;left:209.04px;top:353.74px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:230.16px;top:353.74px" class="cls_006"><span class="cls_006">even</span></div>
+<div style="position:absolute;left:209.04px;top:364.06px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:230.16px;top:364.06px" class="cls_006"><span class="cls_006">odd</span></div>
+<div style="position:absolute;left:209.04px;top:374.54px" class="cls_010"><span class="cls_010">b7</span></div>
+<div style="position:absolute;left:230.16px;top:374.54px" class="cls_010"><span class="cls_010">b6</span></div>
+<div style="position:absolute;left:250.32px;top:374.54px" class="cls_010"><span class="cls_010">stop bit length</span></div>
+<div style="position:absolute;left:209.04px;top:385.42px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:230.16px;top:385.42px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:250.32px;top:385.42px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:209.04px;top:395.74px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:230.16px;top:395.74px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:250.32px;top:395.74px" class="cls_006"><span class="cls_006">1,5</span></div>
+<div style="position:absolute;left:209.04px;top:406.06px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:230.16px;top:406.06px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:250.32px;top:406.06px" class="cls_006"><span class="cls_006">2</span></div>
+<div style="position:absolute;left:70.80px;top:416.38px" class="cls_006"><span class="cls_006">0x1f80105a</span></div>
+<div style="position:absolute;left:138.00px;top:416.38px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:416.38px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:416.38px" class="cls_006"><span class="cls_006">SIO Control</span></div>
+<div style="position:absolute;left:209.04px;top:426.70px" class="cls_006"><span class="cls_006">b0</span></div>
+<div style="position:absolute;left:251.52px;top:426.70px" class="cls_006"><span class="cls_006">TX enable</span></div>
+<div style="position:absolute;left:209.04px;top:437.02px" class="cls_006"><span class="cls_006">b1</span></div>
+<div style="position:absolute;left:251.52px;top:437.02px" class="cls_006"><span class="cls_006">DTR, OpenDrain-Output</span></div>
+<div style="position:absolute;left:209.04px;top:447.34px" class="cls_006"><span class="cls_006">b2</span></div>
+<div style="position:absolute;left:251.52px;top:447.34px" class="cls_006"><span class="cls_006">RX enable</span></div>
+<div style="position:absolute;left:209.04px;top:457.66px" class="cls_006"><span class="cls_006">b3</span></div>
+<div style="position:absolute;left:251.52px;top:457.66px" class="cls_006"><span class="cls_006">?</span></div>
+<div style="position:absolute;left:209.04px;top:467.98px" class="cls_006"><span class="cls_006">b4</span></div>
+<div style="position:absolute;left:251.52px;top:467.98px" class="cls_006"><span class="cls_006">Interrupt Flag</span></div>
+<div style="position:absolute;left:209.04px;top:478.30px" class="cls_006"><span class="cls_006">b5</span></div>
+<div style="position:absolute;left:251.52px;top:478.30px" class="cls_006"><span class="cls_006">RTS, OpenDrain-Output</span></div>
+<div style="position:absolute;left:209.04px;top:488.62px" class="cls_006"><span class="cls_006">b6</span></div>
+<div style="position:absolute;left:251.52px;top:488.62px" class="cls_006"><span class="cls_006">SIO Reset</span></div>
+<div style="position:absolute;left:209.04px;top:498.94px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:251.52px;top:498.94px" class="cls_006"><span class="cls_006">?</span></div>
+<div style="position:absolute;left:209.04px;top:509.42px" class="cls_010"><span class="cls_010">b9</span></div>
+<div style="position:absolute;left:231.60px;top:509.42px" class="cls_010"><span class="cls_010">b8</span></div>
+<div style="position:absolute;left:251.52px;top:509.42px" class="cls_010"><span class="cls_010">Buffersize</span></div>
+<div style="position:absolute;left:209.04px;top:520.30px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:231.60px;top:520.30px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:251.52px;top:520.30px" class="cls_006"><span class="cls_006">1 Byte</span></div>
+<div style="position:absolute;left:209.04px;top:530.62px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:231.60px;top:530.62px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:251.52px;top:530.62px" class="cls_006"><span class="cls_006">2 Bytes (short)</span></div>
+<div style="position:absolute;left:209.04px;top:540.94px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:231.60px;top:540.94px" class="cls_006"><span class="cls_006">0</span></div>
+<div style="position:absolute;left:251.52px;top:540.94px" class="cls_006"><span class="cls_006">4 Bytes (int)</span></div>
+<div style="position:absolute;left:209.04px;top:551.26px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:231.60px;top:551.26px" class="cls_006"><span class="cls_006">1</span></div>
+<div style="position:absolute;left:251.52px;top:551.26px" class="cls_006"><span class="cls_006">8 Bytes (two int)</span></div>
+<div style="position:absolute;left:209.04px;top:561.58px" class="cls_006"><span class="cls_006">b10</span></div>
+<div style="position:absolute;left:251.52px;top:561.58px" class="cls_006"><span class="cls_006">TX Interrupt enable</span></div>
+<div style="position:absolute;left:209.04px;top:571.90px" class="cls_006"><span class="cls_006">b11</span></div>
+<div style="position:absolute;left:251.52px;top:571.90px" class="cls_006"><span class="cls_006">RX Interrupt enable</span></div>
+<div style="position:absolute;left:209.04px;top:582.22px" class="cls_006"><span class="cls_006">b12</span></div>
+<div style="position:absolute;left:251.52px;top:582.22px" class="cls_006"><span class="cls_006">DSR Interrupt enable</span></div>
+<div style="position:absolute;left:70.80px;top:592.54px" class="cls_006"><span class="cls_006">0x1f80105e</span></div>
+<div style="position:absolute;left:138.00px;top:592.54px" class="cls_006"><span class="cls_006">short</span></div>
+<div style="position:absolute;left:173.52px;top:592.54px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:592.54px" class="cls_006"><span class="cls_006">SIO Baudrate</span></div>
+<div style="position:absolute;left:209.04px;top:602.14px" class="cls_006"><span class="cls_006">= 2,1168 Mhz / wanted baudrate</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:6816px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:267.12px;top:79.10px" class="cls_014"><span class="cls_014">DMA-Control</span></div>
+<div style="position:absolute;left:70.80px;top:100.30px" class="cls_006"><span class="cls_006">0x1f8010f0</span></div>
+<div style="position:absolute;left:138.00px;top:100.30px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:100.30px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:100.30px" class="cls_006"><span class="cls_006">DMA Enable</span></div>
+<div style="position:absolute;left:209.04px;top:110.62px" class="cls_006"><span class="cls_006">b3</span></div>
+<div style="position:absolute;left:251.52px;top:110.62px" class="cls_006"><span class="cls_006">enable DMA 0 (MDECin)</span></div>
+<div style="position:absolute;left:209.04px;top:120.94px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:251.52px;top:120.94px" class="cls_006"><span class="cls_006">enable DMA 1 (MDECout)</span></div>
+<div style="position:absolute;left:209.04px;top:131.26px" class="cls_006"><span class="cls_006">b11</span></div>
+<div style="position:absolute;left:251.52px;top:131.26px" class="cls_006"><span class="cls_006">enable DMA 2 (GPU)</span></div>
+<div style="position:absolute;left:209.04px;top:141.58px" class="cls_006"><span class="cls_006">b15</span></div>
+<div style="position:absolute;left:251.52px;top:141.58px" class="cls_006"><span class="cls_006">enable DMA 3 (CD-ROM)</span></div>
+<div style="position:absolute;left:209.04px;top:151.90px" class="cls_006"><span class="cls_006">b19</span></div>
+<div style="position:absolute;left:251.52px;top:151.90px" class="cls_006"><span class="cls_006">enable DMA 4 (SPU)</span></div>
+<div style="position:absolute;left:209.04px;top:162.22px" class="cls_006"><span class="cls_006">b23</span></div>
+<div style="position:absolute;left:251.52px;top:162.22px" class="cls_006"><span class="cls_006">enable DMA 5 (PIO)</span></div>
+<div style="position:absolute;left:209.04px;top:172.54px" class="cls_006"><span class="cls_006">b27</span></div>
+<div style="position:absolute;left:251.52px;top:172.54px" class="cls_006"><span class="cls_006">enable DMA 6 (OTC)</span></div>
+<div style="position:absolute;left:70.80px;top:182.86px" class="cls_006"><span class="cls_006">0x1f8010f4</span></div>
+<div style="position:absolute;left:138.00px;top:182.86px" class="cls_006"><span class="cls_006">int</span></div>
+<div style="position:absolute;left:173.52px;top:182.86px" class="cls_006"><span class="cls_006">rw</span></div>
+<div style="position:absolute;left:209.04px;top:182.86px" class="cls_006"><span class="cls_006">DMA Interrupt Control</span></div>
+<div style="position:absolute;left:209.04px;top:193.18px" class="cls_006"><span class="cls_006">b0</span></div>
+<div style="position:absolute;left:251.52px;top:193.18px" class="cls_006"><span class="cls_006">fast DMA 0 Transfer ???</span></div>
+<div style="position:absolute;left:209.04px;top:203.50px" class="cls_006"><span class="cls_006">b1</span></div>
+<div style="position:absolute;left:251.52px;top:203.50px" class="cls_006"><span class="cls_006">fast DMA 1 Transfer ???</span></div>
+<div style="position:absolute;left:209.04px;top:213.82px" class="cls_006"><span class="cls_006">b2</span></div>
+<div style="position:absolute;left:251.52px;top:213.82px" class="cls_006"><span class="cls_006">fast DMA 2 Transfer ???</span></div>
+<div style="position:absolute;left:209.04px;top:224.14px" class="cls_006"><span class="cls_006">b3</span></div>
+<div style="position:absolute;left:251.52px;top:224.14px" class="cls_006"><span class="cls_006">fast DMA 3 Transfer ???</span></div>
+<div style="position:absolute;left:209.04px;top:234.46px" class="cls_006"><span class="cls_006">b4</span></div>
+<div style="position:absolute;left:251.52px;top:234.46px" class="cls_006"><span class="cls_006">fast DMA 4 Transfer ???</span></div>
+<div style="position:absolute;left:209.04px;top:244.78px" class="cls_006"><span class="cls_006">b5</span></div>
+<div style="position:absolute;left:251.52px;top:244.78px" class="cls_006"><span class="cls_006">fast DMA 5 Transfer ???</span></div>
+<div style="position:absolute;left:209.04px;top:255.10px" class="cls_006"><span class="cls_006">b6</span></div>
+<div style="position:absolute;left:251.52px;top:255.10px" class="cls_006"><span class="cls_006">fast DMA 6 Transfer ???</span></div>
+<div style="position:absolute;left:209.04px;top:265.42px" class="cls_006"><span class="cls_006">b7</span></div>
+<div style="position:absolute;left:209.04px;top:275.74px" class="cls_006"><span class="cls_006">b8</span></div>
+<div style="position:absolute;left:251.52px;top:275.74px" class="cls_006"><span class="cls_006">DMA 0 ???</span></div>
+<div style="position:absolute;left:209.04px;top:286.06px" class="cls_006"><span class="cls_006">b9</span></div>
+<div style="position:absolute;left:251.52px;top:286.06px" class="cls_006"><span class="cls_006">DMA 1 ???</span></div>
+<div style="position:absolute;left:209.04px;top:296.38px" class="cls_006"><span class="cls_006">b10</span></div>
+<div style="position:absolute;left:251.52px;top:296.38px" class="cls_006"><span class="cls_006">DMA 2 ???</span></div>
+<div style="position:absolute;left:209.04px;top:306.70px" class="cls_006"><span class="cls_006">b11</span></div>
+<div style="position:absolute;left:251.52px;top:306.70px" class="cls_006"><span class="cls_006">DMA 3 ???</span></div>
+<div style="position:absolute;left:209.04px;top:317.02px" class="cls_006"><span class="cls_006">b12</span></div>
+<div style="position:absolute;left:251.52px;top:317.02px" class="cls_006"><span class="cls_006">DMA 4 ???</span></div>
+<div style="position:absolute;left:209.04px;top:327.34px" class="cls_006"><span class="cls_006">b13</span></div>
+<div style="position:absolute;left:251.52px;top:327.34px" class="cls_006"><span class="cls_006">DMA 5 ???</span></div>
+<div style="position:absolute;left:209.04px;top:337.66px" class="cls_006"><span class="cls_006">b14</span></div>
+<div style="position:absolute;left:251.52px;top:337.66px" class="cls_006"><span class="cls_006">DMA 6 ???</span></div>
+<div style="position:absolute;left:209.04px;top:347.98px" class="cls_006"><span class="cls_006">b15</span></div>
+<div style="position:absolute;left:209.04px;top:358.30px" class="cls_006"><span class="cls_006">b16</span></div>
+<div style="position:absolute;left:251.52px;top:358.30px" class="cls_006"><span class="cls_006">enable DMA 0 Interrupt</span></div>
+<div style="position:absolute;left:209.04px;top:368.62px" class="cls_006"><span class="cls_006">b17</span></div>
+<div style="position:absolute;left:251.52px;top:368.62px" class="cls_006"><span class="cls_006">enable DMA 1 Interrupt</span></div>
+<div style="position:absolute;left:209.04px;top:378.94px" class="cls_006"><span class="cls_006">b18</span></div>
+<div style="position:absolute;left:251.52px;top:378.94px" class="cls_006"><span class="cls_006">enable DMA 2 Interrupt</span></div>
+<div style="position:absolute;left:209.04px;top:389.26px" class="cls_006"><span class="cls_006">b19</span></div>
+<div style="position:absolute;left:251.52px;top:389.26px" class="cls_006"><span class="cls_006">enable DMA 3 Interrupt</span></div>
+<div style="position:absolute;left:209.04px;top:399.58px" class="cls_006"><span class="cls_006">b20</span></div>
+<div style="position:absolute;left:251.52px;top:399.58px" class="cls_006"><span class="cls_006">enable DMA 4 Interrupt</span></div>
+<div style="position:absolute;left:209.04px;top:409.90px" class="cls_006"><span class="cls_006">b21</span></div>
+<div style="position:absolute;left:251.52px;top:409.90px" class="cls_006"><span class="cls_006">enable DMA 5 Interrupt</span></div>
+<div style="position:absolute;left:209.04px;top:420.22px" class="cls_006"><span class="cls_006">b22</span></div>
+<div style="position:absolute;left:251.52px;top:420.22px" class="cls_006"><span class="cls_006">enable DMA 6 Interrupt</span></div>
+<div style="position:absolute;left:209.04px;top:430.54px" class="cls_006"><span class="cls_006">b23</span></div>
+<div style="position:absolute;left:251.52px;top:430.54px" class="cls_006"><span class="cls_006">should be 1</span></div>
+<div style="position:absolute;left:209.04px;top:440.86px" class="cls_006"><span class="cls_006">b24</span></div>
+<div style="position:absolute;left:251.52px;top:440.86px" class="cls_006"><span class="cls_006">acknowledge interrupt DMA 0</span></div>
+<div style="position:absolute;left:209.04px;top:451.18px" class="cls_006"><span class="cls_006">b25</span></div>
+<div style="position:absolute;left:251.52px;top:451.18px" class="cls_006"><span class="cls_006">acknowledge interrupt DMA 1</span></div>
+<div style="position:absolute;left:209.04px;top:461.50px" class="cls_006"><span class="cls_006">b26</span></div>
+<div style="position:absolute;left:251.52px;top:461.50px" class="cls_006"><span class="cls_006">acknowledge interrupt DMA 2</span></div>
+<div style="position:absolute;left:209.04px;top:471.82px" class="cls_006"><span class="cls_006">b27</span></div>
+<div style="position:absolute;left:251.52px;top:471.82px" class="cls_006"><span class="cls_006">acknowledge interrupt DMA 3</span></div>
+<div style="position:absolute;left:209.04px;top:482.14px" class="cls_006"><span class="cls_006">b28</span></div>
+<div style="position:absolute;left:251.52px;top:482.14px" class="cls_006"><span class="cls_006">acknowledge interrupt DMA 4</span></div>
+<div style="position:absolute;left:209.04px;top:492.46px" class="cls_006"><span class="cls_006">b29</span></div>
+<div style="position:absolute;left:251.52px;top:492.46px" class="cls_006"><span class="cls_006">acknowledge interrupt DMA 5</span></div>
+<div style="position:absolute;left:209.04px;top:502.78px" class="cls_006"><span class="cls_006">b30</span></div>
+<div style="position:absolute;left:251.52px;top:502.78px" class="cls_006"><span class="cls_006">acknowledge interrupt DMA 6</span></div>
+<div style="position:absolute;left:209.04px;top:513.10px" class="cls_006"><span class="cls_006">b31</span></div>
+<div style="position:absolute;left:251.52px;top:513.10px" class="cls_006"><span class="cls_006">should be 1 for acknowledging</span></div>
+<div style="position:absolute;left:70.80px;top:533.74px" class="cls_006"><span class="cls_006">Before the DMA interrupt service routine ends, you should acknowledge the DMA</span></div>
+<div style="position:absolute;left:70.80px;top:543.34px" class="cls_006"><span class="cls_006">interrupt.</span></div>
+<div style="position:absolute;left:70.80px;top:562.54px" class="cls_006"><span class="cls_006">li</span></div>
+<div style="position:absolute;left:106.32px;top:562.54px" class="cls_006"><span class="cls_006">t0,0x1f800000</span></div>
+<div style="position:absolute;left:70.80px;top:572.14px" class="cls_006"><span class="cls_006">lw</span></div>
+<div style="position:absolute;left:106.32px;top:572.14px" class="cls_006"><span class="cls_006">t1,0x10f4(t0)</span></div>
+<div style="position:absolute;left:70.80px;top:581.74px" class="cls_006"><span class="cls_006">li</span></div>
+<div style="position:absolute;left:106.32px;top:581.74px" class="cls_006"><span class="cls_006">t2,0xffffff</span></div>
+<div style="position:absolute;left:212.88px;top:581.74px" class="cls_006"><span class="cls_006"># mask</span></div>
+<div style="position:absolute;left:70.80px;top:591.34px" class="cls_006"><span class="cls_006">and</span></div>
+<div style="position:absolute;left:106.32px;top:591.34px" class="cls_006"><span class="cls_006">t1,t1,t2</span></div>
+<div style="position:absolute;left:70.80px;top:600.94px" class="cls_006"><span class="cls_006">li</span></div>
+<div style="position:absolute;left:106.32px;top:600.94px" class="cls_006"><span class="cls_006">t2,0x81000000</span></div>
+<div style="position:absolute;left:248.40px;top:600.94px" class="cls_006"><span class="cls_006"># i.e. DMA 0</span></div>
+<div style="position:absolute;left:70.80px;top:610.54px" class="cls_006"><span class="cls_006">or</span></div>
+<div style="position:absolute;left:106.32px;top:610.54px" class="cls_006"><span class="cls_006">t1,t1,t2</span></div>
+<div style="position:absolute;left:70.80px;top:620.14px" class="cls_006"><span class="cls_006">sw</span></div>
+<div style="position:absolute;left:106.32px;top:620.14px" class="cls_006"><span class="cls_006">t2,0x10f4(t0)</span></div>
+<div style="position:absolute;left:70.80px;top:639.34px" class="cls_006"><span class="cls_006">Don´t forget to acknowledge the interrupt self:</span></div>
+<div style="position:absolute;left:70.80px;top:658.54px" class="cls_006"><span class="cls_006">li</span></div>
+<div style="position:absolute;left:106.32px;top:658.54px" class="cls_006"><span class="cls_006">t1,~4</span></div>
+<div style="position:absolute;left:70.80px;top:668.14px" class="cls_006"><span class="cls_006">sw</span></div>
+<div style="position:absolute;left:106.32px;top:668.14px" class="cls_006"><span class="cls_006">t1,0x1070(t0)</span></div>
+</div>
+<div style="position:absolute;left:50%;margin-left:-297px;top:7668px;width:595px;height:842px;border-style:outset;overflow:hidden">
+<div style="position:absolute;left:0px;top:0px">
+</div>
+<div style="position:absolute;left:253.44px;top:98.30px" class="cls_014"><span class="cls_014">Memory-Variables</span></div>
+<div style="position:absolute;left:70.80px;top:118.06px" class="cls_006"><span class="cls_006">0x120</span></div>
+<div style="position:absolute;left:141.84px;top:118.06px" class="cls_006"><span class="cls_006">Zeiger auf Event-Table</span></div>
+<div style="position:absolute;left:70.80px;top:127.66px" class="cls_006"><span class="cls_006">0x124</span></div>
+<div style="position:absolute;left:141.84px;top:127.66px" class="cls_006"><span class="cls_006">Größe Event-Table in Bytes</span></div>
+</div>
+
+</body>
+</html>
