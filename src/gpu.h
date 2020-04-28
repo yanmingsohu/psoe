@@ -59,7 +59,6 @@ class GPU : public DMADev {
 public:
   static const u32 IO_DATA      = 0x1F80'1810;
   static const u32 IO_CTRL      = 0x1F80'1814;
-  static const u32 DMA_NUM      = 2;
 
 private:
   u8 frame[0x10'0000];
@@ -69,11 +68,12 @@ public:
   GPU(Bus& bus) : DMADev(bus), ct{0} {
   }
 
-  u32 number() {
-    return DMA_NUM;
+  DmaDeviceNum number() {
+    return DmaDeviceNum::gpu;
   }
 
   bool support(dma_chcr_dir dir) {
+    //TODO: ×öÍêgpu¼Ä´æÆ÷
     return false;
   }
 };

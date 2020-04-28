@@ -31,6 +31,11 @@ WIP
     * [ ] load CD image
     * [ ] support load CD image in zip file
     * [ ] support load CD image in 7z file
+  * [ ] Other Device
+    * [ ] PIO
+    * [ ] Pad
+    * [ ] SIO
+    * [ ] Timer
   * [ ] BIOS
     * [ ] PS Native bios
     * [ ] Homemade bios

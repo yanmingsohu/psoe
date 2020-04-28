@@ -4,7 +4,7 @@ namespace ps1e {
 
 
 bool Bus::set_dma_dev(DMADev* dd) {
-  u32 num = dd->number();
+  u32 num = static_cast<u32>(dd->number());
   if (num >= DMA_LEN) {
     return false;
   }
@@ -23,10 +23,23 @@ void Bus::set_dma_dev_status() {
 
 
 void Bus::send_dma_irq(DMADev* dd) {
-  u32 flag_mask = (1 << (dd->number() + 24));
+  u32 flag_mask = (1 << (static_cast<u32>(dd->number()) + 24));
   dma_irq.v |= flag_mask;
   if (has_dma_irq()) {
-    //TODO: send irq to cpu
+    send_irq(IrqDevMask::dma);
+  }
+}
+
+
+void Bus::send_irq(IrqDevMask dev_irq_mask) {
+  irq_status |= static_cast<u32>(dev_irq_mask);
+  update_irq_to_reciver();
+}
+
+
+void Bus::update_irq_to_reciver() {
+  if (ir) {
+    ir->send_irq(irq_mask & irq_status);
   }
 }
 

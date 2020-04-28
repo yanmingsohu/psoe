@@ -16,9 +16,20 @@ class MMU;
 class Bus;
 
 
+enum class DmaDeviceNum : u32 {
+  MDECin  = 0,
+  MDECout = 1,
+  gpu     = 2,
+  cdrom   = 3,
+  spu     = 4,
+  pio     = 5,
+  otc     = 6,
+};
+
+
 enum class ChcrMode : u32 {
   Manual     = 0, // 单块传输
-  Request    = 1, // 传输连续的数据流
+  Stream     = 1, // 传输连续的数据流
   LinkedList = 2, // 传输链表, GPU only
   Reserved   = 3,
 };
@@ -33,7 +44,7 @@ union DMAChcr {
   u32 v;
   struct {
     u32 dir       : 1; // 1:从内存到设备
-    u32 step      : 1; // 
+    u32 step      : 1; // 1:每次地址-4, 0:每次地址+4
     u32        _3 : 6; // 
     u32 chopping  : 1; // 
     ChcrMode mode : 2; //
@@ -54,7 +65,7 @@ union DMAIrq {
   u32 v;
   struct {
     u32 _0 : 15;
-    u32 force : 1;
+    u32 force : 1; // 16 bit
 
     u32 d0_enable : 1;
     u32 d1_enable : 1;
@@ -63,7 +74,7 @@ union DMAIrq {
     u32 d4_enable : 1;
     u32 d5_enable : 1;
     u32 d6_enable : 1;
-    u32 master_enable : 1;
+    u32 master_enable : 1; // 24bit
 
     u32 d0_flag : 1;
     u32 d1_flag : 1;
@@ -111,7 +122,9 @@ union DMADpcr {
 
 enum class dma_chcr_dir {
   DEV_TO_RAM   = 0,
+  RAM_FROM_DEV = 0,
   DEV_FROM_RAM = 1,
+  RAM_TO_DEV   = 1,
 };
 
 
@@ -122,9 +135,9 @@ private:
   bool running;
 
 protected:
-  u32 base;
-  u32 blocks;
-  u32 blocksize;
+  u32 base;      // 目标内存基址
+  u32 blocks;    // stream 模式数据包数量
+  u32 blocksize; // 一个数据包 u32 的数量
   DMAChcr chcr;
   Bus& bus;
 
@@ -134,13 +147,13 @@ protected:
 
 public:
   DMADev(Bus& _bus) : priority(0), running(false), bus(_bus) {
-    _mask = 1 << (number() * 4);
+    _mask = 1 << (static_cast<u32>(number()) * 4);
   }
 
   virtual ~DMADev() {};
 
-  // 子类重写该方法返回设备号 0-6
-  virtual u32 number() = 0;
+  // 子类重写该方法返回设备号
+  virtual DmaDeviceNum number() = 0;
   // 子类重写, 对传输方向支持返回 true
   virtual bool support(dma_chcr_dir dir) = 0;
 
@@ -158,7 +171,7 @@ public:
   }
 
   void send_base(u32 b) {
-    base = b;
+    base = b & 0x00FF'FFFF;
   }
 
   void send_block(u32 b) {
@@ -183,6 +196,10 @@ public:
   u32 read_status() {
     return chcr.v;
   }
+
+private:
+  void dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc);
+  void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc);
 };
 
 }

@@ -14,7 +14,7 @@ u8* MMU::memPoint(u32 addr) {
     case 0xA:
       #ifdef SAFE_MEM
       if (addr & 0x0FE0'0000) {
-        error("MMU: bad mem %x", addr);
+        error("MMU: bad mem %x fix: %x\n", addr, addr & 0x001F'FFFF);
       }
       #endif
       return ram.point(addr & 0x001F'FFFF);
@@ -22,11 +22,11 @@ u8* MMU::memPoint(u32 addr) {
     case 0xB:
       #ifdef SAFE_MEM
       if (0 == (addr & 0xBFC0'0000)) {
-        error("MMU: bad bios %x", addr);
+        error("MMU: bad bios %x\n", addr);
         return 0;
       }
       if (addr & 0x0008'0000) { 
-        error("MMU: bad bios %x", addr);
+        error("MMU: bad bios %x\n", addr);
         return 0;
       }
       #endif

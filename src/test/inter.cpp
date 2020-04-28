@@ -51,6 +51,7 @@ void test_mips_inter() {
 
   Bus bus(mmu);
   InterpreterMips t(bus);
+  bus.bind_irq_receiver(&t);
   t.reset();
   test_cpu_help();
 

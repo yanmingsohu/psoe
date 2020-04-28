@@ -39,7 +39,7 @@ public:
     run(addr);
   }
 
-  u8* point(u32 addr) {
+  u8* point(psmem addr) {
     return &ram[addr];
   }
 

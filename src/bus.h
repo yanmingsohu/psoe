@@ -3,11 +3,12 @@
 #include "util.h"
 #include "dma.h"
 #include "mem.h"
+#include "cpu.h"
 
 namespace ps1e {
 
 
-enum class IrqMask : u32 {
+enum class IrqDevMask : u32 {
   vblank  = 1,
   gpu     = 1 << 1,
   cdrom   = 1 << 2,
@@ -22,22 +23,69 @@ enum class IrqMask : u32 {
 };
 
 
+class IrqReceiver {
+private:
+  u32 mask;
+
+protected:
+  IrqReceiver() : mask(0) {}
+
+  // 接收方实现方法, 设置 cpu 外部中断
+  virtual void set_ext_int(CpuCauseInt i) = 0;
+  // 接收方实现方法, 清除 cpu 外部中断
+  virtual void clr_ext_int(CpuCauseInt i) = 0;
+
+  // 准备好接受 irq 信号后, 由接收方调用
+  void ready_recv_irq() {
+    if (mask) {
+      set_ext_int(CpuCauseInt::hardware);
+    } else {
+      clr_ext_int(CpuCauseInt::hardware);
+    }
+  }
+
+public:
+  virtual ~IrqReceiver() {}
+
+  // 发送方调用
+  void send_irq(u32 m) {
+    mask = m;
+  }
+};
+
+
 class Bus {
 public:
-  static const u32 DMA_CTRL = 0x1F80'10F0;
-  static const u32 DMA_IRQ  = 0x1F80'10F4;
-  static const u32 DMA_LEN  = 8;
-  static const u32 DMA_MASK = 0x1F80'108F;
+  static const u32 DMA_CTRL_ADDR      = 0x1F80'10F0;
+  static const u32 DMA_IRQ_ADDR       = 0x1F80'10F4;
+  static const u32 IRQ_STATUS_ADDR    = 0x1F80'1070;
+  static const u32 IRQ_MASK_ADDR      = 0x1F80'1074;
+  static const u32 DMA_LEN            = 8;
+  static const u32 DMA_MASK           = 0x1F80'108F;
+  static const u32 DMA_IRQ_WRITE_MASK = (1 << 24) - 1; // 24
+  static const u32 IRQ_ST_WR_MASK     = (1 << 11) - 1; // 11:IrqDevMask count
 
 private:
   MMU& mmu;
+  IrqReceiver* ir;
 
   DMADev* dmadev[DMA_LEN];
-  DMAIrq  dma_irq;  // DMA_IRQ
-  DMADpcr dma_dpcr; // DMA_CTRL
+  DMAIrq  dma_irq;        // DMA_IRQ_ADDR
+  DMADpcr dma_dpcr;       // DMA_CTRL_ADDR
+  u32     irq_status;     // IRQ_STATUS_ADDR
+  u32     irq_mask;       // IRQ_MASK_ADDR
+
+  // 发送设备中断
+  void send_irq(IrqDevMask m);
+
+  // irq_status/irq_mask 寄存器状态改变必须调用方法, 
+  // 模拟硬件拉回引脚, 并把状态发送给 IrqReceiver.
+  void update_irq_to_reciver();
 
 public:
-  Bus(MMU& _mmu) : mmu(_mmu), dmadev{0}, dma_dpcr{0} {}
+  Bus(MMU& _mmu, IrqReceiver* _ir = 0) 
+  : mmu(_mmu), ir(_ir), dmadev{0}, dma_dpcr{0},
+    irq_status(0), irq_mask(0) {}
   ~Bus() {}
 
   // 安装 DMA 设备
@@ -45,6 +93,11 @@ public:
 
   // dma 传输结束后被调用, 发送中断
   void send_dma_irq(DMADev*);
+
+  // 绑定 IRQ 接收器, 通常是 CPU
+  void bind_irq_receiver(IrqReceiver* _ir) {
+    ir = _ir;
+  }
 
   void write32(psmem addr, u32 val);
   void write16(psmem addr, u16 val);
@@ -56,12 +109,23 @@ public:
 
   template<class T> void write(psmem addr, T v) {
     switch (addr) {
-      case DMA_CTRL:
+      case DMA_CTRL_ADDR:
         dma_dpcr.v = v;
         set_dma_dev_status();
         return;
-      case DMA_IRQ:
-        dma_irq.v = v;
+
+      case DMA_IRQ_ADDR:
+        dma_irq.v = v; // & DMA_IRQ_WRITE_MASK; 需要清除 flag
+        return;
+
+      case IRQ_STATUS_ADDR:
+        irq_status = v & IRQ_ST_WR_MASK;
+        update_irq_to_reciver();
+        return;
+
+      case IRQ_MASK_ADDR:
+        irq_mask = v;
+        update_irq_to_reciver();
         return;
     }
 
@@ -101,10 +165,10 @@ public:
 
   template<class T> T read(psmem addr) {
     switch (addr) {
-      case DMA_CTRL:
-        return dma_dpcr.v;
-      case DMA_IRQ:
-        return dma_irq.v;
+      case DMA_CTRL_ADDR:   return dma_dpcr.v;
+      case DMA_IRQ_ADDR:    return dma_irq.v;
+      case IRQ_STATUS_ADDR: return irq_status;
+      case IRQ_MASK_ADDR:   return irq_mask;
     }
 
     if (isDMA(addr)) {

@@ -8,7 +8,7 @@
 namespace ps1e {
 
 
-class InterpreterMips : public InstructionReceiver {
+class InterpreterMips : public InstructionReceiver, public IrqReceiver {
 private:
   Bus& bus;
   MipsReg reg;
@@ -21,9 +21,9 @@ private:
   u32 slot_out_pc;
 
 public:
-  InterpreterMips(Bus& _bus) : bus(_bus), reg({0}), cop0({0}),
-                               pc(0), hi(0), lo(0), jump_delay_slot(0),
-                               slot_delay_time(0) {
+  InterpreterMips(Bus& _bus) 
+  : bus(_bus), reg({0}), cop0({0}), pc(0), hi(0), lo(0), 
+    jump_delay_slot(0), slot_delay_time(0) {
   }
 
   void reset() {
@@ -45,6 +45,7 @@ public:
       jump_delay_slot = 0;
     }
     else {
+      ready_recv_irq();
       process_exception();
     }
 
@@ -64,29 +65,42 @@ public:
     return reg;
   }
 
-  // 硬件中断 1-6
-  inline void set_hard_exception(u8 setbit) {
-    cop0.cause.ip |= 1 << (setbit + 2);
-    if (!cop0.sr.exl) {
-      exception(ExeCodeTable::INT);
-    }
+  void set_ext_int(CpuCauseInt i) {
+    exception(ExeCodeTable::INT, i);
   }
 
-  inline void clr_hard_exception(u8 bit) {
-    cop0.cause.ip &= ~(1 << (bit + 2));
+  void clr_ext_int(CpuCauseInt i) {
+    cop0.cause.ip &= ~(static_cast<u8>(i));
   }
 
   inline u32 has_exception() {
-    return cop0.sr.im & cop0.cause.ip;
+    if (cop0.sr.ie == 0) return 0;
+    if (cop0.sr.exl == 1) return 0; // necessary?
+    if (cop0.sr.erl == 1) return 0; // necessary?
+    return (cop0.sr.im & cop0.cause.ip);
   }
 
 private:
-  void process_exception() {
-    if (cop0.sr.ie == 0) return;
-    if (cop0.sr.exl == 1) return;
-    if (cop0.sr.erl == 1) return;
+  void exception(ExeCodeTable e, CpuCauseInt i = CpuCauseInt::software) {
+    cop0.cause.ip |= static_cast<u8>(i);
     if (!has_exception()) return;
 
+    cop0.sr.exl = 1;
+    cop0.cause.wp = 1;
+    cop0.cause.ExcCode = static_cast<u32>(e);
+
+    if (slot_delay_time) {
+      cop0.cause.bd = 1;
+      cop0.epc = pc - 4; 
+    } else {
+      cop0.cause.bd = 0;
+      cop0.epc = pc;
+    }
+    // printf("Got exception %x\n", e);
+  }
+
+  void process_exception() {
+    if (!has_exception()) return;
     debug("Got exception %x\n", cop0.cause.ExcCode);
 
     if (cop0.sr.bev) {
@@ -507,13 +521,11 @@ private:
 
   void syscall() {
     jj("SYSCALL", reg.v0);
-    cop0.cause.ip |= 0b10;
     exception(ExeCodeTable::SYS);
   }
 
   void brk(u32 code) {
     jj("BREAK", code);
-    cop0.cause.ip |= 0b01;
     exception(ExeCodeTable::BP);
   }
 
@@ -523,19 +535,6 @@ private:
   }
  
 private:
-  void exception(ExeCodeTable e) {
-    cop0.sr.exl = 1;
-    cop0.cause.wp = 1;
-    cop0.cause.ExcCode = static_cast<u32>(e);
-    if (slot_delay_time) {
-      cop0.cause.bd = 1;
-      cop0.epc = pc - 4; 
-    } else {
-      cop0.cause.bd = 0;
-      cop0.epc = pc;
-    }
-    // printf("Got exception %x\n", e);
-  }
 
   inline void sethl(u64 x) {
     hi = (x & 0xFFFF'FFFF'0000'0000) >> 32;
@@ -555,9 +554,9 @@ private:
   }
 
   inline void ii(char const* iname, mips_reg t, mips_reg s, s16 i) {
-    debug("%08x | %08x %6s $%s, $%s, 0x%x \t\t # $%s=%x, $%s=%x\n",
+    debug("%08x | %08x %6s $%s, $%s, 0x%x \t # $%s=%x, $%s=%x, jump=%x\n",
       pc, bus.read32(pc), iname, rname(t), rname(s), i,
-      rname(t), reg.u[t], rname(s), reg.u[s]);
+      rname(t), reg.u[t], rname(s), reg.u[s], pc + (i << 2));
   }
 
   inline void iw(char const* iname, mips_reg t, mips_reg s, s16 i) {

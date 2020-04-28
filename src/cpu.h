@@ -7,6 +7,13 @@ namespace ps1e {
 extern const char*  MipsRegName[];
 
 
+//TODO: ! 这里不完整 ?
+enum class CpuCauseInt : u8 {
+  software = 1,
+  hardware = 1<<1,
+};
+
+
 typedef union {
   u32 u[32];
   s32 s[32];
@@ -66,7 +73,7 @@ typedef union {
     u32 _z0 : 2;
     u32 ExcCode : 5; // 中断类型
     u32 _z1 : 1;
-    u32 ip  : 8; // 软/硬件中断
+    u32 ip  : 8; // 软/硬件中断 see: enum CpuCauseInt
     u32 _z2 : 6;
     u32 wp  : 1; // 1:已经处于异常模式
     u32 iv  : 1; // 1:使用特殊中断入口地址
