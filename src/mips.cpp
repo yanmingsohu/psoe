@@ -235,17 +235,21 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
       }
       break;
 
-    case 18: // cop2 GTE like op 16
     case 48: // lwc0
-    case 50: // lwc2 GTE
     case 56: // swc0
-    case 58: // swc2 GTE
+      return false;
 
-    case 49: // lwc1 not use
-    case 51: // lwc3 not use
+    case 18: // cop2 GTE like op 16
+    case 50: // lwc2 GTE
+    case 58: // swc2 GTE
+      return false;
+    
     case 17: // cop1 not use
-    case 19: // cop3 not use
+    case 49: // lwc1 not use
     case 57: // swc1 not use
+      
+    case 19: // cop3 not use
+    case 51: // lwc3 not use
     case 59: // swc3 not use
     default:
       return false;

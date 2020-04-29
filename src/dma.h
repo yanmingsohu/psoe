@@ -145,6 +145,11 @@ protected:
   // 应该在单独的线程中执行
   void transport();
 
+  // 子类实现内存到设备传输
+  void dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc);
+  // 子类实现设备到内存传输
+  void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc);
+
 public:
   DMADev(Bus& _bus) : priority(0), running(false), bus(_bus) {
     _mask = 1 << (static_cast<u32>(number()) * 4);
@@ -198,8 +203,6 @@ public:
   }
 
 private:
-  void dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc);
-  void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc);
 };
 
 }

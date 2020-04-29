@@ -44,14 +44,18 @@ typedef union {
 } MipsReg;
 
 
+#define COP0_SR_RFE_SHIFT_MASK 0xb0011'1111
+#define COP0_SR_RFE_RESERVED_MASK (~0xb1111)
+#define COP0_SR_REG_IDX 12
 typedef union {
   u32 v;
   struct {
     u32 ie  : 1; // bit 0;  1:使能全局中断 
-    u32 exl : 1; // 1: 关中断进入异常处理程序
-    u32 erl : 1; // ECC 错误
-    u32 ksu : 2; // not use cpu 特权级别
-    u32 ux  : 1; // not use
+    u32 KUc : 1; // 1: 关中断进入异常处理程序, 0=Kernel, 1=User
+    u32 IEp : 1; // ECC 错误
+    u32 KUp : 1; // not use cpu 特权级别
+    u32 IEo : 1;
+    u32 KUo : 1; 
     u32 sx  : 1; // not use
     u32 kx  : 1; // not use
     u32 im  : 8; // bit 8; 8个中断使能位, 1:允许中断
@@ -70,7 +74,8 @@ typedef union {
 } Cop0SR;
 
 
-#define COP_CAUSE_RW_MASK 0b0000'0000'0000'0000'0000'0011'0000'0000
+#define COP0_CAUSE_RW_MASK 0b0000'0000'0000'0000'0000'0011'0000'0000
+#define COP0_CAUSE_REG_IDX 13
 typedef union {
   u32 v; 
   struct {
@@ -91,8 +96,41 @@ typedef union {
 } Cop0Cause;
 
 
+#define COP0_DCIC_WRITE_MASK 0b0000'0000'0000'0000'1111'0000'0011'1111
+#define COP0_DCIC_BK_JMP_MK  ((1 << 31) | (1 << 23) | (1 << 28) | (1 << 29))
+#define COP0_DCIC_BK_CODE_MK ((1 << 31) | (1 << 23) | (1 << 24) | (1 << 30))
+#define COP0_DCIC_BK_DATA_MK ((1 << 31) | (1 << 23) | (1 << 25) | (1 << 30))
+#define COP0_DCIC_BK_DW_MK   (1 << 27)
+#define COP0_DCIC_BK_DR_MK   (1 << 26)
+#define COP0_DCIC_REG_INDEX  7
 typedef union {
-  u32 r[16];
+  u32 v;
+  struct {
+    u32 tany  : 1; //00 Any break set
+    u32 tc    : 1; //01 When BPC code break set 1
+    u32 td    : 1; //02 When DBA data break set 1
+    u32 tdr   : 1; //03 When DBA data read set 1
+    u32 tdw   : 1; //04 When DBA data write set 1
+    u32 tj    : 1; //05 any jump set 1
+    u32 _z0   : 6; //06-11
+    u32 jr    : 2; //12-13 Jump Redirection (0=Disable, 1..3=Enable)
+    u32 _z1   : 2; //14-15
+    u32 _z2   : 7; //16-22
+    u32 sme1  : 1; //23 Super-Master Enable 1 for bit24-29
+    u32 be    : 1; //24 Execution breakpoint 1:Enabled
+    u32 bd    : 1; //25 Data access breakpoint 1:Enabled
+    u32 bdr   : 1; //26 Enable Data read break
+    u32 bdw   : 1; //27 Enable Data write break
+    u32 bj    : 1; //28 Enable any jump break
+    u32 mej   : 1; //29 Master Enable for bit28
+    u32 med   : 1; //30 Master Enable for bit24-27
+    u32 sme2  : 1; //31 Super-Master Enable 2 for bit24-29
+  };
+} Cop0Dcic;
+
+
+typedef union {
+  u32 r[32];
 
   struct {
     u32 index; // r00 not use
@@ -102,7 +140,7 @@ typedef union {
     u32 ctxt;  // r04
     u32 bda;   // r05 数据访问断点
     u32 pidm;  // r06
-    u32 dcic;  // r07 断点控制
+    Cop0Dcic dcic;  // r07 断点控制 TODO!!!
     u32 badv;  // r08; 无效虚拟地址(ps无用)
     u32 bdam;  // r09 数据访问断点掩码, 数据地址 & bdam 再与 bpc 比较
     u32 tlbh;  // r10 not use
@@ -111,6 +149,22 @@ typedef union {
     Cop0Cause cause; // r13
     u32 epc;   // r14; 异常返回地址
     u32 prid;  // r15; 处理器id
+    u32 unused16;
+    u32 unused17;
+    u32 unused18;
+    u32 unused19;
+    u32 unused20;
+    u32 unused21;
+    u32 unused22;
+    u32 unused23;
+    u32 unused24;
+    u32 unused25;
+    u32 unused26;
+    u32 unused27;
+    u32 unused28;
+    u32 unused29;
+    u32 unused30;
+    u32 unused31;
   };
 } Cop0Reg;
 
@@ -125,7 +179,7 @@ enum class ExeCodeTable {
   IBE  = 6,   // 取指令时总线错误
   DBW  = 7,   // 数据读写时总线错误
   SYS  = 8,   // SYSCALL
-  BP   = 9,   // Breakpoint
+  BP   = 9,   // Breakpoint(Debug)
   RI   = 10,  // 保留指令异常
   CPU  = 11,  // 协处理器不可用异常
   OVF  = 12,  // 数学溢出异常

@@ -25,9 +25,10 @@ using namespace ps1e;
 void test_cpu_help() {
   printf("  h : show help\n\
   r : reset\n\
-  n : run next instruction\n\
+  n : run next 10 instruction\n\
+  2 : run next 100 instruction\n\
   q : quit\n\
-  x : run without stop, except exception\n");
+  x : run 100000, except exception\n");
 }
 
 
@@ -59,6 +60,7 @@ void test_mips_inter() {
     int c = _getc();
     switch (c) {
       case 'r':
+        t.__show_interpreter = 1;
         t.reset();
         info("reset\n");
         break;
@@ -67,13 +69,6 @@ void test_mips_inter() {
         test_cpu_help();
         break;
 
-      case 'n':
-      case 0xD:
-      case 0xA:
-        for (int i=10; i>0; --i) {
-          t.next();
-        }
-        break;
 
       case 'f':
       case 0x20:
@@ -83,9 +78,31 @@ void test_mips_inter() {
         return;
 
       case 'x':
-        for (;;) {
+        t.__show_interpreter = 0;
+        for (int i=100000; i>0; --i) {
           t.next();
-          if (t.has_exception()) break;
+          if (t.has_exception()) {
+            warn("Got Exception");
+            break;
+          }
+        }
+        t.__show_interpreter = 1;
+        //break; Don't
+
+      case '1':
+      case 'n':
+      case 0xD:
+      case 0xA:
+        t.__show_interpreter = 1;
+        for (int i=10; i>0; --i) {
+          t.next();
+        }
+        break;
+
+      case '2':
+        t.__show_interpreter = 1;
+        for (int i=100; i>0; --i) {
+          t.next();
         }
         break;
 

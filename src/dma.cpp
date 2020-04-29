@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "dma.h"
 #include "mem.h"
 #include "bus.h"
@@ -41,7 +42,7 @@ void DMADev::transport() {
       }
       break;
 
-    case ChcrMode::Stream:
+    case ChcrMode::Stream: {
       u32 block_count = blocks; 
       if (dir == dma_chcr_dir::RAM_TO_DEV) {
         while (running && chcr.busy_enb && block_count > 0) {
@@ -56,9 +57,10 @@ void DMADev::transport() {
           ramaddr += inc * blocksize;
         }
       }
-      break;
+    } break;
 
     case ChcrMode::LinkedList:
+      throw std::runtime_error("not implement DMA Linked List");
       break;
 
     default:
@@ -71,11 +73,13 @@ void DMADev::transport() {
 }
 
 
-void dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc) {
+void DMADev::dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc) {
+  throw std::runtime_error("not implement DMA RAM to Device");
 }
 
 
-void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc) {
+void DMADev::dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc) {
+  throw std::runtime_error("not implement DMA Device to Mem");
 }
 
 }

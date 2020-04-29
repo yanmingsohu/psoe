@@ -1,5 +1,5 @@
 #include "test.h"
-
+#include "math.h"
 
 namespace ps1e_t {
 using namespace ps1e;
@@ -58,7 +58,21 @@ void test_local() {
 }
 
 
+void inner_window_on_console() {
+  for (int c = 0;; ++c) {
+    const int size = 2000;
+    char buf[size];
+    for (int i=0; i<size; ++i) {
+      // ASCII: 33-126
+      buf[i] = static_cast<char>((float)rand() / RAND_MAX * (126-33) + 33); 
+    }
+    printf("%d %s\r", c, buf);
+  }
+}
+
+
 void test_util() {
+  //inner_window_on_console();
   test_mem_jit();
   test_overflow();
   test_local();

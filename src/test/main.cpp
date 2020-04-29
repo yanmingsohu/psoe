@@ -31,10 +31,10 @@ int main() {
     error("Cannot support little endian CPU\n");
     return 1;
   }
-
+  
+  test_util();
   test_cpu();
   test_jit();
-  test_util();
   test_dma();
   test_disassembly();
   info("Test all passd\n");

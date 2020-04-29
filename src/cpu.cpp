@@ -16,10 +16,10 @@ const char* MipsRegName[] = {
 
 
 void printSR(Cop0SR sr) {
-  printf("COP0\tIE =%x EXL=%x ERL=%x KSU=%x UX =%x SX=%x KX=%x \
+  printf("COP0\tIE =%x KUc=%x IEp=%x KUp=%x IEo=%x IEp=%x SX=%x KX=%x \
             \n\tIM =%x NMI=%x SR =%x TS =%x BEV=%x PX=%x \
             \n\tMX =%x RE =%x FR =%x RP =%x CU =%x\n",\
-                  sr.ie, sr.exl, sr.erl, sr.ksu, sr.ux, sr.sx, sr.kx,
+                  sr.ie, sr.KUc, sr.IEp, sr.KUp, sr.IEo, sr.IEp, sr.sx, sr.kx,
                   sr.im, sr.nmi, sr.sr, sr.ts, sr.bev, sr.px,
                   sr.mx, sr.re, sr.fr, sr.rp, sr.cu);
 }

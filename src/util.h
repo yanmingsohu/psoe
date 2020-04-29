@@ -23,14 +23,22 @@ namespace ps1e {
 // Check bound when read/write memory; 
 // Remove it when debug over.
 #define SAFE_MEM 
-#define RED(s)  "\x1b[31m" s "\033[0m"
-#define BLUE(s) "\x1b[34m" s "\033[0m"
+#define NOT(x)        (!(x))
+#define RED(s)        "\x1b[31m" s "\033[0m"
+#define BLUE(s)       "\x1b[34m" s "\033[0m"
 #define SIGNEL_MASK32 0b1000'0000'0000'0000'0000'0000'0000'0000
 #define SIGNEL_MASK16 0b1000'0000'0000'0000
 #define SIGNEL_MASK8  0b1000'0000
 
-using s8 = int8_t;
-using u8 = uint8_t;
+#define CASE_IO_MIRROR(d1) \
+    case ((d1 & 0x0FFF'FFFF) | 0x1000'0000): \
+    case ((d1 & 0x0FFF'FFFF) | 0x9000'0000): \
+    case ((d1 & 0x0FFF'FFFF) | 0xB000'0000)
+
+#define CASE_MEM_MIRROR(x) CASE_IO_MIRROR(x)
+
+using s8  = int8_t;
+using u8  = uint8_t;
 using s16 = int16_t;
 using u16 = uint16_t;
 using s32 = int32_t;
@@ -147,6 +155,14 @@ public:
 
 template<class F> FuncLocal<F> createFuncLocal(F f) {
   return FuncLocal<F> (f);
+}
+
+
+// 返回 reserve 和 set 逐位运算的结果.
+// 该运算使 set 中的位复制到 reserve 中, 如果对应 reserveMask 位是 1,
+// 否则 reserve 中的位不变.
+template<class T> inline T setbit_with_mask(T reserve, T set, T reserveMask) {
+  return (reserveMask & ~reserve) | (reserveMask & set);
 }
 
 

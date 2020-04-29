@@ -21,6 +21,8 @@ private:
   u32 slot_out_pc;
 
 public:
+  bool __show_interpreter = 1;
+
   InterpreterMips(Bus& _bus) 
   : bus(_bus), reg({0}), cop0({0}), pc(0), hi(0), lo(0), 
     jump_delay_slot(0), slot_delay_time(0) {
@@ -30,6 +32,7 @@ public:
     pc = MMU::BOOT_ADDR;
     cop0.sr.cu = 0b0101;
     cop0.sr.sr = 0;
+    cop0.sr.ie = 1;
   }
 
   void next() {
@@ -46,6 +49,7 @@ public:
     }
     else {
       ready_recv_irq();
+      check_exe_break();
       process_exception();
     }
 
@@ -75,8 +79,8 @@ public:
 
   inline u32 has_exception() {
     if (cop0.sr.ie == 0) return 0;
-    if (cop0.sr.exl == 1) return 0; // necessary?
-    if (cop0.sr.erl == 1) return 0; // necessary?
+    //if (cop0.sr.KUc == 0) return 0; // necessary?
+    //if (cop0.sr.erl == 1) return 0; // necessary?
     return (cop0.sr.im & cop0.cause.ip);
   }
 
@@ -85,7 +89,7 @@ private:
     cop0.cause.ip |= static_cast<u8>(i);
     if (!has_exception()) return;
 
-    cop0.sr.exl = 1;
+    cop0.sr.KUc = 0;
     cop0.cause.wp = 1;
     cop0.cause.ExcCode = static_cast<u32>(e);
 
@@ -105,10 +109,18 @@ private:
 
     if (cop0.sr.bev) {
       // if tlb 0xBFC0'0100
-      pc = 0xBFC0'0180;
+      if (cop0.cause.ExcCode == static_cast<u32>(ExeCodeTable::BP)) {
+        pc = 0xBFC0'0140;
+      } else {
+        pc = 0xBFC0'0180;
+      }
     } else {
       // if tlb 0x8000'0000
-      pc = 0x8000'0080;
+      if (cop0.cause.ExcCode == static_cast<u32>(ExeCodeTable::BP)) {
+        pc = 0x8000'0040;
+      } else {
+        pc = 0x8000'0080;
+      }
     }
   }
 
@@ -267,6 +279,9 @@ private:
       exception(ExeCodeTable::ADEL);
       return;
     }
+    if (check_data_read_break(addr)) {
+      return;
+    }
     reg.u[t] = bus.read32(addr);
     pc += 4;
   }
@@ -278,25 +293,40 @@ private:
       exception(ExeCodeTable::ADES);
       return;
     }
+    if (check_data_write_break(addr)) {
+      return;
+    }
     bus.write32(addr, reg.u[t]);
     pc += 4;
   }
 
   void lb(mips_reg t, mips_reg s, s32 i) override {
     ii("LB", t, s, i);
-    reg.s[t] = (s8) bus.read8(reg.u[s] + i);
+    u32 addr = reg.u[s] + i;
+    if (check_data_read_break(addr)) {
+      return;
+    }
+    reg.s[t] = (s8) bus.read8(addr);
     pc += 4;
   }
 
   void lbu(mips_reg t, mips_reg s, s32 i) override {
     ii("LBu", t, s, i);
-    reg.u[t] = bus.read8(reg.u[s] + i);
+    u32 addr = reg.u[s] + i;
+    if (check_data_read_break(addr)) {
+      return;
+    }
+    reg.u[t] = bus.read8(addr);
     pc += 4;
   }
 
   void sb(mips_reg t, mips_reg s, s32 i) override {
     iw("SB", t, s, i);
-    bus.write8(reg.u[s] + i, 0xFF & reg.u[t]);
+    u32 addr = reg.u[s] + i;
+    if (check_data_write_break(addr)) {
+      return;
+    }
+    bus.write8(addr, 0xFF & reg.u[t]);
     pc += 4;
   }
 
@@ -305,6 +335,9 @@ private:
     u32 addr = reg.u[s] + i;
     if (addr & 1) {
       exception(ExeCodeTable::ADEL);
+      return;
+    }
+    if (check_data_read_break(addr)) {
       return;
     }
     reg.s[t] = bus.read16(addr);
@@ -318,6 +351,9 @@ private:
       exception(ExeCodeTable::ADEL);
       return;
     }
+    if (check_data_read_break(addr)) {
+      return;
+    }
     reg.u[t] = bus.read16(addr);
     pc += 4;
   }
@@ -327,6 +363,9 @@ private:
     u32 addr = reg.u[s] + i;
     if (addr & 1) {
       exception(ExeCodeTable::ADES);
+      return;
+    }
+    if (check_data_write_break(addr)) {
       return;
     }
     bus.write16(addr, reg.u[t]);
@@ -341,6 +380,9 @@ private:
 
   void beq(mips_reg t, mips_reg s, s32 i) override {
     ii("BEQ", t, s, i);
+    if (check_jump_break()) {
+      return;
+    }
     if (reg.u[t] == reg.u[s]) {
       jump_delay_slot = pc + 4;
       pc += i << 2;
@@ -351,6 +393,9 @@ private:
 
   void bne(mips_reg t, mips_reg s, s32 i) override {
     ii("BNE", t, s, i);
+    if (check_jump_break()) {
+      return;
+    }
     if (reg.u[t] != reg.u[s]) {
       jump_delay_slot = pc + 4;
       pc += i << 2;
@@ -361,6 +406,9 @@ private:
 
   void blez(mips_reg s, s32 i) override {
     i2("BLEZ", s, i);
+    if (check_jump_break()) {
+      return;
+    }
     if (reg.s[s] <= 0) {
       jump_delay_slot = pc + 4;
       pc += i << 2;
@@ -371,6 +419,9 @@ private:
 
   void bgtz(mips_reg s, s32 i) override {
     i2("BGTZ", s, i);
+    if (check_jump_break()) {
+      return;
+    }
     if (reg.s[s] > 0) {
       jump_delay_slot = pc + 4;
       pc += i << 2;
@@ -381,6 +432,9 @@ private:
 
   void bltz(mips_reg s, s32 i) override {
     i2("BLTZ", s, i);
+    if (check_jump_break()) {
+      return;
+    }
     if (reg.s[s] < 0) {
       jump_delay_slot = pc + 4;
       pc += i << 2;
@@ -391,6 +445,9 @@ private:
 
   void bgez(mips_reg s, s32 i) override {
     i2("BGEZ", s, i);
+    if (check_jump_break()) {
+      return;
+    }
     if (reg.s[s] >= 0) {
       jump_delay_slot = pc + 4;
       pc += i << 2;
@@ -401,6 +458,9 @@ private:
 
   void bgezal(mips_reg s, s32 i) override {
     i2("BGEZAL", s, i);
+    if (check_jump_break()) {
+      return;
+    }
     if (reg.s[s] >= 0) {
       jump_delay_slot = pc + 4;
       reg.ra = pc + 8;
@@ -412,6 +472,9 @@ private:
 
   void bltzal(mips_reg s, s32 i) override {
     i2("BLTZAL", s, i);
+    if (check_jump_break()) {
+      return;
+    }
     if (reg.s[s] < 0) {
       jump_delay_slot = pc + 4;
       reg.ra = pc + 8;
@@ -423,12 +486,18 @@ private:
 
   void j(u32 i) override {
     jj("J", i);
+    if (check_jump_break()) {
+      return;
+    }
     jump_delay_slot = pc + 4;
     pc = (pc & 0xF000'0000) | (i << 2);
   }
 
   void jal(u32 i) override {
     jj("JAL", i);
+    if (check_jump_break()) {
+      return;
+    }
     jump_delay_slot = pc + 4;
     reg.ra = pc + 8;
     pc = (pc & 0xF000'0000) | (i << 2);
@@ -436,12 +505,18 @@ private:
 
   void jr(mips_reg s) override {
     j1("JR", s);
+    if (check_jump_break()) {
+      return;
+    }
     jump_delay_slot = pc + 4;
     pc = reg.u[s];
   }
 
   void jalr(mips_reg d, mips_reg s) override {
     rx("JALR", d, s);
+    if (check_jump_break()) {
+      return;
+    }
     jump_delay_slot = pc + 4;
     reg.u[d] = pc + 8;
     pc = reg.u[s];
@@ -479,10 +554,15 @@ private:
 
   void mtc0(mips_reg t, mips_reg d) override {
     i2("MTC0", t, d);
-    if (d == 13) {
-      cop0.r[d] = (reg.u[t] & COP0_CAUSE_RW_MASK) | (cop0.r[d] & ~COP0_CAUSE_RW_MASK);
-    } else {
-      cop0.r[d] = reg.u[t];
+    switch (d) {
+      case COP0_CAUSE_REG_IDX:
+        cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_CAUSE_RW_MASK);
+        break;
+      case COP0_DCIC_REG_INDEX:
+        cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_DCIC_WRITE_MASK);
+      default:
+        cop0.r[d] = reg.u[t];
+        break;
     }
     pc += 4;
   }
@@ -534,8 +614,8 @@ private:
   }
 
   void rfe() override {
-    cop0.sr.exl = 0;
-    pc = cop0.epc;
+    u32 sr = (COP0_SR_RFE_SHIFT_MASK & cop0.sr.v) >> 2;
+    cop0.sr.v = (COP0_SR_RFE_RESERVED_MASK & cop0.sr.v) | sr;
   }
  
 private:
@@ -545,41 +625,96 @@ private:
     lo =  x & 0xFFFF'FFFF;
   }
 
+  inline bool check_exe_break() {
+    if (cop0.dcic.v & COP0_DCIC_BK_CODE_MK == COP0_DCIC_BK_CODE_MK) {
+      if (((pc ^ cop0.bpc) & cop0.bpcm) == 0) {
+        cop0.dcic.tany = 1;
+        cop0.dcic.tc   = 1;
+        exception(ExeCodeTable::BP);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  inline bool check_data_read_break(u32 addr) {
+    if (cop0.dcic.v & COP0_DCIC_BK_DATA_MK == COP0_DCIC_BK_DATA_MK) {
+      if (((addr ^ cop0.bda) & cop0.bdam) == 0) {
+        cop0.dcic.tany = 1;
+        cop0.dcic.td   = 1;
+        cop0.dcic.tdr  = cop0.dcic.v && COP0_DCIC_BK_DR_MK;
+        exception(ExeCodeTable::BP);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  inline bool check_data_write_break(u32 addr) {
+    if (cop0.dcic.v & COP0_DCIC_BK_DATA_MK == COP0_DCIC_BK_DATA_MK) {
+      if (((addr ^ cop0.bda) & cop0.bdam) == 0) {
+        cop0.dcic.tany = 1;
+        cop0.dcic.td   = 1;
+        cop0.dcic.tdw  = cop0.dcic.v && COP0_DCIC_BK_DW_MK;
+        exception(ExeCodeTable::BP);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  inline bool check_jump_break() {
+    if (cop0.dcic.v & COP0_DCIC_BK_JMP_MK == COP0_DCIC_BK_JMP_MK) {
+      cop0.dcic.tj   = 1;
+      cop0.dcic.tany = 1;
+      exception(ExeCodeTable::BP);
+      return true;
+    }
+    return false;
+  }
+
   inline void rx(char const* iname, mips_reg s, mips_reg t) {
+    if (!__show_interpreter) return;
     debug("%08x | %08x %6s H/L, $%s, $%s \t\t # $%s=%x, $%s=%x\n", 
       pc, bus.read32(pc), iname, rname(s), rname(t), 
       rname(s), reg.u[s], rname(t), reg.u[t]);
   }
 
   inline void rr(char const* iname, mips_reg d, mips_reg s, mips_reg t) {
+    if (!__show_interpreter) return;
     debug("%08x | %08x %6s $%s, $%s, $%s \t\t # $%s=%x, $%s=%x, $%s=%x\n",
       pc, bus.read32(pc), iname, rname(d), rname(s), rname(t),
       rname(d), reg.u[d], rname(s), reg.u[s], rname(t), reg.u[t]);
   }
 
   inline void ii(char const* iname, mips_reg t, mips_reg s, s16 i) {
-    debug("%08x | %08x %6s $%s, $%s, 0x%x \t # $%s=%x, $%s=%x, jump=%x\n",
+    if (!__show_interpreter) return;
+    debug("%08x | %08x %6s $%s, $%s, 0x%08x \t # $%s=%x, $%s=%x, jump=%x\n",
       pc, bus.read32(pc), iname, rname(t), rname(s), i,
       rname(t), reg.u[t], rname(s), reg.u[s], pc + (i << 2));
   }
 
   inline void iw(char const* iname, mips_reg t, mips_reg s, s16 i) {
+    if (!__show_interpreter) return;
     debug("%08x | %08x %6s [$%s + 0x%x], $%s\t\t # $%s=%x, $%s=%x\n",
       pc, bus.read32(pc), iname, rname(s), i, rname(t),
       rname(t), reg.u[t], rname(s), reg.u[s]);
   }
 
   inline void i2(char const* iname, mips_reg t, s16 i) {
+    if (!__show_interpreter) return;
     debug("%08x | %08x %6s $%s, 0x%x\t\t # $%s=%x\n",
       pc, bus.read32(pc), iname, rname(t), i, rname(t), reg.u[t]);
   }
 
   inline void jj(char const* iname, u32 i) {
-    debug("%08x | %08x %6s 0x%x\t\t # %x\n", pc, bus.read32(pc), iname, i, i<<2);
+    if (!__show_interpreter) return;
+    debug("%08x | %08x %6s 0x%08x\t\t\t # %x\n", pc, bus.read32(pc), iname, i, i<<2);
   }
 
   inline void j1(char const* iname, mips_reg s) {
-    debug("%08x | %08x %6s %s\t\t # $%s=%x\n",
+    if (!__show_interpreter) return;
+    debug("%08x | %08x %6s %s\t\t\t # $%s=%x\n",
       pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
   }
 
