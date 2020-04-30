@@ -7,6 +7,13 @@
 
 namespace ps1e {
 
+#define CASE_IO_MIRROR_WRITE(addr, deviomap, v) \
+    io[ static_cast<size_t>(deviomap) ]->write(v); \
+    return
+
+#define CASE_IO_MIRROR_READ(addr, deviomap) \
+    return io[ static_cast<size_t>(deviomap) ]->read()
+
 
 enum class IrqDevMask : u32 {
   vblank  = 1,
@@ -20,6 +27,37 @@ enum class IrqDevMask : u32 {
   sio     = 1 << 8,
   spu     = 1 << 9,
   pio     = 1 << 10,
+};
+
+
+// IO 接口枚举
+enum class DeviceIOMapper : size_t {
+  none = 0,   // Keep first and value 0
+  gpu_gp0,
+  gpu_gp1,
+  __Length__, // Keep last, Do not Index.
+};
+
+
+// 设备上的一个 IO 端口, 默认什么都不做
+class DeviceIO {
+public:
+  virtual ~DeviceIO() {}
+  virtual void write(u32 value) {}
+  virtual u32 read() { return 0xFFFF'FFFF; }
+};
+
+
+class DeviceIOLatch : public DeviceIO {
+protected:
+  u32 reg;
+public:
+  virtual void write(u32 value) {
+    reg = value;
+  }
+  virtual u32 read() { 
+    return reg;
+  }
 };
 
 
@@ -74,10 +112,12 @@ public:
 private:
   MMU& mmu;
   IrqReceiver* ir;
+  DeviceIO nullio;
+  DeviceIO **io;
 
   DMADev* dmadev[DMA_LEN];
-  DMAIrq  dma_irq;        
-  DMADpcr dma_dpcr;       
+  DMAIrq  dma_irq;
+  DMADpcr dma_dpcr;
   u32     irq_status;     // I_STAT
   u32     irq_mask;       // I_MASK
 
@@ -89,10 +129,8 @@ private:
   void update_irq_to_reciver();
 
 public:
-  Bus(MMU& _mmu, IrqReceiver* _ir = 0) 
-  : mmu(_mmu), ir(_ir), dmadev{0}, dma_dpcr{0},
-    irq_status(0), irq_mask(0) {}
-  ~Bus() {}
+  Bus(MMU& _mmu, IrqReceiver* _ir = 0);
+  ~Bus();
 
   // 安装 DMA 设备
   bool set_dma_dev(DMADev* dd);
@@ -101,9 +139,10 @@ public:
   void send_dma_irq(DMADev*);
 
   // 绑定 IRQ 接收器, 通常是 CPU
-  void bind_irq_receiver(IrqReceiver* _ir) {
-    ir = _ir;
-  }
+  void bind_irq_receiver(IrqReceiver* _ir);
+
+  // 绑定设备的 IO, 不释放解除绑定的对象
+  void bind_io(DeviceIOMapper, DeviceIO*);
 
   void write32(psmem addr, u32 val);
   void write16(psmem addr, u16 val);
@@ -136,6 +175,9 @@ public:
         irq_mask = v;
         update_irq_to_reciver();
         return;
+
+      CASE_IO_MIRROR_WRITE(0x1F80'1810, DeviceIOMapper::gpu_gp0, v);
+      CASE_IO_MIRROR_WRITE(0x1F80'1814, DeviceIOMapper::gpu_gp1, v);
     }
 
     if (isDMA(addr)) {
@@ -185,6 +227,9 @@ public:
 
       CASE_IO_MIRROR(0x1F80'1074):
         return irq_mask;
+
+      CASE_IO_MIRROR_READ(0x1F80'1810, DeviceIOMapper::gpu_gp0);
+      CASE_IO_MIRROR_READ(0x1F80'1814, DeviceIOMapper::gpu_gp1);
     }
 
     if (isDMA(addr)) {
@@ -230,4 +275,7 @@ private:
   }
 };
 
+
+#undef CASE_IO_MIRROR_WRITE
+#undef CASE_IO_MIRROR_READ
 }
