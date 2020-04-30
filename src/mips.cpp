@@ -222,27 +222,76 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
         case 16:
           switch (i.R.ft) {
             case 16:
-            case 24:
-            case 31:
               r->rfe();
               break;
           }
-        case 6: // ct
-        case 2: // cf
-        case 8: // bc
+          break;
+        case 2: 
+          //r->cfc0(i.R.rt, i.R.rd);
+          return false;
+        case 6: 
+          //r->ctc0(i.R.rt, i.R.rd);
+          return false;
+        case 8: 
+          switch (i.R.rt) {
+            case 0:
+              //r->bc0f(i.I.imm)
+              return false;
+            case 1:
+              //r->bc0t(i.I.imm)
+              return false;
+          }
+          return false;
         default:
           return false;
       }
       break;
 
     case 48: // lwc0
-    case 56: // swc0
+      //r->lwc0(i.I.rt, i.I.rs, i.I.imm);
       return false;
+    case 56: // swc0
+      //r->swc0(i.I.rt, i.I.rs, i.I.imm);
+      return false;//TODO: remove
 
     case 18: // cop2 GTE like op 16
-    case 50: // lwc2 GTE
-    case 58: // swc2 GTE
+      switch (i.R.rs) {
+        case 0:
+          //r->mfc2(i.R.rt, i.R.rd);
+          return false;
+        case 4:
+          //r->mtc2(i.R.rt, i.R.rd);
+          return false;
+        case 16:
+          //r->imm25(i.i & ((1<<25)-1));
+          return false;
+        case 2: 
+          //r->cfc2(i.R.rt, i.R.rd);
+          return false;
+        case 6: 
+          //r->ctc2(i.R.rt, i.R.rd);
+          return false;
+        case 8: 
+          switch (i.R.rt) {
+            case 0:
+              //r->bc2f(i.I.imm)
+              return false;
+            case 1:
+              //r->bc2t(i.I.imm)
+              return false;
+          }
+          return false;
+        default:
+          return false;
+      }
       return false;
+
+    case 50: // lwc2 GTE
+      //r->lwc2(i.I.rt, i.I.rs, i.I.imm);
+
+    case 58: // swc2 GTE
+      //r->swc2(i.I.rt, i.I.rs, i.I.imm);
+      return false;//TODO: remove
     
     case 17: // cop1 not use
     case 49: // lwc1 not use
