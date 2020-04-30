@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include "test.h"
+#include "../gpu.h"
 
 using namespace ps1e;
 using namespace ps1e_t;
@@ -32,6 +33,7 @@ int main() {
     return 1;
   }
   
+  OpenGLScope opengl;
   test_util();
   test_cpu();
   test_jit();

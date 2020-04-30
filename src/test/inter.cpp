@@ -51,6 +51,7 @@ void test_mips_inter() {
   }
 
   Bus bus(mmu);
+  GPU gpu(bus);
   InterpreterMips t(bus);
   bus.bind_irq_receiver(&t);
   t.reset();
@@ -68,7 +69,6 @@ void test_mips_inter() {
       case 'h':
         test_cpu_help();
         break;
-
 
       case 'f':
       case 0x20:

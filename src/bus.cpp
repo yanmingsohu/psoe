@@ -1,6 +1,34 @@
+#include <stdexcept>
 #include "bus.h"
 
 namespace ps1e {
+
+
+Bus::Bus(MMU& _mmu, IrqReceiver* _ir) 
+: mmu(_mmu), ir(_ir), dmadev{0}, dma_dpcr{0}, irq_status(0), irq_mask(0) 
+{
+  const size_t s = static_cast<size_t>(DeviceIOMapper::__Length__);
+  io = new DeviceIO*[s];
+  for (int i=0; i<s; ++i) {
+    io[i] = &nullio;
+  }
+}
+
+
+Bus::~Bus() {
+  delete [] io;
+}
+
+
+void Bus::bind_irq_receiver(IrqReceiver* _ir) {
+  ir = _ir;
+}
+
+
+void Bus::bind_io(DeviceIOMapper m, DeviceIO* i) {
+  if (!i) std::runtime_error("DeviceIO parm null pointer");
+  io[ static_cast<size_t>(m) ] = i;
+}
 
 
 bool Bus::set_dma_dev(DMADev* dd) {

@@ -2,6 +2,13 @@
 
 #include "util.h"
 #include "dma.h"
+#include "bus.h"
+
+struct GLFWwindow;
+
+namespace std {
+  class thread;
+}
 
 namespace ps1e {
 
@@ -57,25 +64,45 @@ enum class CommandEnum {
 
 class GPU : public DMADev {
 public:
-  static const u32 IO_DATA      = 0x1F80'1810;
-  static const u32 IO_CTRL      = 0x1F80'1814;
 
 private:
-  u8 frame[0x10'0000];
+  class GP0 : public DeviceIOLatch {
+  } gp0;
+
+  class GP1 : public DeviceIOLatch {
+  } gp1;
+
   GpuCtrl ct;
+  GLFWwindow* glwindow;
+  std::thread* work;
+
+  // 这是gpu线程函数, 不要调用
+  void gpu_thread();
 
 public:
-  GPU(Bus& bus) : DMADev(bus), ct{0} {
-  }
+  GPU(Bus& bus);
+  ~GPU();
 
-  DmaDeviceNum number() {
+  virtual DmaDeviceNum number() {
     return DmaDeviceNum::gpu;
   }
 
-  bool support(dma_chcr_dir dir) {
+  virtual bool support(dma_chcr_dir dir) {
     //TODO: 做完gpu寄存器
     return false;
   }
+};
+
+
+// 首先声明该对象, 并在生命周期内使用 opengl 函数.
+class OpenGLScope {
+private:
+  OpenGLScope(OpenGLScope&);
+  OpenGLScope& operator=(OpenGLScope&);
+  
+public:
+  OpenGLScope();
+  ~OpenGLScope();
 };
 
 }

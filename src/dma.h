@@ -130,6 +130,7 @@ enum class dma_chcr_dir {
 
 class DMADev {
 private:
+  const DmaDeviceNum devnum;
   u32 _mask;
   u32 priority;
   bool running;
@@ -151,14 +152,13 @@ protected:
   void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc);
 
 public:
-  DMADev(Bus& _bus) : priority(0), running(false), bus(_bus) {
+  DMADev(Bus& _bus, DmaDeviceNum _devnum) 
+  : devnum(_devnum), priority(0), running(false), bus(_bus) {
     _mask = 1 << (static_cast<u32>(number()) * 4);
   }
 
   virtual ~DMADev() {};
 
-  // 子类重写该方法返回设备号
-  virtual DmaDeviceNum number() = 0;
   // 子类重写, 对传输方向支持返回 true
   virtual bool support(dma_chcr_dir dir) = 0;
 
@@ -173,6 +173,11 @@ public:
 
   inline u32 mask() {
     return _mask;
+  }
+
+  // 返回设备号
+  inline DmaDeviceNum number() {
+    return devnum;
   }
 
   void send_base(u32 b) {
