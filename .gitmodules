@@ -4,15 +4,12 @@
 [submodule "deps/glfw"]
 	path = deps/glfw
 	url = https://github.com/glfw/glfw
-[submodule "deps/soloud"]
-	path = deps/soloud
-	url = https://github.com/jarikomppa/soloud
-[submodule "deps/UGM"]
-	path = deps/UGM
-	url = https://github.com/Ubpa/UGM
 [submodule "deps/rtaudio"]
 	path = deps/rtaudio
 	url = https://github.com/thestk/rtaudio.git
 [submodule "deps/r8brain"]
 	path = deps/r8brain
 	url = https://github.com/avaneev/r8brain-free-src.git
+[submodule "deps/eigen"]
+	path = deps/eigen
+	url = https://gitlab.com/libeigen/eigen.git

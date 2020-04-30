@@ -50,13 +50,14 @@ WIP
 # Dependents
 
 * [Sound ADSR](https://github.com/kylophone/libADSR)
-* [OpenGL](https://github.com/glfw/glfw)
-* [Sound API](https://github.com/jarikomppa/soloud) ?
 * [Sound API](https://github.com/thestk/rtaudio)
 * [Sound resampler](https://github.com/avaneev/r8brain-free-src)
-* [Graphics Mathematics](https://github.com/Ubpa/UGM) ?
+* [Graphics Mathematics](http://eigen.tuxfamily.org/index.php?title=Main_Page)
+* [Sound API](https://github.com/jarikomppa/soloud) @
+* [OpenGL GUI](https://github.com/wjakob/nanogui) @
 
-? May be removed
+  ? May be removed
+  @ not install
 
 
 # Helpful website
@@ -66,3 +67,4 @@ WIP
 * [x86 Assembler/Disassembler Online](https://defuse.ca/online-x86-assembler.htm#disassembly)
 * [x86 opcodes](http://www.mathemainzel.info/files/x86asmref.html)
 * [PSX documents](http://hitmen.c02.at/html/psx_docs.html)
+* [PSX Test](https://github.com/simias/psx-hardware-tests)

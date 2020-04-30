@@ -5,78 +5,81 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="core">
+    <Filter Include="src">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="header">
+      <UniqueIdentifier>{85475280-23d7-4b0d-bc47-c39e43d0c51d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\asm.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\asm_x86-64.h">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\asm.h">
+      <Filter>header</Filter>
     </ClInclude>
     <ClInclude Include="..\src\cpu.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\mem.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\mips.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\system.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\util.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\gpu.h">
-      <Filter>core</Filter>
+      <Filter>header</Filter>
     </ClInclude>
     <ClInclude Include="..\src\dma.h">
-      <Filter>core</Filter>
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\gpu.h">
+      <Filter>header</Filter>
     </ClInclude>
     <ClInclude Include="..\src\inter.h">
-      <Filter>core</Filter>
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mem.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mips.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\system.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\util.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bus.h">
+      <Filter>header</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\cpu.cpp">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\mem.cpp">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\mips.cpp">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\system.cpp">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\util.cpp">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\gpu.cpp">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\dma.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\bus.h">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bus.cpp">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\makefile">
-      <Filter>core</Filter>
+      <Filter>src</Filter>
     </None>
     <None Include="..\README.md">
       <Filter>资源文件</Filter>

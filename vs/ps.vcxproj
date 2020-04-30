@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\src\asm.h" />
     <ClInclude Include="..\src\asm_x86-64.h" />
+    <ClInclude Include="..\src\bus.h" />
     <ClInclude Include="..\src\cpu.h" />
     <ClInclude Include="..\src\inter.h" />
     <ClInclude Include="..\src\dma.h" />
@@ -29,11 +30,10 @@
     <ClInclude Include="..\src\mips.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\util.h" />
+    <ClCompile Include="..\src\bus.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp" />
-    <ClCompile Include="..\src\bus.cpp" />
-    <ClCompile Include="..\src\bus.h" />
     <ClCompile Include="..\src\cpu.cpp" />
     <ClCompile Include="..\src\dma.cpp" />
     <ClCompile Include="..\src\gpu.cpp" />
@@ -107,13 +107,15 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IntDir>..\bin\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>..\bin\$(Platform)\$(Configuration)\core</IntDir>
     <LibraryPath>..\bin;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\deps\glad\include;$(ProjectDir)..\deps\glfw\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IntDir>..\bin\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>..\bin\$(Platform)\$(Configuration)\core</IntDir>
     <LibraryPath>..\bin;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\deps\glad\include;$(ProjectDir)..\deps\glfw\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
