@@ -4,15 +4,10 @@
 #include "dma.h"
 #include "mem.h"
 #include "cpu.h"
+#include "io.h"
 
 namespace ps1e {
 
-#define CASE_IO_MIRROR_WRITE(addr, deviomap, v) \
-    io[ static_cast<size_t>(deviomap) ]->write(v); \
-    return
-
-#define CASE_IO_MIRROR_READ(addr, deviomap) \
-    return io[ static_cast<size_t>(deviomap) ]->read()
 
 
 enum class IrqDevMask : u32 {
@@ -27,37 +22,6 @@ enum class IrqDevMask : u32 {
   sio     = 1 << 8,
   spu     = 1 << 9,
   pio     = 1 << 10,
-};
-
-
-// IO 接口枚举
-enum class DeviceIOMapper : size_t {
-  none = 0,   // Keep first and value 0
-  gpu_gp0,
-  gpu_gp1,
-  __Length__, // Keep last, Do not Index.
-};
-
-
-// 设备上的一个 IO 端口, 默认什么都不做
-class DeviceIO {
-public:
-  virtual ~DeviceIO() {}
-  virtual void write(u32 value) {}
-  virtual u32 read() { return 0xFFFF'FFFF; }
-};
-
-
-class DeviceIOLatch : public DeviceIO {
-protected:
-  u32 reg;
-public:
-  virtual void write(u32 value) {
-    reg = value;
-  }
-  virtual u32 read() { 
-    return reg;
-  }
 };
 
 
@@ -176,8 +140,7 @@ public:
         update_irq_to_reciver();
         return;
 
-      CASE_IO_MIRROR_WRITE(0x1F80'1810, DeviceIOMapper::gpu_gp0, v);
-      CASE_IO_MIRROR_WRITE(0x1F80'1814, DeviceIOMapper::gpu_gp1, v);
+      IO_MIRROR_CASES_IN_SWITCH(CASE_IO_MIRROR_WRITE, io, v);
     }
 
     if (isDMA(addr)) {
@@ -228,8 +191,7 @@ public:
       CASE_IO_MIRROR(0x1F80'1074):
         return irq_mask;
 
-      CASE_IO_MIRROR_READ(0x1F80'1810, DeviceIOMapper::gpu_gp0);
-      CASE_IO_MIRROR_READ(0x1F80'1814, DeviceIOMapper::gpu_gp1);
+      IO_MIRROR_CASES_IN_SWITCH(CASE_IO_MIRROR_READ, io, NULL);
     }
 
     if (isDMA(addr)) {
@@ -276,6 +238,4 @@ private:
 };
 
 
-#undef CASE_IO_MIRROR_WRITE
-#undef CASE_IO_MIRROR_READ
 }

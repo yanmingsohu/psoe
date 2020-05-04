@@ -47,6 +47,9 @@
     <ClInclude Include="..\src\bus.h">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\io.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">

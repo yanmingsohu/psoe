@@ -26,6 +26,7 @@
     <ClInclude Include="..\src\inter.h" />
     <ClInclude Include="..\src\dma.h" />
     <ClInclude Include="..\src\gpu.h" />
+    <ClInclude Include="..\src\io.h" />
     <ClInclude Include="..\src\mem.h" />
     <ClInclude Include="..\src\mips.h" />
     <ClInclude Include="..\src\system.h" />
