@@ -71,11 +71,49 @@ void inner_window_on_console() {
 }
 
 
+static u32 __t_io_read(DeviceIO**io, u32 addr) {
+  switch (addr) {
+    IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_READ, io, NULL);
+    default:
+      panic("bad read");
+  }
+}
+
+
+static void __t_io_write(DeviceIO** io, u32 addr, u32 v) {
+  switch (addr) {
+    IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_WRITE, io, v);
+    default:
+      panic("bad write");
+  }
+}
+
+
+static void __io(DeviceIO**io, u32 addr, u32 v) {
+  __t_io_write(io, addr, v);
+  eq<u32>(v, __t_io_read(io, addr), "io mirrors");
+  debug("Util Test IO: %x: %x\n", addr, v);
+}
+
+
+void test_io_mirrors() {
+  DeviceIOLatch iol;
+  DeviceIO* io[io_map_size];
+  for (int i=0; i<io_map_size; ++i) {
+    io[i] = &iol;
+  }
+
+  __io(io, 0x1F80'1810, 0xF0F0'E0E0);
+  __io(io, 0x1F80'1814, 0xFFFF'0000);
+}
+
+
 void test_util() {
   //inner_window_on_console();
   test_mem_jit();
   test_overflow();
   test_local();
+  test_io_mirrors();
 }
 
 }

@@ -42,13 +42,13 @@ struct GpuCtrl {
 };
 
 
-struct Command {
+struct GpuCommand {
   u16 parm;
   u16 cmd;
 };
 
 
-enum class CommandEnum {
+enum class GpuCommandEnum {
   rst_gpu    = 0x00, // reset gpu, sets status to $14802000
   rst_buffer = 0x01, // reset command buffer
   rst_irq    = 0x02, // reset IRQ

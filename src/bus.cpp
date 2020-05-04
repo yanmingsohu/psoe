@@ -7,9 +7,8 @@ namespace ps1e {
 Bus::Bus(MMU& _mmu, IrqReceiver* _ir) 
 : mmu(_mmu), ir(_ir), dmadev{0}, dma_dpcr{0}, irq_status(0), irq_mask(0) 
 {
-  const size_t s = static_cast<size_t>(DeviceIOMapper::__Length__);
-  io = new DeviceIO*[s];
-  for (int i=0; i<s; ++i) {
+  io = new DeviceIO*[io_map_size];
+  for (int i=0; i<io_map_size; ++i) {
     io[i] = &nullio;
   }
 }

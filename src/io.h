@@ -4,27 +4,37 @@
 
 namespace ps1e {
 
-#define CASE_IO_MIRROR_WRITE(addr, deviomap, io_map_obj, v) \
+#define CASE_IO_MIRROR(x) CASE_MEM_MIRROR(x)
+
+#define CASE_IO_MIRROR_WRITE(addr, io_enum, io_arr, v) \
     CASE_IO_MIRROR(addr): \
-    io[ static_cast<size_t>(deviomap) ]->write(v); \
+    io_arr[ static_cast<size_t>(DeviceIOMapper::io_enum) ]->write(v); \
     return;
 
-#define CASE_IO_MIRROR_READ(addr, deviomap, io_map_obj, _) \
+#define CASE_IO_MIRROR_READ(addr, io_enum, io_arr, _) \
     CASE_IO_MIRROR(addr): \
-    return io[ static_cast<size_t>(deviomap) ]->read();
+    return io_arr[ static_cast<size_t>(DeviceIOMapper::io_enum) ]->read();
 
-#define IO_MIRROR_CASES_IN_SWITCH(rw, io_map_obj, v) \
-    rw(0x1F80'1810, DeviceIOMapper::gpu_gp0, io_map_obj, v) \
-    rw(0x1F80'1814, DeviceIOMapper::gpu_gp1, io_map_obj, v) \
+#define IO_ENUM_DEFINE_FIELDS(_, enumfield, __, ___) \
+    enumfield,
+
+
+//
+// 所有挂接在总线上的设备的 io 定义表
+// TODO: DMA 设备识别从 bus 移动到这里.
+//
+#define IO_MIRRORS_STATEMENTS(rw, io_arr, v) \
+    rw(0x1F80'1810, gpu_gp0, io_arr, v) \
+    rw(0x1F80'1814, gpu_gp1, io_arr, v) \
   
 
 // IO 接口枚举
 enum class DeviceIOMapper : size_t {
-  none = 0,   // Keep first and value 0
-  gpu_gp0,
-  gpu_gp1,
+  __zero__ = 0,   // Keep first and value 0
+  IO_MIRRORS_STATEMENTS(IO_ENUM_DEFINE_FIELDS, 0, 0)
   __Length__, // Keep last, Do not Index.
 };
+const size_t io_map_size = static_cast<size_t>(DeviceIOMapper::__Length__);
 
 
 // 设备上的一个 IO 端口, 默认什么都不做

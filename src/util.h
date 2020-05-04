@@ -30,12 +30,11 @@ namespace ps1e {
 #define SIGNEL_MASK16 0b1000'0000'0000'0000
 #define SIGNEL_MASK8  0b1000'0000
 
-#define CASE_IO_MIRROR(d1) \
+#define CASE_MEM_MIRROR(d1) \
     case ((d1 & 0x0FFF'FFFF) | 0x1000'0000): \
     case ((d1 & 0x0FFF'FFFF) | 0x9000'0000): \
     case ((d1 & 0x0FFF'FFFF) | 0xB000'0000)
 
-#define CASE_MEM_MIRROR(x) CASE_IO_MIRROR(x)
 
 using s8  = int8_t;
 using u8  = uint8_t;

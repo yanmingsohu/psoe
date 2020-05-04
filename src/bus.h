@@ -140,7 +140,7 @@ public:
         update_irq_to_reciver();
         return;
 
-      IO_MIRROR_CASES_IN_SWITCH(CASE_IO_MIRROR_WRITE, io, v);
+      IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_WRITE, io, v);
     }
 
     if (isDMA(addr)) {
@@ -191,7 +191,7 @@ public:
       CASE_IO_MIRROR(0x1F80'1074):
         return irq_mask;
 
-      IO_MIRROR_CASES_IN_SWITCH(CASE_IO_MIRROR_READ, io, NULL);
+      IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_READ, io, NULL);
     }
 
     if (isDMA(addr)) {
