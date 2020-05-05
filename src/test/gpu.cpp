@@ -5,7 +5,7 @@ namespace ps1e_t {
 using namespace ps1e;
 
 void gpu_basic() {
-  tsize(sizeof(GpuCtrl), 4, "gpu ctrl reg");
+  tsize(sizeof(GpuStatus), 4, "gpu ctrl reg");
   tsize(sizeof(GpuCommand), 4, "gpu command");
 }
 

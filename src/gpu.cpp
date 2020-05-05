@@ -7,7 +7,25 @@
 namespace ps1e {
 
 
-GPU::GPU(Bus& bus) : DMADev(bus, DmaDeviceNum::gpu), ct{0} {
+OpenGLScope::OpenGLScope() {
+  if(gladLoadGL()) {
+    throw std::runtime_error("I did load GL with no context!\n");
+  }
+  if (!glfwInit()) {
+    throw std::runtime_error("Cannot init OpenGLfw");
+  }
+}
+
+
+OpenGLScope::~OpenGLScope() {
+  glfwTerminate();
+}
+
+
+GPU::GPU(Bus& bus) : 
+    DMADev(bus, DmaDeviceNum::gpu), status{0}, 
+    gp0(*this), gp1(*this), cmd_respons(0) 
+{
   glwindow = glfwCreateWindow(640, 480, "Playstation1 EMU", NULL, NULL);
   if (!glwindow) {
     throw std::runtime_error("Cannot create GL window");
@@ -46,18 +64,33 @@ void GPU::gpu_thread() {
 }
 
 
-OpenGLScope::OpenGLScope() {
-  if(gladLoadGL()) {
-    throw std::runtime_error("I did load GL with no context!\n");
-  }
-  if (!glfwInit()) {
-    throw std::runtime_error("Cannot init OpenGLfw");
+void GPU::GP0::write(u32 v) {
+  switch (stage) {
+    case ShapeDataStage::read_command:
+      parseCommand(v);
+      stage = ShapeDataStage::read_data;
+      // do not break
+
+    case ShapeDataStage::read_data:
+      if (!shape->write(v)) {
+        p.send(shape);
+        shape = NULL;
+      }
+      break;
   }
 }
 
 
-OpenGLScope::~OpenGLScope() {
-  glfwTerminate();
+u32 GPU::GP0::read() {
+  return 0;
+}
+
+
+void GPU::GP1::write(u32 v) {}
+
+
+u32 GPU::GP1::read() {
+  return p.status.v;
 }
 
 

@@ -8,7 +8,8 @@ Bus::Bus(MMU& _mmu, IrqReceiver* _ir)
 : mmu(_mmu), ir(_ir), dmadev{0}, dma_dpcr{0}, irq_status(0), irq_mask(0) 
 {
   io = new DeviceIO*[io_map_size];
-  for (int i=0; i<io_map_size; ++i) {
+  io[0] = NULL;
+  for (int i=1; i<io_map_size; ++i) {
     io[i] = &nullio;
   }
 }
