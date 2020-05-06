@@ -22,7 +22,7 @@ using namespace ps1e;
 #endif
 
 
-void test_cpu_help() {
+static void test_cpu_help() {
   printf("  h : show help\n\
   r : reset\n\
   n : run next 10 instruction\n\
@@ -35,7 +35,7 @@ void test_cpu_help() {
 // https://alanhogan.com/asu/assembler.php
 // https://github.com/oscourse-tsinghua/cpu-testcase
 // https://github.com/YurongYou/MIPS-CPU-Test-Cases
-void test_mips() {
+static void test_mips() {
   tsize(sizeof(instruction_st::R), 4, "mips instruction struct R");
   tsize(sizeof(instruction_st::J), 4, "mips instruction struct J");
   tsize(sizeof(instruction_st::I), 4, "mips instruction struct I");
@@ -43,20 +43,7 @@ void test_mips() {
 }
 
 
-void test_mips_inter() {
-  MemJit mmjit;
-  MMU mmu(mmjit);
-  if (!mmu.loadBios("demo/SCPH1000.BIN")) {
-    panic("load bios fail");
-  }
-
-  Bus bus(mmu);
-  GPU gpu(bus);
-  InterpreterMips t(bus);
-  bus.bind_irq_receiver(&t);
-  t.reset();
-  test_cpu_help();
-
+static void debug_cpu(InterpreterMips& t) {
   for (;;) {
     int c = _getc();
     switch (c) {
@@ -110,6 +97,38 @@ void test_mips_inter() {
         warn("Unknow %c(%x)\n", c, c);
         test_cpu_help();
         break;
+    }
+  }
+}
+
+
+void test_mips_inter() {
+  MemJit mmjit;
+  MMU mmu(mmjit);
+  if (!mmu.loadBios("demo/SCPH1000.BIN")) {
+    panic("load bios fail");
+  }
+
+  Bus bus(mmu);
+  GPU gpu(bus);
+  InterpreterMips t(bus);
+  bus.bind_irq_receiver(&t);
+  t.reset();
+  test_cpu_help();
+  test_gpu(gpu, bus);
+
+  for (;;); //!! À¿—≠ª∑
+
+  if (0) {
+    debug_cpu(t);
+  } else {
+    t.__show_interpreter = 0;
+    for (;;) {
+      t.next();
+      if (t.has_exception()) {
+        warn("Got Exception");
+        break;
+      }
     }
   }
 }

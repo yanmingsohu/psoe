@@ -23,7 +23,7 @@ void test_disassembly();
 void test_cpu();
 void test_jit();
 void test_util();
-void test_gpu();
+void test_gpu(ps1e::GPU& gpu, ps1e::Bus& bus);
 void test_dma();
 
 }

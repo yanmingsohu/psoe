@@ -1,5 +1,7 @@
 #pragma once
 
+#include <list>
+
 #include "util.h"
 #include "dma.h"
 #include "bus.h"
@@ -11,6 +13,12 @@ namespace std {
 }
 
 namespace ps1e {
+
+class GPU;
+class MonoColorPolygonShader;
+
+typedef u32 GLHANDLE;
+typedef const char* ShaderSrc;
 
 union GpuStatus {
   u32 v;
@@ -55,11 +63,11 @@ union GpuCommand {
 };
 
 
-struct GpuDataColor {
-  u32 red   : 8;
-  u32 green : 8;
-  u32 blue  : 8;
-  u32 _0    : 8;
+struct GpuDataRange {
+  u16 width;
+  u16 height;
+
+  GpuDataRange(u32 w, u32 h);
 };
 
 
@@ -89,7 +97,9 @@ public:
   // 写入命令数据(包含第一次的命令数据), 如果改形状已经读取全部数据则返回 false
   virtual bool write(const u32 c) = 0;
   // 一旦数据全部读取, 则构建 opengl 缓冲区用于绘制
-  virtual void build() = 0;
+  virtual void build(GPU&) = 0;
+  // 绘制图像
+  virtual void draw(GPU&) = 0;
 };
 
 
@@ -105,18 +115,31 @@ public:
 };
 
 
-class GPU : public DMADev {
-public:
-
+class OpenGLShader {
 private:
+  GLHANDLE program;
+  GLHANDLE createShader(ShaderSrc src, u32 shader_flag);
+  int getUniform(const char* name);
 
+public:
+  OpenGLShader(ShaderSrc vertex, ShaderSrc fragment);
+  virtual ~OpenGLShader();
+
+  void use();
+  void setUint(const char* name, u32 v);
+  void setFloat(const char* name, float v);
+};
+
+
+class GPU : public DMADev {
+private:
   class GP0 : public DeviceIO {
     GPU &p;
     ShapeDataStage stage;
     IDrawShape *shape;
   public:
     GP0(GPU &_p) : p(_p), stage(ShapeDataStage::read_command), shape(0) {}
-    void parseCommand(const GpuCommand c);
+    bool parseCommand(const GpuCommand c);
     void write(u32 value);
     u32 read();
   };
@@ -130,23 +153,30 @@ private:
     u32 read();
   };
 
-
+private:
   GP0 gp0;
   GP1 gp1;
   u32 cmd_respons;
   GpuStatus status;
   GLFWwindow* glwindow;
   std::thread* work;
+  GpuDataRange screen;
+  GpuDataRange ps;
+  std::list<IDrawShape*> build;
+  std::list<IDrawShape*> shapes;
 
   // 这是gpu线程函数, 不要调用
   void gpu_thread();
+  void initOpenGL();
 
 public:
   GPU(Bus& bus);
   ~GPU();
 
   // 发送可绘制图形
-  void send(IDrawShape* s);
+  void send(IDrawShape* s) {
+    build.push_back(s);
+  }
 
   virtual DmaDeviceNum number() {
     return DmaDeviceNum::gpu;
@@ -155,6 +185,16 @@ public:
   virtual bool support(dma_chcr_dir dir) {
     //TODO: 做完gpu寄存器
     return false;
+  }
+
+  // 返回已经缓冲的着色器程序
+  template<class Shader> OpenGLShader* getProgram() {
+    static Shader instance;
+    return &instance;
+  }
+
+  GpuDataRange* screen_range() {
+    return &screen;
   }
 };
 

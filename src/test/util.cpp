@@ -108,7 +108,30 @@ void test_io_mirrors() {
 }
 
 
+class StaticVar {
+public:
+  ~StaticVar() {
+    debug("static released\n");
+  }
+  StaticVar() {
+    debug("static init\n");
+  }
+};
+
+
+class StaticInClass {
+public:
+  StaticVar* init() {
+    static StaticVar v;
+    return &v;
+  }
+};
+
+
 void test_util() {
+  //static StaticVar v;
+  StaticInClass sic;
+  sic.init();
   //inner_window_on_console();
   test_mem_jit();
   test_overflow();

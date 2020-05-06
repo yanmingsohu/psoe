@@ -35,7 +35,6 @@ int main() {
   
   OpenGLScope opengl;
   test_util();
-  test_cpu();
   test_jit();
   test_dma();
   test_disassembly();
