@@ -48,7 +48,7 @@ void test_gpu(GPU& gpu, Bus& bus) {
   for (int i=0; i<20; ++i) {
     bus.write32(gp0, Color(0x20, 0x70, 0x70, 0x8*i).v);
     bus.write32(gp0, pos(100, 10).v);
-    bus.write32(gp0, pos(30, 100+i*30).v);
+    bus.write32(gp0, pos(300, 100+i*30).v);
     bus.write32(gp0, pos(160, 100).v);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }

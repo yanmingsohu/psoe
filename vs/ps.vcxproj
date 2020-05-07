@@ -23,6 +23,7 @@
     <ClInclude Include="..\src\asm_x86-64.h" />
     <ClInclude Include="..\src\bus.h" />
     <ClInclude Include="..\src\cpu.h" />
+    <ClInclude Include="..\src\gpu_shader.h" />
     <ClInclude Include="..\src\inter.h" />
     <ClInclude Include="..\src\dma.h" />
     <ClInclude Include="..\src\gpu.h" />
@@ -39,7 +40,6 @@
     <ClCompile Include="..\src\dma.cpp" />
     <ClCompile Include="..\src\gpu.cpp" />
     <ClCompile Include="..\src\gpu_shader.cpp" />
-    <ClCompile Include="..\src\gpu_shader.h" />
     <ClCompile Include="..\src\gpu_sp.cpp" />
     <ClCompile Include="..\src\mem.cpp" />
     <ClCompile Include="..\src\mips.cpp" />

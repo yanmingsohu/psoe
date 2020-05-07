@@ -50,6 +50,9 @@
     <ClInclude Include="..\src\io.h">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\gpu_shader.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">
@@ -79,13 +82,10 @@
     <ClCompile Include="..\src\bus.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\gpu_shader.h">
-      <Filter>header</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\gpu_shader.cpp">
+    <ClCompile Include="..\src\gpu_sp.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\gpu_sp.cpp">
+    <ClCompile Include="..\src\gpu_shader.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

@@ -28,7 +28,7 @@ union GpuStatus {
     u32 abr       : 2; //5-6 半透明 0{0.5xB+0.5xF}, 1{1.0xB+1.0xF}, 2{1.0xB-1.0xF}, 3{1.0xB+0.25xF}
     u32 tp        : 2; //7-8 纹理页颜色模式 0{4bit CLUT}, 1{8bit CLUT}, 2:{15bit}
     u32 dtd       : 1; //  9 1:开启抖动Dither, 24抖15
-    u32 draw      : 1; // 10 1:Draw to display area allowed, 0:prohibited
+    u32 draw      : 1; // 10 1:允许绘图命令绘制显示区域, 0:prohibited
     u32 mask      : 1; // 11 1:绘制时修改蒙板bit (bit15?)
     u32 enb_msk   : 1; // 12 1:启用蒙板, 只能绘制到蒙板区域
     u32 inter_f   : 1; // 13 always 1 when GP1(08h).5=0

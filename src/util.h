@@ -26,6 +26,7 @@ namespace ps1e {
 #define NOT(x)        (!(x))
 #define RED(s)        "\x1b[31m" s "\033[0m"
 #define BLUE(s)       "\x1b[34m" s "\033[0m"
+#define MAGENTA(s)    "\x1b[35m" s "\033[0m"
 #define SIGNEL_MASK32 0b1000'0000'0000'0000'0000'0000'0000'0000
 #define SIGNEL_MASK16 0b1000'0000'0000'0000
 #define SIGNEL_MASK8  0b1000'0000
@@ -165,10 +166,11 @@ template<class T> inline T setbit_with_mask(T reserve, T set, T reserveMask) {
 }
 
 
-bool   check_little_endian();
-void*  melloc_exec(size_t size, void* near = 0);
-bool   free_exec(void* p, size_t size = 0);
-size_t get_page_size();
+bool    check_little_endian();
+void*   melloc_exec(size_t size, void* near = 0);
+bool    free_exec(void* p, size_t size = 0);
+size_t  get_page_size();
+void    print_code(const char* src);
 
 void debug(const char* format, ...);
 void info(const char* format, ...);

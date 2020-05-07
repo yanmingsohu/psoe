@@ -3,6 +3,7 @@
 #include <exception>
 #include <new>
 #include <stdexcept>
+#include <string.h>
 
 #if defined(LINUX) || defined(MACOS)
 #include <sys/mman.h>
@@ -206,6 +207,34 @@ void MemJit::free(void* p) {
     }
     addr_list.erase(it->second);
     delete bl;
+  }
+}
+
+
+void print_code(const char* src) {
+  char buf[255];
+  int i = 0;
+  int s = 0;
+  int line = 1;
+
+  for (char ch = src[i]; ch != '\0'; ch = src[++i]) {
+    if (ch == '\n' || ch == '\r') {
+      if (i > s) {
+        int len = min(i-s, sizeof(buf));
+        memcpy(buf, &src[s], len);
+        buf[len] = '\0';
+        printf(MAGENTA("%4d |")" %s\n", line, buf);
+      } else {
+        printf(MAGENTA("%4d |")" \n", line);
+      }
+      ++line;
+      s = i+1;
+    }
+  }
+  if (s < i) {
+    printf(MAGENTA("%4d |")" %s\n", line, &src[s]);
+  } else {
+    printf(MAGENTA("%4d |")" \n", line);
   }
 }
 

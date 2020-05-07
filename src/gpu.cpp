@@ -176,9 +176,11 @@ GLHANDLE OpenGLShader::createShader(ShaderSrc src, u32 shader_flag) {
   int success;
   glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
   if (!success) {
-    char info[0xFFF];
+    char info[GL_INFO_LOG_LENGTH];
     glGetShaderInfoLog(shader, sizeof(info), NULL, info);
-    error("Shader Fail: \n%s\n%s\n", src, info);
+    error("<----- ----- ----- Shader Fail ----- ----- ----->\n");
+    print_code(src);
+    error("%s\n", info);
     throw std::runtime_error(info);
   }
   return shader;

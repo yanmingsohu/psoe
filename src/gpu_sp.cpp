@@ -55,8 +55,8 @@ public:
     prog->use();
     prog->setUint("width", gpu.screen_range()->width);
     prog->setUint("height", gpu.screen_range()->height);
-    prog->setUint("color", color);
     prog->setFloat("transparent", transparent);
+    prog->setUint("ps_color", color);
     
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, Count);
