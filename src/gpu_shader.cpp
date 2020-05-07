@@ -54,8 +54,35 @@ void main() {
 )shader";
 
 
+static ShaderSrc draw_virtual_screen_vertex = R"shader(
+#version 330 core
+layout (location = 0) in vec2 pos;
+layout (location = 1) in vec2 coord;
+out vec2 TexCoord;
+
+void main() {
+  gl_Position = vec4(pos.x, pos.y, 0, 1.0);
+  TexCoord = coord;
+}
+)shader";
+
+
+static ShaderSrc draw_virtual_screen_frag = R"shader(
+#version 330 core
+out vec4 FragColor;
+uniform sampler2D text;
+in vec2 TexCoord;
+  
+void main() {
+  FragColor = texture(text, TexCoord);
+}
+)shader";
+
+
 ShaderSrc MonoColorPolygonShader::vertex = mono_color_polygon_vertex;
 ShaderSrc MonoColorPolygonShader::frag = color_polygon_frag;
 
+ShaderSrc VirtualScreenShader::vertex = draw_virtual_screen_vertex;
+ShaderSrc VirtualScreenShader::frag = draw_virtual_screen_frag;
 
 }

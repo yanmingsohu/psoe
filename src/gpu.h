@@ -5,6 +5,7 @@
 #include "util.h"
 #include "dma.h"
 #include "bus.h"
+#include "opengl-wrap.h"
 
 struct GLFWwindow;
 
@@ -16,9 +17,8 @@ namespace ps1e {
 
 class GPU;
 class MonoColorPolygonShader;
+class VirtualScreenShader;
 
-typedef u32 GLHANDLE;
-typedef const char* ShaderSrc;
 
 union GpuStatus {
   u32 v;
@@ -96,8 +96,6 @@ public:
   virtual ~IDrawShape() {}
   // 写入命令数据(包含第一次的命令数据), 如果改形状已经读取全部数据则返回 false
   virtual bool write(const u32 c) = 0;
-  // 一旦数据全部读取, 则构建 opengl 缓冲区用于绘制
-  virtual void build(GPU&) = 0;
   // 绘制图像
   virtual void draw(GPU&) = 0;
 };
@@ -115,19 +113,28 @@ public:
 };
 
 
-class OpenGLShader {
+// 所有图形都绘制到虚拟缓冲区, 然后再绘制到物理屏幕上
+class VirtualFrameBuffer {
+public:
+  static const int Width  = 1024;
+  static const int Height = 512;
+
 private:
-  GLHANDLE program;
-  GLHANDLE createShader(ShaderSrc src, u32 shader_flag);
-  int getUniform(const char* name);
+  GLVertexArrays vao;
+  GLVerticesBuffer vbo;
+  GLFrameBuffer frame_buffer;
+  GLTexture virtual_screen;
+  GLRenderBuffer rbo;
+  int multiple;
+  const int width, height;
+  VirtualScreenShader* shader;
+  GLDrawState ds;
 
 public:
-  OpenGLShader(ShaderSrc vertex, ShaderSrc fragment);
-  virtual ~OpenGLShader();
-
-  void use();
-  void setUint(const char* name, u32 v);
-  void setFloat(const char* name, float v);
+  VirtualFrameBuffer(int _multiple=1);
+  ~VirtualFrameBuffer();
+  void drawShape();
+  void drawScreen();
 };
 
 

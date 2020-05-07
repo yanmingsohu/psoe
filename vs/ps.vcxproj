@@ -30,6 +30,7 @@
     <ClInclude Include="..\src\io.h" />
     <ClInclude Include="..\src\mem.h" />
     <ClInclude Include="..\src\mips.h" />
+    <ClInclude Include="..\src\opengl-wrap.h" />
     <ClInclude Include="..\src\system.h" />
     <ClInclude Include="..\src\util.h" />
     <ClCompile Include="..\src\bus.cpp" />
@@ -43,6 +44,7 @@
     <ClCompile Include="..\src\gpu_sp.cpp" />
     <ClCompile Include="..\src\mem.cpp" />
     <ClCompile Include="..\src\mips.cpp" />
+    <ClCompile Include="..\src\opengl-wrap.cpp" />
     <ClCompile Include="..\src\system.cpp" />
     <ClCompile Include="..\src\util.cpp" />
   </ItemGroup>

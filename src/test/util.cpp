@@ -128,9 +128,17 @@ public:
 };
 
 
+static auto test_scope() {
+  return createFuncLocal([]{
+    printf("test_scope\n");
+  });
+}
+
+
 void test_util() {
   //static StaticVar v;
   StaticInClass sic;
+  //auto l = test_scope();
   sic.init();
   //inner_window_on_console();
   test_mem_jit();

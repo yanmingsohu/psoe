@@ -56,7 +56,7 @@ WIP
 * [Sound API](https://github.com/jarikomppa/soloud) @
 * [OpenGL GUI](https://github.com/wjakob/nanogui) @
 
-  ? May be removed
+  ? May be removed  
   @ not install
 
 

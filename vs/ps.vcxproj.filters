@@ -53,6 +53,9 @@
     <ClInclude Include="..\src\gpu_shader.h">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\opengl-wrap.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">
@@ -86,6 +89,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\gpu_shader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\opengl-wrap.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

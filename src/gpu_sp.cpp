@@ -15,14 +15,12 @@ private:
   u32 color;
   float transparent;
   int step;
-  GLHANDLE vao;
-  GLHANDLE vbo;
+  GLVertexArrays vao;
+  GLVerticesBuffer vbo;
 
 public:
   MonoPolygon(float trans) : transparent(trans), step(0) {}
   ~MonoPolygon() {
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
   }
 
   virtual bool write(const u32 c) {
@@ -40,17 +38,16 @@ public:
     return ++step <= Count;
   }
 
-  virtual void build(GPU& gpu) {
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, EleCount, GL_FLOAT, GL_FALSE, EleCount * sizeof(u32), 0);
-    glEnableVertexAttribArray(0);
-  }
-
   virtual void draw(GPU& gpu) {
+    vao.init();
+    auto vaosc = gl_scope(vao);
+
+    vbo.init(vao);
+    auto vbosc = gl_scope(vbo);
+
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, EleCount, EleCount);
+
     OpenGLShader* prog = gpu.getProgram<MonoColorPolygonShader>();
     prog->use();
     prog->setUint("width", gpu.screen_range()->width);
@@ -58,8 +55,8 @@ public:
     prog->setFloat("transparent", transparent);
     prog->setUint("ps_color", color);
     
-    glBindVertexArray(vao);
-    glDrawArrays(GL_TRIANGLES, 0, Count);
+    vao.addIndices(Count);
+    vao.drawTriangles();
   }
 };
 

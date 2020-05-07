@@ -79,25 +79,20 @@ GPU::~GPU() {
 
 
 void GPU::gpu_thread() {
-  glfwMakeContextCurrent(glwindow);
   u32 frames = 0;
-
-  // 必须清除一次缓冲区, 否则绘制失败
-  glClearColor(0, 0, 0, 0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glfwMakeContextCurrent(glwindow);
+  VirtualFrameBuffer vfb(1);
 
   while (!glfwWindowShouldClose(glwindow)) {
+    vfb.drawShape();
     while (build.size()) {
       IDrawShape *sp = build.front();
-      sp->build(*this);
-      shapes.push_back(sp);
+      sp->draw(*this);
       build.pop_front();
     }
 
-    for (auto sh : shapes) {
-      sh->draw(*this);
-    }
-
+    //glViewport(0, 0, screen.width, screen.height);
+    vfb.drawScreen();
     glfwSwapBuffers(glwindow);
     glfwPollEvents();
     transport();
@@ -139,80 +134,69 @@ u32 GPU::GP1::read() {
 }
 
 
-OpenGLShader::OpenGLShader(ShaderSrc vertex_src, ShaderSrc fragment_src) {
-  program = glCreateProgram();
-  if (!program) {
-    error("OpenGL error %d\n", glGetError());
-    throw std::runtime_error("Cannot create shader program");
-  }
-  GLHANDLE vertexShader = createShader(vertex_src, GL_VERTEX_SHADER);
-  GLHANDLE fragShader = createShader(fragment_src, GL_FRAGMENT_SHADER);
-  glAttachShader(program, vertexShader);
-  glAttachShader(program, fragShader);
-  glLinkProgram(program);
+static void initBoxVertices(float* vertices) {
+  float v[] = {
+    -1.0f,  1.0f,     0.0f, 1.0f,
+    -1.0f, -1.0f,     0.0f, 0.0f,
+     1.0f, -1.0f,     1.0f, 0.0f,
 
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragShader);  
-
-  int success;
-  glGetProgramiv(program, GL_LINK_STATUS, &success);
-  if(!success) {
-    char info[0xFFF];
-    glGetProgramInfoLog(program, sizeof(info), NULL, info);
-    error("Program Fail: %s\n", info);
-    throw std::runtime_error(info);
-  }
+    -1.0f,  1.0f,     0.0f, 1.0f,
+     1.0f, -1.0f,     1.0f, 0.0f,
+     1.0f,  1.0f,     1.0f, 1.0f
+  };
+  memcpy(vertices, v, sizeof(v));
 }
 
 
-GLHANDLE OpenGLShader::createShader(ShaderSrc src, u32 shader_flag) {
-  GLHANDLE shader = glCreateShader(shader_flag);
-  if (!shader) {
-    throw std::runtime_error("Cannot create shader object");
-  }
-  glShaderSource(shader, 1, &src, NULL);
-  glCompileShader(shader);
+VirtualFrameBuffer::VirtualFrameBuffer(int _mul) : 
+    multiple(_mul), width(Width * _mul), height(Height * _mul), ds(0.03)
+{
+  vao.init();
+  auto sc = gl_scope(vao);
+  vbo.init(vao);
+  auto sb = gl_scope(vbo);
+  
+  float vertices[4*6];
+  const int UZ = sizeof(float);
+  initBoxVertices(vertices);
+  GLBufferData bd(vbo, vertices, sizeof(vertices));
+  bd.floatAttr(0, 2, 4, 0);
+  bd.floatAttr(1, 2, 4, 2);
+  vao.addIndices(6);
 
-  int success;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    char info[GL_INFO_LOG_LENGTH];
-    glGetShaderInfoLog(shader, sizeof(info), NULL, info);
-    error("<----- ----- ----- Shader Fail ----- ----- ----->\n");
-    print_code(src);
-    error("%s\n", info);
-    throw std::runtime_error(info);
-  }
-  return shader;
+  frame_buffer.init(width, height);
+  auto sf = gl_scope(frame_buffer);
+  virtual_screen.init(frame_buffer);
+  auto st = gl_scope(virtual_screen);
+  rbo.init(frame_buffer);
+  frame_buffer.check();
+  ds.clear(0, 0, 0);
+
+  shader = new VirtualScreenShader();
 }
 
 
-OpenGLShader::~OpenGLShader() {
-  glDeleteProgram(program);
+VirtualFrameBuffer::~VirtualFrameBuffer() {
+  delete shader;
 }
 
 
-void OpenGLShader::use() {
-  glUseProgram(program);
+void VirtualFrameBuffer::drawShape() {
+  frame_buffer.bind();
+  ds.clearDepth();
+  ds.setDepthTest(true);
+  ds.viewport(0, 0, width, height);
 }
 
 
-int OpenGLShader::getUniform(const char* name) {
-  int loc = glGetUniformLocation(program, name);
-  if (loc < 0) {
-    throw std::runtime_error("Cannot get Uniform location.");
-  }
-  return loc;
-}
-
-
-void OpenGLShader::setUint(const char* name, u32 v) {
-  glUniform1ui(getUniform(name), v);
-}
-
-
-void OpenGLShader::setFloat(const char* name, float v) {
-  glUniform1f(getUniform(name), v);
+void VirtualFrameBuffer::drawScreen() {
+  frame_buffer.unbind();
+  ds.clear();
+  shader->use();
+  auto vc = gl_scope(vao);
+  auto vt = gl_scope(virtual_screen);
+  ds.setDepthTest(false);
+  vao.drawTriangles();
 }
 
 

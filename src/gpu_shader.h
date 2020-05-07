@@ -15,4 +15,14 @@ public:
 };
 
 
+class VirtualScreenShader : public OpenGLShader {
+private:
+  static ShaderSrc vertex;
+  static ShaderSrc frag;
+
+public:
+  VirtualScreenShader() : OpenGLShader(vertex, frag) {}
+};
+
+
 }

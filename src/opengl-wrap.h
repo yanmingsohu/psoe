@@ -1,0 +1,152 @@
+#pragma once
+
+#include "util.h"
+
+namespace ps1e {
+
+
+typedef u32 GLHANDLE;
+typedef const char* ShaderSrc;
+
+
+template<class GlUnBindClass>
+class GLBindScope {
+private:
+  GlUnBindClass& obj;
+  bool unbinded;
+public:
+  GLBindScope(GlUnBindClass& t) : obj(t), unbinded(false) {
+    obj.bind();
+  }
+
+  ~GLBindScope() { 
+    unbind(); 
+  }
+
+  // 一定会调用一次
+  void unbind() {
+    obj.unbind();
+  }
+
+  GlUnBindClass& operator->() {
+    return obj;
+  }
+};
+
+
+template<class C>
+GLBindScope<C> gl_scope(C& obj) {
+  return GLBindScope<C>(obj);
+}
+
+
+class GLVertexArrays {
+private:
+  GLHANDLE vao;
+  u32 indices_count;
+public:
+  GLVertexArrays();
+  ~GLVertexArrays();
+  void init();
+  void bind();
+  void unbind();
+  // type : GL_TRIANGLES ...
+  void drawTriangles();
+  void addIndices(u32 count);
+};
+
+
+class GLVerticesBuffer {
+private:
+  GLHANDLE vbo;
+public:
+  GLVerticesBuffer();
+  ~GLVerticesBuffer();
+  void init(GLVertexArrays&);
+  void bind();
+  void unbind();
+};
+
+
+class GLFrameBuffer {
+private:
+  GLHANDLE fbo;
+  int w, h;
+public:
+  GLFrameBuffer();
+  ~GLFrameBuffer();
+  void init(int width, int height);
+  void bind();
+  void unbind();
+  int width() { return w; }
+  int height() { return h; }
+  void check();
+};
+
+
+class GLBufferData {
+private:
+  GLVerticesBuffer& vbo;
+public:
+  GLBufferData(GLVerticesBuffer& b, void* data, size_t length);
+  void floatAttr(u32 location, u32 elementCount, u32 spaceCount, u32 beginCount = 0);
+  void uintAttr(u32 location, u32 elementCount, u32 spaceCount, u32 beginCount = 0);
+};
+
+
+class GLTexture {
+private:
+  GLHANDLE text;
+  
+public:
+  GLTexture();
+  ~GLTexture();
+  void init(GLFrameBuffer&, void* pixeldata = 0);
+  void bind();
+  void unbind();
+};
+
+
+class GLRenderBuffer {
+private:
+  GLHANDLE rb;
+public:
+  GLRenderBuffer();
+  ~GLRenderBuffer();
+  void init(GLFrameBuffer&);
+  void bind();
+  void unbind();
+};
+
+
+class OpenGLShader {
+private:
+  GLHANDLE program;
+  GLHANDLE createShader(ShaderSrc src, u32 shader_flag);
+  int getUniform(const char* name);
+
+public:
+  OpenGLShader(ShaderSrc vertex, ShaderSrc fragment);
+  virtual ~OpenGLShader();
+
+  void use();
+  void setUint(const char* name, u32 v);
+  void setFloat(const char* name, float v);
+};
+
+
+class GLDrawState {
+private:
+  const float r, g, b, a;
+public:
+  GLDrawState(float c, float aa = 1) : r(c), g(c), b(c), a(aa) {}
+  GLDrawState(float rr, float gg, float bb, float aa = 1) : r(rr), g(gg), b(bb), a(aa) {}
+  void clear();
+  void clear(float r, float g, float b, float a = 1);
+  void clearDepth();
+  void setDepthTest(const bool);
+  void viewport(int x, int y, int w, int h);
+};
+
+
+}
