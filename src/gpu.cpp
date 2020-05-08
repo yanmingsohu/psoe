@@ -1,5 +1,4 @@
 #include <stdexcept>
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <thread>
 #include "gpu.h"
@@ -8,30 +7,9 @@
 namespace ps1e {
 
 
-OpenGLScope::OpenGLScope() {
-  if(gladLoadGL()) {
-    throw std::runtime_error("I did load GL with no context!\n");
-  }
-  if (!glfwInit()) {
-    throw std::runtime_error("Cannot init OpenGLfw");
-  }
-}
-
-
-OpenGLScope::~OpenGLScope() {
-  glfwTerminate();
-}
-
-
-GpuDataRange::GpuDataRange(u32 w, u32 h) : width(w), height(h) {
-  if (w > 0xffff) throw std::out_of_range("width");
-  if (h > 0xffff) throw std::out_of_range("height");
-}
-
-
 GPU::GPU(Bus& bus) : 
-    DMADev(bus, DmaDeviceNum::gpu), status{0}, screen(0,0), ps(255,255),
-    gp0(*this), gp1(*this), cmd_respons(0) 
+    DMADev(bus, DmaDeviceNum::gpu), status{0}, screen{0,0,0,0}, ps{0,0,320,240},
+    gp0(*this), gp1(*this), cmd_respons(0), vfb(1), ds(0)
 {
   initOpenGL();
 
@@ -45,9 +23,8 @@ GPU::GPU(Bus& bus) :
 void GPU::initOpenGL() {
   GLFWmonitor* monitor = glfwGetPrimaryMonitor();
   const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-  screen = GpuDataRange(mode->width, mode->height);
+  screen = GpuDataRange(0, 0, mode->width, mode->height);
 
-  glfwWindowHint(GLFW_SAMPLES, 4);
   glwindow = glfwCreateWindow(screen.width, screen.height, "Playstation1 EMU", NULL, NULL);
   if (!glwindow) {
     throw std::runtime_error("Cannot create GL window");
@@ -55,14 +32,14 @@ void GPU::initOpenGL() {
   glfwSetWindowPos(glwindow, 0, 0);
   
   glfwMakeContextCurrent(glwindow);
-  if(! gladLoadGLLoader((GLADloadproc)glfwGetProcAddress) ) {
-    throw std::runtime_error("Cannot init OpenGLAD");
-  }
-  info("PS1 GPU used OpenGL %d.%d\n", GLVersion.major, GLVersion.minor);
+  ds.initGlad();
   
-  glViewport(0, 0, screen.width, screen.height);
-  glEnable(GL_MULTISAMPLE);
-  glEnable(GL_DEPTH_TEST);
+  ds.viewport(&screen);
+  ds.setMultismple(true, 4);
+  ds.setDepthTest(true);
+
+  vfb.init();
+  frame = vfb.size();
 
   // 必须释放 gl 上下文, 另一个线程才能绑定.
   glfwMakeContextCurrent(NULL);
@@ -81,7 +58,6 @@ GPU::~GPU() {
 void GPU::gpu_thread() {
   u32 frames = 0;
   glfwMakeContextCurrent(glwindow);
-  VirtualFrameBuffer vfb(1);
 
   while (!glfwWindowShouldClose(glwindow)) {
     vfb.drawShape();
@@ -91,7 +67,7 @@ void GPU::gpu_thread() {
       build.pop_front();
     }
 
-    //glViewport(0, 0, screen.width, screen.height);
+    //ds.viewport(&screen);
     vfb.drawScreen();
     glfwSwapBuffers(glwindow);
     glfwPollEvents();
@@ -151,10 +127,14 @@ static void initBoxVertices(float* vertices) {
 VirtualFrameBuffer::VirtualFrameBuffer(int _mul) : 
     multiple(_mul), width(Width * _mul), height(Height * _mul), ds(0.03)
 {
+}
+
+
+void VirtualFrameBuffer::init() {
   vao.init();
-  auto sc = gl_scope(vao);
+  gl_scope(vao);
   vbo.init(vao);
-  auto sb = gl_scope(vbo);
+  gl_scope(vbo);
   
   float vertices[4*6];
   const int UZ = sizeof(float);
@@ -165,9 +145,10 @@ VirtualFrameBuffer::VirtualFrameBuffer(int _mul) :
   vao.addIndices(6);
 
   frame_buffer.init(width, height);
-  auto sf = gl_scope(frame_buffer);
+  gl_scope(frame_buffer);
   virtual_screen.init(frame_buffer);
-  auto st = gl_scope(virtual_screen);
+  gl_scope(virtual_screen);
+
   rbo.init(frame_buffer);
   frame_buffer.check();
   ds.clear(0, 0, 0);
@@ -193,10 +174,15 @@ void VirtualFrameBuffer::drawScreen() {
   frame_buffer.unbind();
   ds.clear();
   shader->use();
-  auto vc = gl_scope(vao);
-  auto vt = gl_scope(virtual_screen);
+  gl_scope(vao);
+  gl_scope(virtual_screen);
   ds.setDepthTest(false);
   vao.drawTriangles();
+}
+
+
+GpuDataRange VirtualFrameBuffer::size() {
+  return GpuDataRange(0, 0, width, height);
 }
 
 

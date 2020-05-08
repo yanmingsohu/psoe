@@ -1,16 +1,12 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include "gpu.h"
 #include "gpu_shader.h"
 
 namespace ps1e {
 
 
-template<int Count>
+template<int Count, int EleCount = 1>
 class MonoPolygon : public IDrawShape {
 private:
-  static const int EleCount = 1;
   u32 vertices[EleCount *Count];
   u32 color;
   float transparent;
@@ -19,7 +15,9 @@ private:
   GLVerticesBuffer vbo;
 
 public:
-  MonoPolygon(float trans) : transparent(trans), step(0) {}
+  MonoPolygon(float trans) : transparent(trans), step(0) {
+  }
+
   ~MonoPolygon() {
   }
 
@@ -40,20 +38,16 @@ public:
 
   virtual void draw(GPU& gpu) {
     vao.init();
-    auto vaosc = gl_scope(vao);
+    gl_scope(vao);
 
     vbo.init(vao);
-    auto vbosc = gl_scope(vbo);
+    gl_scope(vbo);
 
     GLBufferData vbdata(vbo, vertices, sizeof(vertices));
     vbdata.uintAttr(0, EleCount, EleCount);
 
-    OpenGLShader* prog = gpu.getProgram<MonoColorPolygonShader>();
-    prog->use();
-    prog->setUint("width", gpu.screen_range()->width);
-    prog->setUint("height", gpu.screen_range()->height);
-    prog->setFloat("transparent", transparent);
-    prog->setUint("ps_color", color);
+    auto prog = gpu.useProgram<MonoColorPolygonShader>();
+    prog->setColor(transparent, color);
     
     vao.addIndices(Count);
     vao.drawTriangles();

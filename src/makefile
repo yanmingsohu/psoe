@@ -9,3 +9,6 @@ SOURCES += \
 	src/mips.cpp \
   src/dma.cpp \
   src/gpu.cpp \
+	src/gpu_shader.cpp \
+	src/gpu_sp.cpp \
+	src/opengl-wrap.cpp \

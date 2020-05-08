@@ -1,9 +1,26 @@
-#include "opengl-wrap.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 
+#include "opengl-wrap.h"
+#include "gpu.h"
+
 namespace ps1e {
+
+
+OpenGLScope::OpenGLScope() {
+  if(gladLoadGL()) {
+    throw std::runtime_error("I did load GL with no context!\n");
+  }
+  if (!glfwInit()) {
+    throw std::runtime_error("Cannot init OpenGLfw");
+  }
+}
+
+
+OpenGLScope::~OpenGLScope() {
+  glfwTerminate();
+}
 
 
 void GLVertexArrays::init() {
@@ -92,8 +109,9 @@ void GLFrameBuffer::unbind() {
 
 
 void GLFrameBuffer::check() {
-  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	    throw std::runtime_error("Framebuffer is not complete!");
+  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+	  throw std::runtime_error("Framebuffer is not complete!");
+  }
 }
 
 
@@ -239,22 +257,30 @@ void OpenGLShader::use() {
 }
 
 
-int OpenGLShader::getUniform(const char* name) {
+int OpenGLShader::_getUniform(const char* name) {
   int loc = glGetUniformLocation(program, name);
   if (loc < 0) {
-    throw std::runtime_error("Cannot get Uniform location.");
+    char buf[100];
+    sprintf(buf, "Cannot get Uniform location '%s'", name);
+    error("%s", buf);
+    throw std::runtime_error(buf);
   }
   return loc;
 }
 
 
-void OpenGLShader::setUint(const char* name, u32 v) {
-  glUniform1ui(getUniform(name), v);
+GLUniform OpenGLShader::getUniform(const char* name) {
+  return GLUniform(_getUniform(name));
 }
 
 
-void OpenGLShader::setFloat(const char* name, float v) {
-  glUniform1f(getUniform(name), v);
+void GLUniform::setUint(u32 v) {
+  glUniform1ui(uni, v);
+}
+
+
+void GLUniform::setFloat(float v) {
+  glUniform1f(uni, v);
 }
 
 
@@ -286,6 +312,30 @@ void GLDrawState::setDepthTest(const bool t) {
 
 void GLDrawState::viewport(int x, int y, int w, int h) {
   glViewport(x, y, w, h);
+}
+
+
+void GLDrawState::setMultismple(const bool t, int hint) {
+  if (t) {
+    glfwWindowHint(GLFW_SAMPLES, hint);
+    glEnable(GL_MULTISAMPLE);
+  } else {
+    glfwWindowHint(GLFW_SAMPLES, 0);
+    glDisable(GL_MULTISAMPLE);
+  }
+}
+
+
+void GLDrawState::viewport(GpuDataRange* r) {
+  viewport(r->offx, r->offy, r->width, r->height);
+}
+
+
+void GLDrawState::initGlad() {
+  if(! gladLoadGLLoader((GLADloadproc)glfwGetProcAddress) ) {
+    throw std::runtime_error("Cannot init OpenGLAD");
+  }
+  info("PS1 GPU used OpenGL %d.%d\n", GLVersion.major, GLVersion.minor);
 }
 
 

@@ -64,10 +64,11 @@ union GpuCommand {
 
 
 struct GpuDataRange {
-  u16 width;
-  u16 height;
+  u32 offx, offy, width, height;
 
-  GpuDataRange(u32 w, u32 h);
+  GpuDataRange(int x, int y, int w, int h)
+    : offx(x), offy(y), width(w), height(h) {}
+  GpuDataRange() : offx(0), offy(0), width(0), height(0) {}
 };
 
 
@@ -101,18 +102,6 @@ public:
 };
 
 
-// 首先声明该对象, 并在生命周期内使用 opengl 函数.
-class OpenGLScope {
-private:
-  OpenGLScope(OpenGLScope&);
-  OpenGLScope& operator=(OpenGLScope&);
-  
-public:
-  OpenGLScope();
-  ~OpenGLScope();
-};
-
-
 // 所有图形都绘制到虚拟缓冲区, 然后再绘制到物理屏幕上
 class VirtualFrameBuffer {
 public:
@@ -125,16 +114,18 @@ private:
   GLFrameBuffer frame_buffer;
   GLTexture virtual_screen;
   GLRenderBuffer rbo;
-  int multiple;
-  const int width, height;
   VirtualScreenShader* shader;
   GLDrawState ds;
+  int multiple;
+  const int width, height;
 
 public:
   VirtualFrameBuffer(int _multiple=1);
   ~VirtualFrameBuffer();
+  void init();
   void drawShape();
   void drawScreen();
+  GpuDataRange size();
 };
 
 
@@ -167,10 +158,13 @@ private:
   GpuStatus status;
   GLFWwindow* glwindow;
   std::thread* work;
-  GpuDataRange screen;
-  GpuDataRange ps;
+  GpuDataRange screen; // 物理屏幕尺寸
+  GpuDataRange ps;     // 显存中映射屏幕的范围
+  GpuDataRange frame;  // 整个显存
+  VirtualFrameBuffer vfb;
   std::list<IDrawShape*> build;
   std::list<IDrawShape*> shapes;
+  GLDrawState ds;
 
   // 这是gpu线程函数, 不要调用
   void gpu_thread();
@@ -195,8 +189,10 @@ public:
   }
 
   // 返回已经缓冲的着色器程序
-  template<class Shader> OpenGLShader* getProgram() {
+  template<class Shader> Shader* useProgram() {
     static Shader instance;
+    instance.use();
+    instance.update(ps, frame);
     return &instance;
   }
 
