@@ -64,7 +64,6 @@ template<class T, class Func> void _gl_scope(T& obj, Func func) {
 class GLVertexArrays {
 private:
   GLHANDLE vao;
-  u32 indices_count;
 public:
   GLVertexArrays();
   ~GLVertexArrays();
@@ -72,8 +71,9 @@ public:
   void bind();
   void unbind();
   // type : GL_TRIANGLES ...
-  void drawTriangles();
-  void addIndices(u32 count);
+  void drawTriangles(u32 count);
+  void drawLines(u32 count);
+  void drawTriangleFan(u32 indices_count);
 };
 
 
@@ -176,6 +176,7 @@ private:
 public:
   GLDrawState(float c, float aa = 1) : r(c), g(c), b(c), a(aa) {}
   GLDrawState(float rr, float gg, float bb, float aa = 1) : r(rr), g(gg), b(bb), a(aa) {}
+
   void clear();
   void clear(float r, float g, float b, float a = 1);
   void clearDepth();
@@ -183,6 +184,7 @@ public:
   void viewport(GpuDataRange*);
   void setDepthTest(const bool);
   void setMultismple(const bool, int hint = 4);
+  void setBlend(const bool);
   void initGlad();
 };
 

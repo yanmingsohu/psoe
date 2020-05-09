@@ -28,7 +28,7 @@ void GLVertexArrays::init() {
 }
 
 
-GLVertexArrays::GLVertexArrays() : vao(0), indices_count(0) {
+GLVertexArrays::GLVertexArrays() : vao(0) {
 }
 
 
@@ -47,13 +47,18 @@ void GLVertexArrays::unbind() {
 }
 
 
-void GLVertexArrays::drawTriangles() {
+void GLVertexArrays::drawTriangles(u32 indices_count) {
   glDrawArrays(GL_TRIANGLES, 0, indices_count);
 }
 
 
-void GLVertexArrays::addIndices(u32 c) {
-  indices_count += c;
+void GLVertexArrays::drawLines(u32 indices_count) {
+  glDrawArrays(GL_LINES, 0, indices_count);
+}
+
+
+void GLVertexArrays::drawTriangleFan(u32 indices_count) {
+  glDrawArrays(GL_TRIANGLE_FAN, 0, indices_count);
 }
 
 
@@ -322,6 +327,16 @@ void GLDrawState::setMultismple(const bool t, int hint) {
   } else {
     glfwWindowHint(GLFW_SAMPLES, 0);
     glDisable(GL_MULTISAMPLE);
+  }
+}
+
+
+void GLDrawState::setBlend(const bool t) {
+  if (t) {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  } else {
+    glDisable(GL_BLEND);
   }
 }
 

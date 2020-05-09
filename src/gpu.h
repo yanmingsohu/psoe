@@ -68,7 +68,10 @@ struct GpuDataRange {
 
   GpuDataRange(int x, int y, int w, int h)
     : offx(x), offy(y), width(w), height(h) {}
-  GpuDataRange() : offx(0), offy(0), width(0), height(0) {}
+  GpuDataRange() 
+    : offx(0), offy(0), width(0), height(0) {}
+  GpuDataRange(int a) 
+    : offx(a), offy(a), width(a), height(a) {}
 };
 
 
@@ -93,12 +96,15 @@ enum class ShapeDataStage {
 
 
 class IDrawShape {
+protected:
+  GLVerticesBuffer vbo;
+
 public:
   virtual ~IDrawShape() {}
   // 写入命令数据(包含第一次的命令数据), 如果改形状已经读取全部数据则返回 false
   virtual bool write(const u32 c) = 0;
   // 绘制图像
-  virtual void draw(GPU&) = 0;
+  virtual void draw(GPU&, GLVertexArrays& vao) = 0;
 };
 
 
@@ -116,16 +122,16 @@ private:
   GLRenderBuffer rbo;
   VirtualScreenShader* shader;
   GLDrawState ds;
+  GpuDataRange gsize;
   int multiple;
-  const int width, height;
 
 public:
-  VirtualFrameBuffer(int _multiple=1);
+  VirtualFrameBuffer(int _multiple =1);
   ~VirtualFrameBuffer();
   void init();
   void drawShape();
   void drawScreen();
-  GpuDataRange size();
+  GpuDataRange& size();
 };
 
 

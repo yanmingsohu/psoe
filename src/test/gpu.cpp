@@ -5,6 +5,9 @@
 
 namespace ps1e_t {
 using namespace ps1e;
+static const u32 gp0 = 0x1F80'1810;
+static const u32 gp1 = 0x1F80'1814;
+
 
 void gpu_basic() {
   tsize(sizeof(GpuStatus), 4, "gpu ctrl reg");
@@ -35,23 +38,43 @@ union Color {
 };
 
 
+static int random(int max, int min = 0) {
+  return rand() % (max - min) + min;
+}
+
+
+static void draw_p3_1(Bus& bus, int x, int y, int count, int cmd) {
+  for (int i=0; i<count; ++i) {
+    bus.write32(gp0, Color(cmd, random(0xff, 0x10), random(0xff, 0x10), 0x8*i).v);
+    bus.write32(gp0, pos(100+x, 10+y).v);
+    bus.write32(gp0, pos(200+x, (30+y)+i*30).v);
+    bus.write32(gp0, pos(11+x, 100+y).v);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+}
+
+
+static void draw_p4_1(Bus& bus, int x, int y, int cmd = 0x28) {
+  bus.write32(gp0, Color(cmd, 0,0xa0,0).v);
+  bus.write32(gp0, pos(30+x, 60+y).v);
+  bus.write32(gp0, pos(30+x, 30+y).v);
+  bus.write32(gp0, pos(60+x, 30+y).v);
+  bus.write32(gp0, pos(60+x, 60+y).v);
+}
+
+
 void test_gpu(GPU& gpu, Bus& bus) {
   gpu_basic();
-  const u32 gp0 = 0x1F80'1810;
-  const u32 gp1 = 0x1F80'1814;
   
   bus.write32(gp0, Color(0x20, 0xff,0,0).v);
-  bus.write32(gp0, pos(200, 300).v);
-  bus.write32(gp0, pos(300, 1080-300).v);
-  bus.write32(gp0, pos(1920-300, 1080-300).v);
-
-  for (int i=0; i<20; ++i) {
-    bus.write32(gp0, Color(0x20, 0x70, 0x70, 0x8*i).v);
-    bus.write32(gp0, pos(100, 10).v);
-    bus.write32(gp0, pos(300, 100+i*30).v);
-    bus.write32(gp0, pos(160, 100).v);
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
+  bus.write32(gp0, pos(80, 160).v);
+  bus.write32(gp0, pos(100, 100).v);
+  bus.write32(gp0, pos(120, 80).v);
+  
+  draw_p3_1(bus, 100, 100, 5, 0x20);
+  draw_p3_1(bus, 10, 10, 5, 0x22);
+  draw_p4_1(bus, 20, 20, 0x28);
+  draw_p4_1(bus, 50, 80, 0x2A);
 }
 
 }

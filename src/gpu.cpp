@@ -8,7 +8,7 @@ namespace ps1e {
 
 
 GPU::GPU(Bus& bus) : 
-    DMADev(bus, DmaDeviceNum::gpu), status{0}, screen{0,0,0,0}, ps{0,0,320,240},
+    DMADev(bus, DmaDeviceNum::gpu), status{0}, screen(0), ps{0,0,320,240},
     gp0(*this), gp1(*this), cmd_respons(0), vfb(1), ds(0)
 {
   initOpenGL();
@@ -37,6 +37,7 @@ void GPU::initOpenGL() {
   ds.viewport(&screen);
   ds.setMultismple(true, 4);
   ds.setDepthTest(true);
+  ds.setBlend(true);
 
   vfb.init();
   frame = vfb.size();
@@ -58,13 +59,16 @@ GPU::~GPU() {
 void GPU::gpu_thread() {
   u32 frames = 0;
   glfwMakeContextCurrent(glwindow);
+  GLVertexArrays vao;
 
   while (!glfwWindowShouldClose(glwindow)) {
     vfb.drawShape();
+
     while (build.size()) {
       IDrawShape *sp = build.front();
-      sp->draw(*this);
+      sp->draw(*this, vao);
       build.pop_front();
+      delete sp;
     }
 
     //ds.viewport(&screen);
@@ -125,7 +129,7 @@ static void initBoxVertices(float* vertices) {
 
 
 VirtualFrameBuffer::VirtualFrameBuffer(int _mul) : 
-    multiple(_mul), width(Width * _mul), height(Height * _mul), ds(0.03)
+    multiple(_mul), gsize(0, 0, Width * _mul, Height * _mul), ds(0.03)
 {
 }
 
@@ -142,9 +146,8 @@ void VirtualFrameBuffer::init() {
   GLBufferData bd(vbo, vertices, sizeof(vertices));
   bd.floatAttr(0, 2, 4, 0);
   bd.floatAttr(1, 2, 4, 2);
-  vao.addIndices(6);
 
-  frame_buffer.init(width, height);
+  frame_buffer.init(gsize.width, gsize.height);
   gl_scope(frame_buffer);
   virtual_screen.init(frame_buffer);
   gl_scope(virtual_screen);
@@ -166,7 +169,7 @@ void VirtualFrameBuffer::drawShape() {
   frame_buffer.bind();
   ds.clearDepth();
   ds.setDepthTest(true);
-  ds.viewport(0, 0, width, height);
+  ds.viewport(&gsize);
 }
 
 
@@ -177,12 +180,12 @@ void VirtualFrameBuffer::drawScreen() {
   gl_scope(vao);
   gl_scope(virtual_screen);
   ds.setDepthTest(false);
-  vao.drawTriangles();
+  vao.drawTriangles(6);
 }
 
 
-GpuDataRange VirtualFrameBuffer::size() {
-  return GpuDataRange(0, 0, width, height);
+GpuDataRange& VirtualFrameBuffer::size() {
+  return gsize;
 }
 
 
