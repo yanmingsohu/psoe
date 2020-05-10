@@ -8,8 +8,9 @@ namespace ps1e {
 
 
 GPU::GPU(Bus& bus) : 
-    DMADev(bus, DmaDeviceNum::gpu), status{0}, screen(0), ps{0,0,320,240},
-    gp0(*this), gp1(*this), cmd_respons(0), vfb(1), ds(0)
+    DMADev(bus, DmaDeviceNum::gpu), status{0}, screen{0}, display{0},
+    gp0(*this), gp1(*this), cmd_respons(0), vfb(1), ds(0), disp_hori{0},
+    disp_veri{0}, text_win{0}, draw_offset{0}, draw_tp_lf{0}, draw_bm_rt{0}
 {
   initOpenGL();
 
@@ -23,7 +24,7 @@ GPU::GPU(Bus& bus) :
 void GPU::initOpenGL() {
   GLFWmonitor* monitor = glfwGetPrimaryMonitor();
   const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-  screen = GpuDataRange(0, 0, mode->width, mode->height);
+  screen = {0, 0, (u32)mode->width, (u32)mode->height};
 
   glwindow = glfwCreateWindow(screen.width, screen.height, "Playstation1 EMU", NULL, NULL);
   if (!glwindow) {
@@ -64,10 +65,10 @@ void GPU::gpu_thread() {
   while (!glfwWindowShouldClose(glwindow)) {
     vfb.drawShape();
 
-    while (build.size()) {
-      IDrawShape *sp = build.front();
+    while (draw_queue.size()) {
+      IDrawShape *sp = draw_queue.front();
       sp->draw(*this, vao);
-      build.pop_front();
+      draw_queue.pop_front();
       delete sp;
     }
 
@@ -81,36 +82,9 @@ void GPU::gpu_thread() {
 }
 
 
-void GPU::GP0::write(u32 v) {
-  switch (stage) {
-    case ShapeDataStage::read_command:
-      if (!parseCommand(v)) {
-        break;
-      }
-      stage = ShapeDataStage::read_data;
-      // do not break
-
-    case ShapeDataStage::read_data:
-      if (!shape->write(v)) {
-        p.send(shape);
-        shape = NULL;
-        stage = ShapeDataStage::read_command;
-      }
-      break;
-  }
-}
-
-
-u32 GPU::GP0::read() {
-  return 0;
-}
-
-
-void GPU::GP1::write(u32 v) {}
-
-
-u32 GPU::GP1::read() {
-  return p.status.v;
+void GPU::reset() {
+  gp0.reset_fifo();
+  status.v = 0x14802000;
 }
 
 
@@ -129,7 +103,7 @@ static void initBoxVertices(float* vertices) {
 
 
 VirtualFrameBuffer::VirtualFrameBuffer(int _mul) : 
-    multiple(_mul), gsize(0, 0, Width * _mul, Height * _mul), ds(0.03)
+    multiple(_mul), gsize{0, 0, Width * _mul, Height * _mul}, ds(0.03)
 {
 }
 

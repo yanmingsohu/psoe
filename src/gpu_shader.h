@@ -7,8 +7,6 @@ namespace ps1e {
 
 class PSShaderBase : public OpenGLShader {
 private:
-  GLUniform w;
-  GLUniform h;
   GLUniform x;
   GLUniform y;
   GLUniform fw;
@@ -19,19 +17,16 @@ public:
 
   PSShaderBase(ShaderSrc v, ShaderSrc f) : OpenGLShader(v, f) {
     use();
-    //w  = getUniform("width");
-    //h  = getUniform("height");
     x  = getUniform("offx");
     y  = getUniform("offy");
     fw = getUniform("frame_width");
     fh = getUniform("frame_height");
   }
 
-  void update(GpuDataRange& ps, GpuDataRange& frame) {
-    //w.setUint(ps.width);
-    //h.setUint(ps.height);
-    x.setUint(ps.offx);
-    y.setUint(ps.offy);
+  void update(GpuStatus& gs, GpuDataRange& frame, GpuTextRange& text_win, 
+              GpuDrawOffset& doff, GpuRange10& dtl, GpuRange10& dbr) {
+    x.setUint(doff.offx());
+    y.setUint(doff.offy());
     fw.setUint(frame.width);
     fh.setUint(frame.height);
   }

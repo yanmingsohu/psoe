@@ -50,6 +50,10 @@ union GpuStatus {
     u32 dma_md    : 2; // 29-30 DMA 0:关, 1:未知, 2:CPU to GP0, 3:GPU-READ to CPU
     u32 lcf       : 1; // 31 交错时 0:绘制偶数行, 1:绘制奇数行
   };
+
+  u32 texturePage() { 
+    return (tx * 64) | ((ty * 256) << 16); 
+  }
 };
 
 
@@ -65,13 +69,53 @@ union GpuCommand {
 
 struct GpuDataRange {
   u32 offx, offy, width, height;
+};
 
-  GpuDataRange(int x, int y, int w, int h)
-    : offx(x), offy(y), width(w), height(h) {}
-  GpuDataRange() 
-    : offx(0), offy(0), width(0), height(0) {}
-  GpuDataRange(int a) 
-    : offx(a), offy(a), width(a), height(a) {}
+
+union GpuRange10 {
+  u32 v;
+  struct {
+    u32 x : 10;
+    u32 y : 10;
+    u32 _ : 12;
+  };
+};
+
+
+union GpuRange12 {
+  u32 v;
+  struct {
+    u32 x : 12;
+    u32 y : 12;
+    u32 _ : 8;
+  };
+};
+
+
+union GpuTextRange {
+  u32 v;
+  struct {
+    u32 mask_x : 5;
+    u32 mask_y : 5;
+    u32 off_x  : 5;
+    u32 off_y  : 5;
+    u32 _ : 12;
+  };
+};
+
+
+union GpuDrawOffset {
+  u32 v;
+  struct {
+    u32 x  : 10;
+    u32 sx : 1;
+    u32 y  : 10;
+    u32 sy : 1;
+    u32 _  : 10;
+  };
+
+  int offx() { return sx ? int(~x)+1 : (x); }
+  int offy() { return sy ? int(~y)+1 : (y); }
 };
 
 
@@ -108,11 +152,21 @@ public:
 };
 
 
+class IGpuReadData {
+public:
+  virtual ~IGpuReadData() {};
+  // 读取下一个数据
+  virtual u32 read() = 0;
+  // 一旦返回 false 表示当前对象没有更多数据读取, 则立即删除当前对象
+  virtual bool has() = 0;
+};
+
+
 // 所有图形都绘制到虚拟缓冲区, 然后再绘制到物理屏幕上
 class VirtualFrameBuffer {
 public:
-  static const int Width  = 1024;
-  static const int Height = 512;
+  static const u32 Width  = 1024;
+  static const u32 Height = 512;
 
 private:
   GLVertexArrays vao;
@@ -141,18 +195,21 @@ private:
     GPU &p;
     ShapeDataStage stage;
     IDrawShape *shape;
+    u32 last_read;
   public:
-    GP0(GPU &_p) : p(_p), stage(ShapeDataStage::read_command), shape(0) {}
+    GP0(GPU &_p);
     bool parseCommand(const GpuCommand c);
     void write(u32 value);
     u32 read();
+    void reset_fifo();
   };
 
 
   class GP1 : public DeviceIO {
     GPU &p;
   public:
-    GP1(GPU &_p) : p(_p) {}
+    GP1(GPU &_p);
+    void parseCommand(const GpuCommand c);
     void write(u32 value);
     u32 read();
   };
@@ -164,14 +221,23 @@ private:
   GpuStatus status;
   GLFWwindow* glwindow;
   std::thread* work;
-  GpuDataRange screen; // 物理屏幕尺寸
-  GpuDataRange ps;     // 显存中映射屏幕的范围
-  GpuDataRange frame;  // 整个显存
-  VirtualFrameBuffer vfb;
-  std::list<IDrawShape*> build;
-  std::list<IDrawShape*> shapes;
-  GLDrawState ds;
 
+  GpuDataRange  screen;      // 物理屏幕尺寸
+  GpuRange10    display;     // 显存中映射到屏幕的起始位置
+  GpuRange12    disp_hori;   // 显示的水平范围
+  GpuRange10    disp_veri;   // 显示的垂直范围
+  GpuDataRange  frame;       // 整个显存
+  GpuTextRange  text_win;    // 纹理窗口
+  GpuDrawOffset draw_offset; // 绘图时的偏移
+  GpuRange10    draw_tp_lf;  // 绘图左上角
+  GpuRange10    draw_bm_rt;  // 绘图右下角
+
+  VirtualFrameBuffer vfb;
+  std::list<IDrawShape*> draw_queue;
+  // 从插入的对象中读取数据, 只要对象存在必须至少能读取一次
+  std::list<IGpuReadData*> read_queue;
+  GLDrawState ds;
+    
   // 这是gpu线程函数, 不要调用
   void gpu_thread();
   void initOpenGL();
@@ -180,9 +246,11 @@ public:
   GPU(Bus& bus);
   ~GPU();
 
+  void reset();
+
   // 发送可绘制图形
   void send(IDrawShape* s) {
-    build.push_back(s);
+    draw_queue.push_back(s);
   }
 
   virtual DmaDeviceNum number() {
@@ -198,12 +266,16 @@ public:
   template<class Shader> Shader* useProgram() {
     static Shader instance;
     instance.use();
-    instance.update(ps, frame);
+    instance.update(status, frame, text_win, draw_offset, draw_tp_lf, draw_bm_rt);
     return &instance;
   }
 
   GpuDataRange* screen_range() {
     return &screen;
+  }
+
+  void add(IGpuReadData* r) {
+    read_queue.push_back(r);
   }
 };
 

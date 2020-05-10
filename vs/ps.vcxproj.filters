@@ -85,13 +85,16 @@
     <ClCompile Include="..\src\bus.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\gpu_sp.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\gpu_shader.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\opengl-wrap.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gpu_gp0.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gpu_gp1.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

@@ -10,5 +10,6 @@ SOURCES += \
   src/dma.cpp \
   src/gpu.cpp \
 	src/gpu_shader.cpp \
-	src/gpu_sp.cpp \
+	src/gpu_gp0.cpp \
+  src/gpu_gp1.cpp \
 	src/opengl-wrap.cpp \

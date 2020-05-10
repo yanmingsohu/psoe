@@ -31,6 +31,10 @@ namespace ps1e {
 #define SIGNEL_MASK16 0b1000'0000'0000'0000
 #define SIGNEL_MASK8  0b1000'0000
 
+// tar(nochange=~mask, change=mask) = mask & src
+// tar 中 maks 为 0 的部分不变; 为 1 的部分从 src 复制.
+#define SET_BIT(tar, mask, src)  ((tar & (~mask)) | (src & mask))
+
 #define CASE_MEM_MIRROR(d1) \
     case ((d1 & 0x0FFF'FFFF) | 0x1000'0000): \
     case ((d1 & 0x0FFF'FFFF) | 0x9000'0000): \

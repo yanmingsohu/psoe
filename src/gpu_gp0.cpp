@@ -86,6 +86,42 @@ void drawSquare(GLVertexArrays& vao, int elementCount) {
 
 bool GPU::GP0::parseCommand(const GpuCommand c) {
   switch (c.cmd) {
+    case 0x00:
+      debug("Gpu Nop?\n");
+      return false;
+
+    case 0x1F:
+      p.status.irq_on = 1;
+      return false;
+
+    case 0xE1:
+      p.status.v = SET_BIT(p.status.v, 0b11'1111'1111, c.parm);
+      p.status.text_off = (c.parm >> 11) & 1;
+      p.status.inter_f  = (c.parm >> 13) & 1;
+      return false;
+
+    case 0xE2:
+      p.text_win.v = c.parm;
+      return false;
+
+    case 0xE3: 
+      p.draw_tp_lf.v = c.parm;
+      return false;
+
+    case 0xE4: 
+      p.draw_bm_rt.v = c.parm;
+      return false;
+
+    case 0xE5:
+      p.draw_offset.v = c.parm;
+      //debug("offset x %d y %d\n", p.draw_offset.offx(), p.draw_offset.offy());
+      return false;
+
+    case 0xE6:
+      p.status.mask = c.parm & 1;
+      p.status.enb_msk = (c.parm >> 1) & 1;
+      return false;
+      
     case 0x20:
       shape = new MonoPolygon<PolygonU32Vertices<3>, drawTriangles>(1);
       break;
@@ -107,6 +143,48 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       return false;
   }
   return true;
+}
+
+
+u32 GPU::GP0::read() {
+  if (p.read_queue.size()) {
+    IGpuReadData* data_que = p.read_queue.front();
+    last_read = data_que->read();
+    if (!data_que->has()) {
+      delete data_que;
+      p.read_queue.pop_front();
+    }
+  }
+  return last_read;
+}
+
+
+void GPU::GP0::write(u32 v) {
+  switch (stage) {
+    case ShapeDataStage::read_command:
+      if (!parseCommand(v)) {
+        break;
+      }
+      stage = ShapeDataStage::read_data;
+      // do not break
+
+    case ShapeDataStage::read_data:
+      if (!shape->write(v)) {
+        p.send(shape);
+        shape = NULL;
+        stage = ShapeDataStage::read_command;
+      }
+      break;
+  }
+}
+
+
+void GPU::GP0::reset_fifo() {
+  stage = ShapeDataStage::read_command;
+}
+
+
+GPU::GP0::GP0(GPU &_p) : p(_p), stage(ShapeDataStage::read_command), shape(0), last_read(0) {
 }
 
 

@@ -8,8 +8,6 @@ namespace ps1e {
 #version 330 core
 uniform uint frame_width;
 uniform uint frame_height;
-uniform uint width;
-uniform uint height;
 uniform uint offx;
 uniform uint offy;
 
