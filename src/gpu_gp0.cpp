@@ -68,7 +68,6 @@ public:
 
     auto prog = gpu.useProgram<MonoColorPolygonShader>();
     prog->setColor(transparent, vertices.color());
-    //vao.drawTriangles(vertices.elementCount());
     Draw(vao, vertices.elementCount());
   }
 };
@@ -98,28 +97,33 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       p.status.v = SET_BIT(p.status.v, 0b11'1111'1111, c.parm);
       p.status.text_off = (c.parm >> 11) & 1;
       p.status.inter_f  = (c.parm >> 13) & 1;
+      p.dirtyAttr();
       return false;
 
     case 0xE2:
       p.text_win.v = c.parm;
+      p.dirtyAttr();
       return false;
 
     case 0xE3: 
       p.draw_tp_lf.v = c.parm;
+      p.dirtyAttr();
       return false;
 
     case 0xE4: 
       p.draw_bm_rt.v = c.parm;
+      p.dirtyAttr();
       return false;
 
     case 0xE5:
       p.draw_offset.v = c.parm;
-      //debug("offset x %d y %d\n", p.draw_offset.offx(), p.draw_offset.offy());
+      p.dirtyAttr();
       return false;
 
     case 0xE6:
       p.status.mask = c.parm & 1;
       p.status.enb_msk = (c.parm >> 1) & 1;
+      p.dirtyAttr();
       return false;
       
     case 0x20:

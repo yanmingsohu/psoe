@@ -11,6 +11,7 @@ private:
   GLUniform y;
   GLUniform fw;
   GLUniform fh;
+  u32 update_flag;
 
 public:
   virtual ~PSShaderBase() {}
@@ -23,12 +24,15 @@ public:
     fh = getUniform("frame_height");
   }
 
-  void update(GpuStatus& gs, GpuDataRange& frame, GpuTextRange& text_win, 
-              GpuDrawOffset& doff, GpuRange10& dtl, GpuRange10& dbr) {
-    x.setUint(doff.offx());
-    y.setUint(doff.offy());
-    fw.setUint(frame.width);
-    fh.setUint(frame.height);
+  void update(u32 flag, GpuStatus& gs, GpuDataRange& frame, 
+              GpuTextRange& text_win, GpuDrawOffset& doff) {
+    if (update_flag != flag) {
+      x.setUint(doff.offx());
+      y.setUint(doff.offy());
+      fw.setUint(frame.width);
+      fh.setUint(frame.height);
+      update_flag = flag;
+    }
   }
 };
 

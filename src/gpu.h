@@ -237,6 +237,7 @@ private:
   // 从插入的对象中读取数据, 只要对象存在必须至少能读取一次
   std::list<IGpuReadData*> read_queue;
   GLDrawState ds;
+  u32 status_change_count;
     
   // 这是gpu线程函数, 不要调用
   void gpu_thread();
@@ -249,7 +250,7 @@ public:
   void reset();
 
   // 发送可绘制图形
-  void send(IDrawShape* s) {
+  inline void send(IDrawShape* s) {
     draw_queue.push_back(s);
   }
 
@@ -266,16 +267,21 @@ public:
   template<class Shader> Shader* useProgram() {
     static Shader instance;
     instance.use();
-    instance.update(status, frame, text_win, draw_offset, draw_tp_lf, draw_bm_rt);
+    instance.update(status_change_count, status, frame, text_win, draw_offset);
     return &instance;
   }
 
-  GpuDataRange* screen_range() {
+  inline GpuDataRange* screen_range() {
     return &screen;
   }
 
-  void add(IGpuReadData* r) {
+  inline void add(IGpuReadData* r) {
     read_queue.push_back(r);
+  }
+
+  inline GPU& dirtyAttr() {
+    status_change_count++;
+    return *this;
   }
 };
 

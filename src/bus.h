@@ -14,7 +14,7 @@ enum class IrqDevMask : u32 {
   vblank  = 1,
   gpu     = 1 << 1,
   cdrom   = 1 << 2,
-  dma     = 1 << 3,
+  dma     = 1 << 3, // 在 bus 中, 有单独的方法发送 DMA 中断.
   dotclk  = 1 << 4,
   hblank  = 1 << 5,
   sysclk  = 1 << 6,
@@ -85,9 +85,6 @@ private:
   u32     irq_status;     // I_STAT
   u32     irq_mask;       // I_MASK
 
-  // 发送设备中断
-  void send_irq(IrqDevMask m);
-
   // irq_status/irq_mask 寄存器状态改变必须调用方法, 
   // 模拟硬件拉回引脚, 并把状态发送给 IrqReceiver.
   void update_irq_to_reciver();
@@ -101,6 +98,9 @@ public:
 
   // dma 传输结束后被调用, 发送中断
   void send_dma_irq(DMADev*);
+
+  // 发送除了 DMA 之外的设备中断
+  void send_irq(IrqDevMask m);
 
   // 绑定 IRQ 接收器, 通常是 CPU
   void bind_irq_receiver(IrqReceiver* _ir);

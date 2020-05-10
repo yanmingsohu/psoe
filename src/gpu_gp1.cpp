@@ -24,11 +24,11 @@ public:
 void GPU::GP1::parseCommand(const GpuCommand c) {
   switch (c.cmd & 0b0011'1111) {
     case 0x00:
-      p.reset();
+      p.dirtyAttr().reset();
       break;
 
     case 0x01:
-      p.gp0.reset_fifo();
+      p.dirtyAttr().gp0.reset_fifo();
       break;
 
     case 0x02:
@@ -46,16 +46,19 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
     case 0x05:
       p.display.x = 0x11'1111'1111 & c.parm;
       p.display.y = 0x1'1111'1111 & (c.parm >> 10);
+      p.dirtyAttr();
       break;
 
     case 0x06:
       p.disp_hori.x = 0x1111'1111'1111 & c.parm;
       p.disp_hori.y = 0x1111'1111'1111 & (c.parm >> 12);
+      p.dirtyAttr();
       break;
 
     case 0x07:
       p.disp_veri.x = 0x11'1111'1111 & c.parm;
       p.disp_veri.y = 0x11'1111'1111 & (c.parm >> 10);
+      p.dirtyAttr();
       break;
 
     case 0x08:
@@ -66,10 +69,12 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
       p.status.isinter    = 0b1  & (c.parm >> 5);
       p.status.width1     = 0b1  & (c.parm >> 6);
       p.status.distorted  = 0b1  & (c.parm >> 7);
+      p.dirtyAttr();
       break;
 
     case 0x09:
       p.status.text_off = 1 & c.parm;
+      p.dirtyAttr();
       break;
 
     case 0x10: 
