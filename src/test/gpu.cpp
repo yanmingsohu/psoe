@@ -37,6 +37,33 @@ union Color {
   Color(u8 cmd, u8 _r, u8 _g, u8 _b) : r(_r), g(_g), b(_b), _(cmd) {}
 };
 
+union TexpageAttr {
+  u32 v;
+  struct {
+    u32 px          : 4; //0-3
+    u32 py          : 1; //4
+    u32 semi        : 2; //5-6
+    u32 color_mode  : 2; //7-8
+    u32 c24         : 1; //9
+    u32 draw        : 1; //10
+    u32 text_off    : 1; //11
+    u32 x_flip      : 1; //12
+    u32 y_flip      : 1; //13
+    u32 _           :10; //14-23
+    u32 cmd         : 8; //24-31
+  };
+};
+
+union TCoord {
+  u32 v;
+  struct {
+    u32 x : 8;
+    u32 y : 8;
+    u32 other : 16;
+  };
+  TCoord(u8 xx, u8 yy, u16 o=0) : x(xx), y(yy), other(o) {}
+};
+
 
 static int random(int max, int min = 0) {
   return rand() % (max - min) + min;
@@ -59,12 +86,39 @@ static void draw_p3_1(Bus& bus, int x, int y, int count, int cmd) {
 }
 
 
-static void draw_p4_1(Bus& bus, int x, int y, int cmd = 0x28) {
+static void draw_p4_1(Bus& bus, int cmd = 0x28) {
   bus.write32(gp0, Color(cmd, 0,0xa0,0).v);
-  bus.write32(gp0, pos(30+x, 90+y).v);
-  bus.write32(gp0, pos(30+x, 60+y).v);
-  bus.write32(gp0, pos(60+x, 60+y).v);
-  bus.write32(gp0, pos(60+x, 90+y).v);
+  bus.write32(gp0, pos(30, 90).v);
+  bus.write32(gp0, pos(30, 60).v);
+  bus.write32(gp0, pos(60, 60).v);
+  bus.write32(gp0, pos(60, 90).v);
+}
+
+
+static void draw_p3_t1(Bus& bus, int cmd = 0x24) {
+  TexpageAttr ta{0};
+  ta.cmd = 0xE1;
+  ta.px = 0;
+  ta.py = 0;
+  ta.draw = 1;
+  bus.write32(gp0, ta.v);
+
+  bus.write32(gp0, Color(cmd, 0,0,0xc0).v);
+  bus.write32(gp0, pos(30, 120).v);
+  bus.write32(gp0, TCoord(30, 120).v);
+  
+  bus.write32(gp0, pos(30, 30).v);
+  bus.write32(gp0, TCoord(30, 39).v);
+
+  bus.write32(gp0, pos(120, 120).v);
+  bus.write32(gp0, TCoord(120, 120).v);
+}
+
+
+static void draw_offset(Bus& bus, int x, int y) {
+  // 变更之前必须等待 gpu 绘制完成
+  sleep(150);
+  bus.write32(gp0, 0xE500'0000 | (x & 0xfff) | ((y & 0xFFF) << 11));
 }
 
 
@@ -77,15 +131,19 @@ void test_gpu(GPU& gpu, Bus& bus) {
   bus.write32(gp0, pos(100, 100).v);
   bus.write32(gp0, pos(120, 80).v);
   
-  bus.write32(gp0, 0xE500'0000);
+  draw_offset(bus, 0, 0);
   draw_p3_1(bus, 100, 100, 5, 0x20);
   draw_p3_1(bus, 10, 10, 5, 0x22);
+  draw_p4_1(bus, 0x28);
 
-  bus.write32(gp0, 0xE500'0000);
-  draw_p4_1(bus, 20, 20, 0x28);
-  sleep(150);
-  bus.write32(gp0, 0xE501'403c);
-  draw_p4_1(bus, 20, 20, 0x2A);
+  draw_offset(bus, 60, 30);
+  draw_p4_1(bus, 0x2A);
+
+  draw_offset(bus, 200, 10);
+  draw_p3_t1(bus);
+
+  draw_offset(bus, 300, 40);
+  draw_p3_t1(bus, 0x25);
 }
 
 }

@@ -197,6 +197,7 @@ public:
   void drawShape();
   void drawScreen();
   GpuDataRange& size();
+  GLTexture& useTexture();
 };
 
 
@@ -245,7 +246,7 @@ private:
   GLFWwindow* glwindow;
   std::thread* work;
 
-  VirtualFrameBuffer vfb;
+  VirtualFrameBuffer vram;
   std::list<IDrawShape*> draw_queue;
   // 从插入的对象中读取数据, 只要对象存在必须至少能读取一次
   std::list<IGpuReadData*> read_queue;
@@ -295,6 +296,10 @@ public:
   inline GPU& dirtyAttr() {
     status_change_count++;
     return *this;
+  }
+
+  inline GLTexture& useTexture() {
+    return vram.useTexture();
   }
 };
 

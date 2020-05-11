@@ -265,10 +265,11 @@ void OpenGLShader::use() {
 int OpenGLShader::_getUniform(const char* name) {
   int loc = glGetUniformLocation(program, name);
   if (loc < 0) {
-    char buf[100];
+    /*char buf[100];
     sprintf(buf, "Cannot get Uniform location '%s'", name);
     error("%s", buf);
-    throw std::runtime_error(buf);
+    throw std::runtime_error(buf);*/
+    warn("Cannot get Uniform location '%s'\n", name);
   }
   return loc;
 }
@@ -281,6 +282,16 @@ GLUniform OpenGLShader::getUniform(const char* name) {
 
 void GLUniform::setUint(u32 v) {
   glUniform1ui(uni, v);
+}
+
+
+void GLUniform::setUint2(u32 a, u32 b) {
+  glUniform2ui(uni, a, b);
+}
+
+
+void GLUniform::setInt(s32 v) {
+  glUniform1i(uni, v);
 }
 
 

@@ -149,6 +149,8 @@ public:
   GLUniform() : uni(0) {}
   void setUint(u32 v);
   void setFloat(float v);
+  void setInt(s32 v);
+  void setUint2(u32, u32);
 
 friend class OpenGLShader;
 };

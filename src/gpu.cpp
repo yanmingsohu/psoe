@@ -9,7 +9,7 @@ namespace ps1e {
 
 GPU::GPU(Bus& bus) : 
     DMADev(bus, DmaDeviceNum::gpu), status{0}, screen{0}, display{0},
-    gp0(*this), gp1(*this), cmd_respons(0), vfb(1), ds(0), disp_hori{0},
+    gp0(*this), gp1(*this), cmd_respons(0), vram(1), ds(0), disp_hori{0},
     disp_veri{0}, text_win{0}, draw_offset{0}, draw_tp_lf{0}, draw_bm_rt{0},
     status_change_count(0)
 {
@@ -41,8 +41,8 @@ void GPU::initOpenGL() {
   ds.setDepthTest(true);
   ds.setBlend(true);
 
-  vfb.init();
-  frame = vfb.size();
+  vram.init();
+  frame = vram.size();
 
   // 必须释放 gl 上下文, 另一个线程才能绑定.
   glfwMakeContextCurrent(NULL);
@@ -64,7 +64,7 @@ void GPU::gpu_thread() {
   GLVertexArrays vao;
 
   while (!glfwWindowShouldClose(glwindow)) {
-    vfb.drawShape();
+    vram.drawShape();
 
     while (draw_queue.size()) {
       IDrawShape *sp = draw_queue.front();
@@ -75,7 +75,7 @@ void GPU::gpu_thread() {
 
     if (status.display) {
       //ds.viewport(&screen);
-      vfb.drawScreen();
+      vram.drawScreen();
     }
 
     if (status.irq_on) {
@@ -169,6 +169,11 @@ void VirtualFrameBuffer::drawScreen() {
 
 GpuDataRange& VirtualFrameBuffer::size() {
   return gsize;
+}
+
+
+GLTexture& VirtualFrameBuffer::useTexture() {
+  return virtual_screen;
 }
 
 
