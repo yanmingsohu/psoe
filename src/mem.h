@@ -1,4 +1,4 @@
-#pragma once
+#pragma once 
 
 #include "util.h"
 #include "asm.h"
@@ -82,7 +82,7 @@ private:
 
 public:
   MMU(MemJit&);
-  // ·µ»ØÄÚ´æÖ¸Õë, µØÖ·±ØĞëÔÚ ram/bios ·¶Î§ÄÚ
+  // è¿”å›å†…å­˜æŒ‡é’ˆ, åœ°å€å¿…é¡»åœ¨ ram/bios èŒƒå›´å†…
   u8* memPoint(psmem virtual_addr);
   bool loadBios(char const* filename);
 };

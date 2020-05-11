@@ -1,4 +1,4 @@
-#pragma once
+#pragma once 
 
 #include "util.h"
 
@@ -13,7 +13,7 @@ typedef const char* ShaderSrc;
 struct GpuDataRange;
 
 
-// Ê×ÏÈÉùÃ÷¸Ã¶ÔÏó, ²¢ÔÚÉúÃüÖÜÆÚÄÚÊ¹ÓÃ opengl º¯Êı.
+// é¦–å…ˆå£°æ˜è¯¥å¯¹è±¡, å¹¶åœ¨ç”Ÿå‘½å‘¨æœŸå†…ä½¿ç”¨ opengl å‡½æ•°.
 class OpenGLScope {
 private:
   OpenGLScope(OpenGLScope&);
@@ -38,7 +38,7 @@ public:
     unbind(); 
   }
 
-  // Ò»¶¨»áµ÷ÓÃÒ»´Î
+  // ä¸€å®šä¼šè°ƒç”¨ä¸€æ¬¡
   void unbind() {
     obj.unbind();
   }

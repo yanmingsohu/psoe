@@ -1,4 +1,4 @@
-#pragma once
+#pragma once 
 
 #include "util.h"
 #include "dma.h"
@@ -14,7 +14,7 @@ enum class IrqDevMask : u32 {
   vblank  = 1,
   gpu     = 1 << 1,
   cdrom   = 1 << 2,
-  dma     = 1 << 3, // ÔÚ bus ÖÐ, ÓÐµ¥¶ÀµÄ·½·¨·¢ËÍ DMA ÖÐ¶Ï.
+  dma     = 1 << 3, // åœ¨ bus ä¸­, æœ‰å•ç‹¬çš„æ–¹æ³•å‘é€ DMA ä¸­æ–­.
   dotclk  = 1 << 4,
   hblank  = 1 << 5,
   sysclk  = 1 << 6,
@@ -34,12 +34,12 @@ private:
 protected:
   IrqReceiver() : mask(0) {}
 
-  // ½ÓÊÕ·½ÊµÏÖ·½·¨, ÉèÖÃ cpu Íâ²¿ÖÐ¶Ï
+  // æŽ¥æ”¶æ–¹å®žçŽ°æ–¹æ³•, è®¾ç½® cpu å¤–éƒ¨ä¸­æ–­
   virtual void set_ext_int(CpuCauseInt i) = 0;
-  // ½ÓÊÕ·½ÊµÏÖ·½·¨, Çå³ý cpu Íâ²¿ÖÐ¶Ï
+  // æŽ¥æ”¶æ–¹å®žçŽ°æ–¹æ³•, æ¸…é™¤ cpu å¤–éƒ¨ä¸­æ–­
   virtual void clr_ext_int(CpuCauseInt i) = 0;
 
-  // ×¼±¸ºÃ½ÓÊÜ irq ÐÅºÅºó, ÓÉ½ÓÊÕ·½µ÷ÓÃ
+  // å‡†å¤‡å¥½æŽ¥å— irq ä¿¡å·åŽ, ç”±æŽ¥æ”¶æ–¹è°ƒç”¨
   void ready_recv_irq() {
     if (mask == 0) {
       clr_ext_int(CpuCauseInt::hardware);
@@ -57,7 +57,7 @@ protected:
 public:
   virtual ~IrqReceiver() {}
 
-  // ·¢ËÍ·½µ÷ÓÃ
+  // å‘é€æ–¹è°ƒç”¨
   void send_irq(u32 m) {
     mask = m;
   }
@@ -85,27 +85,27 @@ private:
   u32     irq_status;     // I_STAT
   u32     irq_mask;       // I_MASK
 
-  // irq_status/irq_mask ¼Ä´æÆ÷×´Ì¬¸Ä±ä±ØÐëµ÷ÓÃ·½·¨, 
-  // Ä£ÄâÓ²¼þÀ­»ØÒý½Å, ²¢°Ñ×´Ì¬·¢ËÍ¸ø IrqReceiver.
+  // irq_status/irq_mask å¯„å­˜å™¨çŠ¶æ€æ”¹å˜å¿…é¡»è°ƒç”¨æ–¹æ³•, 
+  // æ¨¡æ‹Ÿç¡¬ä»¶æ‹‰å›žå¼•è„š, å¹¶æŠŠçŠ¶æ€å‘é€ç»™ IrqReceiver.
   void update_irq_to_reciver();
 
 public:
   Bus(MMU& _mmu, IrqReceiver* _ir = 0);
   ~Bus();
 
-  // °²×° DMA Éè±¸
+  // å®‰è£… DMA è®¾å¤‡
   bool set_dma_dev(DMADev* dd);
 
-  // dma ´«Êä½áÊøºó±»µ÷ÓÃ, ·¢ËÍÖÐ¶Ï
+  // dma ä¼ è¾“ç»“æŸåŽè¢«è°ƒç”¨, å‘é€ä¸­æ–­
   void send_dma_irq(DMADev*);
 
-  // ·¢ËÍ³ýÁË DMA Ö®ÍâµÄÉè±¸ÖÐ¶Ï
+  // å‘é€é™¤äº† DMA ä¹‹å¤–çš„è®¾å¤‡ä¸­æ–­
   void send_irq(IrqDevMask m);
 
-  // °ó¶¨ IRQ ½ÓÊÕÆ÷, Í¨³£ÊÇ CPU
+  // ç»‘å®š IRQ æŽ¥æ”¶å™¨, é€šå¸¸æ˜¯ CPU
   void bind_irq_receiver(IrqReceiver* _ir);
 
-  // °ó¶¨Éè±¸µÄ IO, ²»ÊÍ·Å½â³ý°ó¶¨µÄ¶ÔÏó
+  // ç»‘å®šè®¾å¤‡çš„ IO, ä¸é‡Šæ”¾è§£é™¤ç»‘å®šçš„å¯¹è±¡
   void bind_io(DeviceIOMapper, DeviceIO*);
 
   void write32(psmem addr, u32 val);
@@ -222,9 +222,9 @@ public:
   }
 
 private:
-  // dma_dpcr Í¬²½µ½ dma Éè±¸ÉÏ
+  // dma_dpcr åŒæ­¥åˆ° dma è®¾å¤‡ä¸Š
   void set_dma_dev_status();
-  // ¼ì²é×´Ì¬, Âú×ãÌõ¼þÔòÆô¶¯/Í£Ö¹DMA¹ý³Ì
+  // æ£€æŸ¥çŠ¶æ€, æ»¡è¶³æ¡ä»¶åˆ™å¯åŠ¨/åœæ­¢DMAè¿‡ç¨‹
   void change_running_state(DMADev* dd);
 
   u32 has_dma_irq() {

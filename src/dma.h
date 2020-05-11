@@ -1,4 +1,4 @@
-#pragma once
+#pragma once 
 
 #include "util.h"
 
@@ -28,9 +28,9 @@ enum class DmaDeviceNum : u32 {
 
 
 enum class ChcrMode : u32 {
-  Manual     = 0, // µ¥¿é´«Êä
-  Stream     = 1, // ´«ÊäÁ¬ĞøµÄÊı¾İÁ÷
-  LinkedList = 2, // ´«ÊäÁ´±í, GPU only
+  Manual     = 0, // å•å—ä¼ è¾“
+  Stream     = 1, // ä¼ è¾“è¿ç»­çš„æ•°æ®æµ
+  LinkedList = 2, // ä¼ è¾“é“¾è¡¨, GPU only
   Reserved   = 3,
 };
 
@@ -43,8 +43,8 @@ enum class ChcrMode : u32 {
 union DMAChcr {
   u32 v;
   struct {
-    u32 dir       : 1; // 1:´ÓÄÚ´æµ½Éè±¸
-    u32 step      : 1; // 1:Ã¿´ÎµØÖ·-4, 0:Ã¿´ÎµØÖ·+4
+    u32 dir       : 1; // 1:ä»å†…å­˜åˆ°è®¾å¤‡
+    u32 step      : 1; // 1:æ¯æ¬¡åœ°å€-4, 0:æ¯æ¬¡åœ°å€+4
     u32        _3 : 6; // 
     u32 chopping  : 1; // 
     ChcrMode mode : 2; //
@@ -53,9 +53,9 @@ union DMAChcr {
     u32        _7 : 1; // 
     u32 cpu_wsize : 3; // 
     u32        _8 : 1; // 
-    u32 busy_enb  : 1; // 1: Ã¦Âµ, DMA ´«ÊäÊı¾İ¿ªÊ¼ºóÖÃ1
+    u32 busy_enb  : 1; // 1: å¿™ç¢Œ, DMA ä¼ è¾“æ•°æ®å¼€å§‹åç½®1
     u32        _6 : 3; // 
-    u32 trigger   : 1; // 1: ´¥·¢´«Êä, ´«Êä¿ªÊ¼ºóÖÃ0
+    u32 trigger   : 1; // 1: è§¦å‘ä¼ è¾“, ä¼ è¾“å¼€å§‹åç½®0
     u32        _5 : 3; // 
   };
 };
@@ -136,19 +136,19 @@ private:
   bool running;
 
 protected:
-  u32 base;      // Ä¿±êÄÚ´æ»ùÖ·
-  u32 blocks;    // stream Ä£Ê½Êı¾İ°üÊıÁ¿
-  u32 blocksize; // Ò»¸öÊı¾İ°ü u32 µÄÊıÁ¿
+  u32 base;      // ç›®æ ‡å†…å­˜åŸºå€
+  u32 blocks;    // stream æ¨¡å¼æ•°æ®åŒ…æ•°é‡
+  u32 blocksize; // ä¸€ä¸ªæ•°æ®åŒ… u32 çš„æ•°é‡
   DMAChcr chcr;
   Bus& bus;
 
-  // DMA ´«Êä¹ı³Ì, ÓÉÉè±¸µ÷ÓÃ¸Ã·½·¨¿ªÊ¼ DMA ´«Êä,
-  // Ó¦¸ÃÔÚµ¥¶ÀµÄÏß³ÌÖĞÖ´ĞĞ
+  // DMA ä¼ è¾“è¿‡ç¨‹, ç”±è®¾å¤‡è°ƒç”¨è¯¥æ–¹æ³•å¼€å§‹ DMA ä¼ è¾“,
+  // åº”è¯¥åœ¨å•ç‹¬çš„çº¿ç¨‹ä¸­æ‰§è¡Œ
   void transport();
 
-  // ×ÓÀàÊµÏÖÄÚ´æµ½Éè±¸´«Êä
+  // å­ç±»å®ç°å†…å­˜åˆ°è®¾å¤‡ä¼ è¾“
   void dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc);
-  // ×ÓÀàÊµÏÖÉè±¸µ½ÄÚ´æ´«Êä
+  // å­ç±»å®ç°è®¾å¤‡åˆ°å†…å­˜ä¼ è¾“
   void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc);
 
 public:
@@ -159,12 +159,12 @@ public:
 
   virtual ~DMADev() {};
 
-  // ×ÓÀàÖØĞ´, ¶Ô´«Êä·½ÏòÖ§³Ö·µ»Ø true
+  // å­ç±»é‡å†™, å¯¹ä¼ è¾“æ–¹å‘æ”¯æŒè¿”å› true
   virtual bool support(dma_chcr_dir dir) = 0;
 
-  // Í£Ö¹ DMA ´«Êä
+  // åœæ­¢ DMA ä¼ è¾“
   void stop();
-  // Ê¹ DMA Æô¶¯´«Êä, ÒòÎª´«ÊäÏß³Ì¶ÀÁ¢, ²¢²»±£Ö¤Á¢¼´ÔËĞĞ
+  // ä½¿ DMA å¯åŠ¨ä¼ è¾“, å› ä¸ºä¼ è¾“çº¿ç¨‹ç‹¬ç«‹, å¹¶ä¸ä¿è¯ç«‹å³è¿è¡Œ
   void start();
 
   void set_priority(u32 p) {
@@ -175,7 +175,7 @@ public:
     return _mask;
   }
 
-  // ·µ»ØÉè±¸ºÅ
+  // è¿”å›è®¾å¤‡å·
   inline DmaDeviceNum number() {
     return devnum;
   }

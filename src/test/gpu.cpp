@@ -1,4 +1,4 @@
-#include "../gpu.h"
+﻿#include "../gpu.h"
 #include "test.h"
 #include <thread>
 #include <chrono>
@@ -70,9 +70,10 @@ static void draw_p4_1(Bus& bus, int x, int y, int cmd = 0x28) {
 
 void test_gpu(GPU& gpu, Bus& bus) {
   gpu_basic();
+  bus.write32(gp1, 0x0300'0001); // open display
   
   bus.write32(gp0, Color(0x20, 0xff,0,0).v);
-  bus.write32(gp0, pos(80, 160).v);
+  bus.write32(gp0, pos(80, 10).v);
   bus.write32(gp0, pos(100, 100).v);
   bus.write32(gp0, pos(120, 80).v);
   

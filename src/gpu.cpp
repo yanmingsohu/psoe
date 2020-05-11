@@ -31,7 +31,7 @@ void GPU::initOpenGL() {
   if (!glwindow) {
     throw std::runtime_error("Cannot create GL window");
   }
-  glfwSetWindowPos(glwindow, 0, 0);
+  glfwSetWindowPos(glwindow, 0, 0); 
   
   glfwMakeContextCurrent(glwindow);
   ds.initGlad();
@@ -44,7 +44,7 @@ void GPU::initOpenGL() {
   vfb.init();
   frame = vfb.size();
 
-  // ±ØĞëÊÍ·Å gl ÉÏÏÂÎÄ, ÁíÒ»¸öÏß³Ì²ÅÄÜ°ó¶¨.
+  // å¿…é¡»é‡Šæ”¾ gl ä¸Šä¸‹æ–‡, å¦ä¸€ä¸ªçº¿ç¨‹æ‰èƒ½ç»‘å®š.
   glfwMakeContextCurrent(NULL);
 }
 
@@ -73,8 +73,11 @@ void GPU::gpu_thread() {
       delete sp;
     }
 
-    //ds.viewport(&screen);
-    vfb.drawScreen();
+    if (status.display) {
+      //ds.viewport(&screen);
+      vfb.drawScreen();
+    }
+
     if (status.irq_on) {
       bus.send_irq(IrqDevMask::vblank);
     }

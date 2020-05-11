@@ -1,4 +1,4 @@
-#include "util.h"
+﻿#include "util.h" 
 #include <stdio.h>
 #include <exception>
 #include <new>
@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #endif
 
-namespace ps1e {
+namespace ps1e { 
 
 LogLevel log_level = LogLevel::all;
 

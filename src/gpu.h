@@ -23,32 +23,32 @@ class VirtualScreenShader;
 union GpuStatus {
   u32 v;
   struct {
-    u32 tx        : 4; //0-3 ÎÆÀíÒ³ X = ty * 64 (0~3)
-    u32 ty        : 1; //  4 ÎÆÀíÒ³ Y = ty * 256
-    u32 abr       : 2; //5-6 °ëÍ¸Ã÷ 0{0.5xB+0.5xF}, 1{1.0xB+1.0xF}, 2{1.0xB-1.0xF}, 3{1.0xB+0.25xF}
-    u32 tp        : 2; //7-8 ÎÆÀíÒ³ÑÕÉ«Ä£Ê½ 0{4bit CLUT}, 1{8bit CLUT}, 2:{15bit}
-    u32 dtd       : 1; //  9 1:¿ªÆô¶¶¶¯Dither, 24¶¶15
-    u32 draw      : 1; // 10 1:ÔÊĞí»æÍ¼ÃüÁî»æÖÆÏÔÊ¾ÇøÓò, 0:prohibited
-    u32 mask      : 1; // 11 1:»æÖÆÊ±ĞŞ¸ÄÃÉ°åbit (bit15?)
-    u32 enb_msk   : 1; // 12 1:ÆôÓÃÃÉ°å, Ö»ÄÜ»æÖÆµ½ÃÉ°åÇøÓò
+    u32 tx        : 4; //0-3 çº¹ç†é¡µ X = ty * 64 (0~3)
+    u32 ty        : 1; //  4 çº¹ç†é¡µ Y = ty * 256
+    u32 abr       : 2; //5-6 åŠé€æ˜ 0{0.5xB+0.5xF}, 1{1.0xB+1.0xF}, 2{1.0xB-1.0xF}, 3{1.0xB+0.25xF}
+    u32 tp        : 2; //7-8 çº¹ç†é¡µé¢œè‰²æ¨¡å¼ 0{4bit CLUT}, 1{8bit CLUT}, 2:{15bit}
+    u32 dtd       : 1; //  9 1:å¼€å¯æŠ–åŠ¨Dither, 24æŠ–15
+    u32 draw      : 1; // 10 1:å…è®¸ç»˜å›¾å‘½ä»¤ç»˜åˆ¶æ˜¾ç¤ºåŒºåŸŸ, 0:prohibited
+    u32 mask      : 1; // 11 1:ç»˜åˆ¶æ—¶ä¿®æ”¹è’™æ¿bit (bit15?)
+    u32 enb_msk   : 1; // 12 1:å¯ç”¨è’™æ¿, åªèƒ½ç»˜åˆ¶åˆ°è’™æ¿åŒºåŸŸ
     u32 inter_f   : 1; // 13 always 1 when GP1(08h).5=0
     u32 distorted : 1; // 14 GP1(08h).7
     u32 text_off  : 1; // 15 1=Disable Textures
 
     u32 width1    : 1; // 16 width1=1{width0{0:384?368}}
-    u32 width0    : 2; // 17-18 ÆÁÄ»¿í¶È, width1=0{0:256, 1:320, 2:512, 3:640}
-    u32 height    : 1; // 19 ÆÁÄ»¸ß¶È, 0:240, 1:480
+    u32 width0    : 2; // 17-18 å±å¹•å®½åº¦, width1=0{0:256, 1:320, 2:512, 3:640}
+    u32 height    : 1; // 19 å±å¹•é«˜åº¦, 0:240, 1:480
     u32 video     : 1; // 20 1:PAL, 0:NTSC
     u32 isrgb24   : 1; // 21 1:24bit, 0:15bit
-    u32 isinter   : 1; // 22 1:½»´í¿ªÆô(¸ôĞĞÉ¨Ãè)
-    u32 display   : 1; // 23 0:¿ªÆôÏÔÊ¾, 1:ºÚÆÁ
+    u32 isinter   : 1; // 22 1:äº¤é”™å¼€å¯(éš”è¡Œæ‰«æ)
+    u32 display   : 1; // 23 0:å¼€å¯æ˜¾ç¤º, 1:é»‘å±
     u32 irq_on    : 1; // 24 1:IRQ
-    u32 r         : 1; // 25 dma ×´Ì¬×Ü¿ª¹Ø, 1:dma ¾ÍĞ÷
-    u32 r_cmd     : 1; // 26 1:¿ÉÒÔ½ÓÊÜÃüÁîÀ´×Ô gp0
-    u32 r_cpu     : 1; // 27 1:¿ÉÒÔ·¢ËÍ vram Êı¾İµ½ cpu
-    u32 r_dma     : 1; // 28 1:¿ÉÒÔ½ÓÊÜ dma Êı¾İ¿é
-    u32 dma_md    : 2; // 29-30 DMA 0:¹Ø, 1:Î´Öª, 2:CPU to GP0, 3:GPU-READ to CPU
-    u32 lcf       : 1; // 31 ½»´íÊ± 0:»æÖÆÅ¼ÊıĞĞ, 1:»æÖÆÆæÊıĞĞ
+    u32 r         : 1; // 25 dma çŠ¶æ€æ€»å¼€å…³, 1:dma å°±ç»ª
+    u32 r_cmd     : 1; // 26 1:å¯ä»¥æ¥å—å‘½ä»¤æ¥è‡ª gp0
+    u32 r_cpu     : 1; // 27 1:å¯ä»¥å‘é€ vram æ•°æ®åˆ° cpu
+    u32 r_dma     : 1; // 28 1:å¯ä»¥æ¥å— dma æ•°æ®å—
+    u32 dma_md    : 2; // 29-30 DMA 0:å…³, 1:æœªçŸ¥, 2:CPU to GP0, 3:GPU-READ to CPU
+    u32 lcf       : 1; // 31 äº¤é”™æ—¶ 0:ç»˜åˆ¶å¶æ•°è¡Œ, 1:ç»˜åˆ¶å¥‡æ•°è¡Œ
   };
 
   u32 texturePage() { 
@@ -104,6 +104,17 @@ union GpuTextRange {
 };
 
 
+union GpuTextFlip {
+  u32 v;
+  struct {
+    u32 _0 : 20;
+    u32 x  : 1;
+    u32 y  : 1;
+    u32 _1 : 10;
+  };
+};
+
+
 union GpuDrawOffset {
   u32 v;
   struct {
@@ -125,7 +136,7 @@ enum class GpuGp1CommandDef {
   rst_irq    = 0x02, // reset IRQ
   display    = 0x03, // Turn on(1)/off display
   dma        = 0x04, // DMA 0:off, 1:unknow, 2:C to G, 3 G toC
-  startxy    = 0x05, // ÆÁÄ»×óÉÏ½ÇµÄÄÚ´æÇøÓò
+  startxy    = 0x05, // å±å¹•å·¦ä¸Šè§’çš„å†…å­˜åŒºåŸŸ
   setwidth   = 0x06,
   setheight  = 0x07,
   setmode    = 0x08,
@@ -145,9 +156,9 @@ protected:
 
 public:
   virtual ~IDrawShape() {}
-  // Ğ´ÈëÃüÁîÊı¾İ(°üº¬µÚÒ»´ÎµÄÃüÁîÊı¾İ), Èç¹û¸ÄĞÎ×´ÒÑ¾­¶ÁÈ¡È«²¿Êı¾İÔò·µ»Ø false
+  // å†™å…¥å‘½ä»¤æ•°æ®(åŒ…å«ç¬¬ä¸€æ¬¡çš„å‘½ä»¤æ•°æ®), å¦‚æœæ”¹å½¢çŠ¶å·²ç»è¯»å–å…¨éƒ¨æ•°æ®åˆ™è¿”å› false
   virtual bool write(const u32 c) = 0;
-  // »æÖÆÍ¼Ïñ
+  // ç»˜åˆ¶å›¾åƒ
   virtual void draw(GPU&, GLVertexArrays& vao) = 0;
 };
 
@@ -155,14 +166,14 @@ public:
 class IGpuReadData {
 public:
   virtual ~IGpuReadData() {};
-  // ¶ÁÈ¡ÏÂÒ»¸öÊı¾İ
+  // è¯»å–ä¸‹ä¸€ä¸ªæ•°æ®
   virtual u32 read() = 0;
-  // Ò»µ©·µ»Ø false ±íÊ¾µ±Ç°¶ÔÏóÃ»ÓĞ¸ü¶àÊı¾İ¶ÁÈ¡, ÔòÁ¢¼´É¾³ıµ±Ç°¶ÔÏó
+  // ä¸€æ—¦è¿”å› false è¡¨ç¤ºå½“å‰å¯¹è±¡æ²¡æœ‰æ›´å¤šæ•°æ®è¯»å–, åˆ™ç«‹å³åˆ é™¤å½“å‰å¯¹è±¡
   virtual bool has() = 0;
 };
 
 
-// ËùÓĞÍ¼ĞÎ¶¼»æÖÆµ½ĞéÄâ»º³åÇø, È»ºóÔÙ»æÖÆµ½ÎïÀíÆÁÄ»ÉÏ
+// æ‰€æœ‰å›¾å½¢éƒ½ç»˜åˆ¶åˆ°è™šæ‹Ÿç¼“å†²åŒº, ç„¶åå†ç»˜åˆ¶åˆ°ç‰©ç†å±å¹•ä¸Š
 class VirtualFrameBuffer {
 public:
   static const u32 Width  = 1024;
@@ -214,32 +225,34 @@ private:
     u32 read();
   };
 
+public:
+  GpuDataRange  screen;      // ç‰©ç†å±å¹•å°ºå¯¸
+  GpuRange10    display;     // æ˜¾å­˜ä¸­æ˜ å°„åˆ°å±å¹•çš„èµ·å§‹ä½ç½®
+  GpuRange12    disp_hori;   // æ˜¾ç¤ºçš„æ°´å¹³èŒƒå›´
+  GpuRange10    disp_veri;   // æ˜¾ç¤ºçš„å‚ç›´èŒƒå›´
+  GpuDataRange  frame;       // æ•´ä¸ªæ˜¾å­˜
+  GpuTextRange  text_win;    // çº¹ç†çª—å£
+  GpuDrawOffset draw_offset; // ç»˜å›¾æ—¶çš„åç§»
+  GpuRange10    draw_tp_lf;  // ç»˜å›¾å·¦ä¸Šè§’
+  GpuRange10    draw_bm_rt;  // ç»˜å›¾å³ä¸‹è§’
+  GpuTextFlip   text_flip;   // çº¹ç†åæ ‡ x,y é€’å¢æ–¹å‘
+  GpuStatus     status;
+
 private:
   GP0 gp0;
   GP1 gp1;
   u32 cmd_respons;
-  GpuStatus status;
   GLFWwindow* glwindow;
   std::thread* work;
 
-  GpuDataRange  screen;      // ÎïÀíÆÁÄ»³ß´ç
-  GpuRange10    display;     // ÏÔ´æÖĞÓ³Éäµ½ÆÁÄ»µÄÆğÊ¼Î»ÖÃ
-  GpuRange12    disp_hori;   // ÏÔÊ¾µÄË®Æ½·¶Î§
-  GpuRange10    disp_veri;   // ÏÔÊ¾µÄ´¹Ö±·¶Î§
-  GpuDataRange  frame;       // Õû¸öÏÔ´æ
-  GpuTextRange  text_win;    // ÎÆÀí´°¿Ú
-  GpuDrawOffset draw_offset; // »æÍ¼Ê±µÄÆ«ÒÆ
-  GpuRange10    draw_tp_lf;  // »æÍ¼×óÉÏ½Ç
-  GpuRange10    draw_bm_rt;  // »æÍ¼ÓÒÏÂ½Ç
-
   VirtualFrameBuffer vfb;
   std::list<IDrawShape*> draw_queue;
-  // ´Ó²åÈëµÄ¶ÔÏóÖĞ¶ÁÈ¡Êı¾İ, Ö»Òª¶ÔÏó´æÔÚ±ØĞëÖÁÉÙÄÜ¶ÁÈ¡Ò»´Î
+  // ä»æ’å…¥çš„å¯¹è±¡ä¸­è¯»å–æ•°æ®, åªè¦å¯¹è±¡å­˜åœ¨å¿…é¡»è‡³å°‘èƒ½è¯»å–ä¸€æ¬¡
   std::list<IGpuReadData*> read_queue;
   GLDrawState ds;
   u32 status_change_count;
     
-  // ÕâÊÇgpuÏß³Ìº¯Êı, ²»Òªµ÷ÓÃ
+  // è¿™æ˜¯gpuçº¿ç¨‹å‡½æ•°, ä¸è¦è°ƒç”¨
   void gpu_thread();
   void initOpenGL();
 
@@ -249,7 +262,7 @@ public:
 
   void reset();
 
-  // ·¢ËÍ¿É»æÖÆÍ¼ĞÎ
+  // å‘é€å¯ç»˜åˆ¶å›¾å½¢
   inline void send(IDrawShape* s) {
     draw_queue.push_back(s);
   }
@@ -259,15 +272,15 @@ public:
   }
 
   virtual bool support(dma_chcr_dir dir) {
-    //TODO: ×öÍêgpu¼Ä´æÆ÷
+    //TODO: åšå®Œgpuå¯„å­˜å™¨
     return false;
   }
 
-  // ·µ»ØÒÑ¾­»º³åµÄ×ÅÉ«Æ÷³ÌĞò
+  // è¿”å›å·²ç»ç¼“å†²çš„ç€è‰²å™¨ç¨‹åº
   template<class Shader> Shader* useProgram() {
     static Shader instance;
     instance.use();
-    instance.update(status_change_count, status, frame, text_win, draw_offset);
+    instance.update(status_change_count, *this);
     return &instance;
   }
 

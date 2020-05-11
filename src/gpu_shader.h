@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once 
 
 #include "gpu.h"
 
@@ -24,13 +24,12 @@ public:
     fh = getUniform("frame_height");
   }
 
-  void update(u32 flag, GpuStatus& gs, GpuDataRange& frame, 
-              GpuTextRange& text_win, GpuDrawOffset& doff) {
+  void update(u32 flag, GPU& gpu) {
     if (update_flag != flag) {
-      x.setUint(doff.offx());
-      y.setUint(doff.offy());
-      fw.setUint(frame.width);
-      fh.setUint(frame.height);
+      x.setUint(gpu.draw_offset.offx());
+      y.setUint(gpu.draw_offset.offy());
+      fw.setUint(gpu.frame.width);
+      fh.setUint(gpu.frame.height);
       update_flag = flag;
     }
   }

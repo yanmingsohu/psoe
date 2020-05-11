@@ -1,8 +1,8 @@
-#include "asm.h"
+﻿#include "asm.h"
 #include <stdio.h>
 
 
-namespace ps1e {
+namespace ps1e { 
 #ifdef X86_64
 
 

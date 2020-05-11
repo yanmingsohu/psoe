@@ -1,4 +1,4 @@
-#pragma once
+#pragma once 
 
 #include "util.h"
 
@@ -20,15 +20,15 @@ namespace ps1e {
 
 
 //
-// ËùÓĞ¹Ò½ÓÔÚ×ÜÏßÉÏµÄÉè±¸µÄ io ¶¨Òå±í
-// TODO: DMA Éè±¸Ê¶±ğ´Ó bus ÒÆ¶¯µ½ÕâÀï.
+// æ‰€æœ‰æŒ‚æ¥åœ¨æ€»çº¿ä¸Šçš„è®¾å¤‡çš„ io å®šä¹‰è¡¨
+// TODO: DMA è®¾å¤‡è¯†åˆ«ä» bus ç§»åŠ¨åˆ°è¿™é‡Œ.
 //
 #define IO_MIRRORS_STATEMENTS(rw, io_arr, v) \
     rw(0x1F80'1810, gpu_gp0, io_arr, v) \
     rw(0x1F80'1814, gpu_gp1, io_arr, v) \
   
 
-// IO ½Ó¿ÚÃ¶¾Ù
+// IO æ¥å£æšä¸¾
 enum class DeviceIOMapper : size_t {
   __zero__ = 0,   // Keep first and value 0
   IO_MIRRORS_STATEMENTS(IO_ENUM_DEFINE_FIELDS, 0, 0)
@@ -37,7 +37,7 @@ enum class DeviceIOMapper : size_t {
 const size_t io_map_size = static_cast<size_t>(DeviceIOMapper::__Length__);
 
 
-// Éè±¸ÉÏµÄÒ»¸ö IO ¶Ë¿Ú, Ä¬ÈÏÊ²Ã´¶¼²»×ö
+// è®¾å¤‡ä¸Šçš„ä¸€ä¸ª IO ç«¯å£, é»˜è®¤ä»€ä¹ˆéƒ½ä¸åš
 class DeviceIO {
 public:
   virtual ~DeviceIO() {}
@@ -46,7 +46,7 @@ public:
 };
 
 
-// ´øÓĞËø´æ¹¦ÄÜµÄ½Ó¿Ú
+// å¸¦æœ‰é”å­˜åŠŸèƒ½çš„æ¥å£
 class DeviceIOLatch : public DeviceIO {
 protected:
   u32 reg;

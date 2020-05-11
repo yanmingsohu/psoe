@@ -1,4 +1,4 @@
-#include "gpu.h"
+﻿#include "gpu.h"
 #include "gpu_shader.h"
 #include <functional>
 
@@ -81,7 +81,7 @@ void drawTriangles(GLVertexArrays& vao, int elementCount) {
 void drawSquare(GLVertexArrays& vao, int elementCount) {
   vao.drawTriangleFan(elementCount);
 }
-
+ 
 
 bool GPU::GP0::parseCommand(const GpuCommand c) {
   switch (c.cmd) {
@@ -97,6 +97,8 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       p.status.v = SET_BIT(p.status.v, 0b11'1111'1111, c.parm);
       p.status.text_off = (c.parm >> 11) & 1;
       p.status.inter_f  = (c.parm >> 13) & 1;
+      p.text_flip.x     = (c.parm >> 12) & 1;
+      p.text_flip.y     = (c.parm >> 13) & 1;
       p.dirtyAttr();
       return false;
 

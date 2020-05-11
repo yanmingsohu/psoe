@@ -1,4 +1,4 @@
-#include "test.h"
+ï»¿#include "test.h"
 #include "../util.h"
 #include "../mips.h"
 #include "../inter.h"
@@ -117,7 +117,7 @@ void test_mips_inter() {
   test_cpu_help();
   test_gpu(gpu, bus);
 
-  for (;;); //!! ËÀÑ­»·
+  for (;;); //!!æ­»å¾ªçŽ¯
 
   if (0) {
     debug_cpu(t);
