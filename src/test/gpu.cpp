@@ -157,6 +157,57 @@ static void draw_p3_s2(Bus& bus, int count = 3, int cmd = 0x34) {
 }
 
 
+static void draw_l1(Bus& bus, int cmd = 0x40, int offy = 0) {
+  bus.write32(gp0, Color(cmd, 0xff, 0, 0).v);
+  bus.write32(gp0, pos(20, 0 + offy).v);
+  bus.write32(gp0, pos(300, 0 + offy).v);
+}
+
+
+static void draw_l2(Bus& bus, int cmd = 0x50, int offy = 0) {
+  bus.write32(gp0, Color(cmd, 0xff, 0, 0).v);
+  bus.write32(gp0, pos(20, 30 + offy).v);
+  bus.write32(gp0, Color(0, 0, 0xff, 0).v);
+  bus.write32(gp0, pos(300, 30 + offy).v);
+}
+
+
+static void draw_lm1(Bus& bus) {
+  bus.write32(gp0, Color(0x48, 0, 0, 0xff).v);
+  int x = 20, y = 10, n = 10;
+  for (int i=0; i<100; ++i) {
+    if (i & 0x1) {
+      x += 10;
+    } else {
+      y += n;
+      n = -n;
+    }
+    bus.write32(gp0, pos(x, y).v);
+  }
+  bus.write32(gp0, 0x50005000);
+}
+
+
+static void draw_lm2(Bus& bus, int cmd = 0x58) {
+  int x = 20, y = 50, n = 10;
+  //bus.write32(gp0, Color(cmd, 0, x, 0xff).v);
+  //bus.write32(gp0, pos(x, y).v);
+
+  for (int i=0; i<100; ++i) {
+    if (i & 0x1) {
+      x += 10;
+    } else {
+      y += n;
+      n = -n;
+    }
+    bus.write32(gp0, Color(cmd, 0, x, 0xff).v);
+    bus.write32(gp0, pos(x, y).v);
+    cmd = 0;
+  }
+  bus.write32(gp0, 0x50005000);
+}
+
+
 void test_gpu(GPU& gpu, Bus& bus) {
   gpu_basic();
   bus.write32(gp1, 0x0300'0001); // open display
@@ -167,6 +218,13 @@ void test_gpu(GPU& gpu, Bus& bus) {
   bus.write32(gp0, pos(120, 80).v);
   
   draw_offset(bus, 0, 0);
+  draw_l1(bus);
+  draw_l1(bus, 0x42, 5);
+  draw_lm1(bus);
+  draw_l2(bus);
+  draw_l2(bus, 0x52, 5);
+  draw_lm2(bus);
+
   draw_p3_1(bus, 100, 100, 5, 0x20);
   draw_p3_1(bus, 10, 10, 5, 0x22);
   draw_p4_1(bus, 0x28);

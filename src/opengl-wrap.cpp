@@ -67,6 +67,16 @@ void GLVertexArrays::drawTriangleStrip(u32 indices_count) {
 }
 
 
+void GLVertexArrays::drawQuads(u32 i) {
+  glDrawArrays(GL_QUADS, 0, i);
+}
+
+
+void GLVertexArrays::drawLineStrip(u32 i) {
+  glDrawArrays(GL_LINE_STRIP, 0, i);
+}
+
+
 GLVerticesBuffer::GLVerticesBuffer() : vbo(0) {
 }
 

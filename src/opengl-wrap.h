@@ -75,6 +75,8 @@ public:
   void drawLines(u32 count);
   void drawTriangleFan(u32 indices_count);
   void drawTriangleStrip(u32);
+  void drawQuads(u32);
+  void drawLineStrip(u32);
 };
 
 

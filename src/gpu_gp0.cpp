@@ -1,6 +1,7 @@
 ﻿#include "gpu.h"
 #include "gpu_shader.h"
 #include <functional>
+#include <stdexcept>
 
 namespace ps1e {
 
@@ -15,7 +16,7 @@ protected:
   const int element;
 
 public:
-  VerticesBase(int ele) : step(0), element(ele) {}
+  VerticesBase(int ele, int st = 0) : step(st), element(ele) {}
   virtual ~VerticesBase() {}
 
   int elementCount() {
@@ -32,7 +33,7 @@ private:
 public:
   u32 color;
 
-  PolygonU32Vertices() : VerticesBase(ElementCount) {}
+  PolygonU32Vertices() : VerticesBase(ElementCount, -1) {}
 
   void setAttr(GLVerticesBuffer& vbo) {
     GLBufferData vbdata(vbo, vertices, sizeof(vertices));
@@ -41,16 +42,16 @@ public:
 
   bool write(const u32 c) {
     switch (step) {
-      case 0:
+      case -1:
         color = c;
         break;
 
       default: {
-        vertices[step - 1] = c;
+        vertices[step] = c;
         break;
       }
     }
-    return ++step <= ElementCount;
+    return ++step < ElementCount;
   }
 };
 
@@ -58,14 +59,14 @@ public:
 template<int ElementCount>
 class PolyTextureVertices : public VerticesBase {
 private:
-  u32 vertices[ElementCount * 2];
+  u32 vertices[ElementCount *2];
 
 public:
   u32 color;
   u32 clut;
   u32 page;
 
-  PolyTextureVertices() : VerticesBase(ElementCount) {}
+  PolyTextureVertices() : VerticesBase(ElementCount, -1) {}
 
   void setAttr(GLVerticesBuffer& vbo) {
     GLBufferData vbdata(vbo, vertices, sizeof(vertices));
@@ -75,24 +76,24 @@ public:
 
   bool write(const u32 c) {
     switch (step) {
-      case 0:
+      case -1:
         color = c;
         break;
 
       default: {
         switch (step) {
-          case 2:
+          case 1:
             clut = c & 0xFFFF'0000;
             break;
-          case 4:
+          case 3:
             page = c & 0xFFFF'0000;
             break;
         }
-        vertices[step - 1] = c;
+        vertices[step] = c;
         break;
       }
     }
-    return ++step <= ElementCount*2;
+    return ++step < (ElementCount *2);
   }
 };
 
@@ -100,7 +101,7 @@ public:
 template<int ElementCount>
 class ShadedPolyVertices : public VerticesBase {
 private:
-  u32 vertices[ElementCount * 2];
+  u32 vertices[ElementCount *2];
 
 public:
   ShadedPolyVertices() : VerticesBase(ElementCount) {}
@@ -113,7 +114,7 @@ public:
 
   bool write(const u32 c) {
     vertices[step] = c;
-    return ++step < ElementCount*2;
+    return ++step < (ElementCount *2);
   }
 };
 
@@ -121,7 +122,7 @@ public:
 template<int ElementCount>
 class ShadedPolyWithTextureVertices : public VerticesBase {
 private:
-  u32 vertices[ElementCount * 3];
+  u32 vertices[ElementCount *3];
 
 public:
   u32 clut;
@@ -147,7 +148,147 @@ public:
         page = c & 0xFFFF'0000;
         break;
     }
-    return ++step < ElementCount*3;
+    return ++step < (ElementCount *3);
+  }
+};
+
+
+class MonoLineFixVertices : public VerticesBase {
+private:
+  u32 vertices[2];
+
+public:
+  u32 color;
+
+  MonoLineFixVertices() : VerticesBase(2, -1) {}
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, 1, 1, 0);
+  }
+
+  bool write(const u32 c) {
+    switch (step) {
+      case -1:
+        color = c;
+        break;
+
+      default:
+        vertices[step] = c;
+    }
+    return ++step < 2;
+  }
+};
+
+
+class MultipleVertices {
+public:
+  const u32 END = 0x50005000;
+  const int InitBufSize = 0x10;
+
+protected:
+  u32 *vertices;
+
+private:
+  int capacity;
+  int count;
+  const int mincount;
+
+  void resize(int size) {
+    if (capacity < size) {
+      u32 *mm = (u32*) realloc(vertices, size * sizeof(u32));
+      if (!mm) {
+        throw std::runtime_error("Failed allocated memory");
+      }
+      vertices = mm;
+      capacity = size;
+    }
+  }
+
+public:
+  u32 color;
+
+  MultipleVertices(int initCount, int terminatMin) : 
+      capacity(0), count(initCount), mincount(terminatMin)
+  {
+    capacity = InitBufSize;
+    vertices = (u32*) malloc(capacity * sizeof(u32));
+    if (!vertices) {
+      throw std::runtime_error("Failed allocated memory");
+    }
+  }
+
+  ~MultipleVertices() {
+    free(vertices);
+    vertices = 0;
+    count = 0;
+    capacity = 0;
+  }
+
+  int elementCount() {
+    return count;
+  }
+
+  bool write(const u32 c) {
+    // 55555555h ? 50005000h ??
+    if ((count >= mincount) && (c & END)==END) {
+      return false;
+    }
+
+    writeVertices(count, c);
+
+    if (++count >= capacity) {
+      resize(capacity << 1);
+    }
+    return true;
+  }
+
+  inline size_t vsize() {
+    return sizeof(u32) * count;
+  }
+
+  virtual void writeVertices(int count, const u32 data) = 0;
+};
+
+
+class MonoLineMulVertices : public MultipleVertices {
+public:
+  MonoLineMulVertices() : MultipleVertices(-1, 2) {}
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, vsize());
+    vbdata.uintAttr(0, 1, 1, 0);
+  }
+
+  void writeVertices(int count, const u32 data) {
+    switch (count) {
+      case -1:
+        color = data;
+        break;
+
+      default:
+        vertices[count] = data;
+    }
+  }
+};
+
+
+class ShadedLineMulVertices : public MultipleVertices {
+public:
+  ShadedLineMulVertices() : MultipleVertices(0, 3) {}
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, vsize());
+    vbdata.uintAttr(0, 1, 2, 1);
+    vbdata.uintAttr(1, 1, 2, 0);
+  }
+
+  void writeVertices(int count, const u32 data) {
+    vertices[count] = data;
+  }
+
+  int elementCount() {
+    return MultipleVertices::elementCount() >> 1;
   }
 };
 
@@ -202,7 +343,16 @@ void drawFan(GLVertexArrays& vao, int elementCount) {
 void drawTriStrip(GLVertexArrays& vao, int elementCount) {
   vao.drawTriangleStrip(elementCount);
 }
- 
+
+
+void drawQuads(GLVertexArrays& vao, int elementCount) {
+  vao.drawQuads(elementCount);
+}
+
+
+void drawLines(GLVertexArrays& vao, int elementCount) {
+  vao.drawLineStrip(elementCount);
+}
  
 
 bool GPU::GP0::parseCommand(const GpuCommand c) {
@@ -259,11 +409,11 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       break;
 
     case 0x28: mirror_case(0x29):
-      shape = new Polygon<PolygonU32Vertices<4>, drawTriStrip>(1);
+      shape = new Polygon<PolygonU32Vertices<4>, drawQuads>(1);
       break;
 
     case 0x2A: mirror_case(0x2B):
-      shape = new Polygon<PolygonU32Vertices<4>, drawTriStrip>(0.5);
+      shape = new Polygon<PolygonU32Vertices<4>, drawQuads>(0.5);
       break;
 
     case 0x24:
@@ -318,12 +468,12 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     case 0x38: mirror_case(0x39):
       shape = new Polygon<ShadedPolyVertices<4>, 
-                  drawTriStrip, ShadedPolyShader, false>(1);
+                  drawQuads, ShadedPolyShader, false>(1);
       break;
 
     case 0x3A: mirror_case(0x3B):
       shape = new Polygon<ShadedPolyVertices<4>, 
-                  drawTriStrip, ShadedPolyShader, false>(0.5);
+                  drawQuads, ShadedPolyShader, false>(0.5);
       break;
 
     case 0x34: mirror_case(0x35):
@@ -338,12 +488,47 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     case 0x3C: mirror_case(0x3D):
       shape = new Polygon<ShadedPolyWithTextureVertices<4>,
-                  drawTriStrip, ShadedPolyWithTextShader, true>(1);
+                  drawQuads, ShadedPolyWithTextShader, true>(1);
       break;
 
     case 0x3E: mirror_case(0x3F):
       shape = new Polygon<ShadedPolyWithTextureVertices<4>,
-                  drawTriStrip, ShadedPolyWithTextShader, true>(0.5);
+                  drawQuads, ShadedPolyWithTextShader, true>(0.5);
+      break;
+
+    case 0x40:
+      shape = new Polygon<MonoLineFixVertices, 
+                  drawLines, MonoColorPolygonShader, false>(1);
+      break;
+
+    case 0x42:
+      shape = new Polygon<MonoLineFixVertices, 
+                  drawLines, MonoColorPolygonShader, false>(0.5);
+      break;
+
+    case 0x48:
+      shape = new Polygon<MonoLineMulVertices, 
+                  drawLines, MonoColorPolygonShader, false>(1);
+      break;
+
+    case 0x4A:
+      shape = new Polygon<MonoLineMulVertices, 
+                  drawLines, MonoColorPolygonShader, false>(0.5);
+      break;
+
+    case 0x50: 
+      shape = new Polygon<ShadedPolyVertices<2>, 
+                  drawLines, ShadedPolyShader, false>(1);
+      break;
+
+    case 0x52: 
+      shape = new Polygon<ShadedPolyVertices<2>, 
+                  drawLines, ShadedPolyShader, false>(0.5);
+      break;
+
+    case 0x58:
+      shape = new Polygon<ShadedLineMulVertices, 
+                  drawLines, ShadedPolyShader, false>(1);
       break;
 
     default:
