@@ -13,10 +13,9 @@ uniform int offy;
 uniform float transparent;
 
 vec4 color_ps2gl(uint pscolor) {
-  uint  x = 0xFFu;
-  float r = ((pscolor      & x) / 255.0f);
-  float g = ((pscolor>> 8) & x) / 255.0f;
-  float b = ((pscolor>>16) & x) / 255.0f;
+  float r = ((pscolor      & 0xFFu) / 255.0f);
+  float g = ((pscolor>> 8) & 0xFFu) / 255.0f;
+  float b = ((pscolor>>16) & 0xFFu) / 255.0f;
   return vec4(r, g, b, transparent);
 }
 
@@ -65,9 +64,9 @@ vec4 mix_color(vec4 b, vec4 f) {
 
 vec4 texture_mode(sampler2D text, vec2 coord) {
   switch (int(page >> 7) & 0x03) {
-    case 0: // 4bit
-
-    case 1: // 8bit
+    case 0: // 4bit TODO!
+      
+    case 1: // 8bit TODO!
 
     default:
     case 2: // 16bit
@@ -81,11 +80,11 @@ vec4 texture_mode(sampler2D text, vec2 coord) {
 static ShaderSrc mono_color_polygon_vertex = VertexShaderHeader R"shader(
 layout (location = 0) in uint pos;
 uniform uint ps_color;
-out vec4 color;
+out vec4 oColor;
 
 void main() {
   gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
-  color = color_ps2gl(ps_color);
+  oColor = color_ps2gl(ps_color);
 }
 )shader";
 
@@ -93,10 +92,10 @@ void main() {
 static ShaderSrc color_polygon_frag = R"shader(
 #version 330 core
 out vec4 FragColor;
-in vec4 color;
+in vec4 oColor;
   
 void main() {
-  FragColor = color;
+  FragColor = oColor;
 }
 )shader";
 
@@ -108,12 +107,12 @@ layout (location = 1) in uint coord;
 uniform uint ps_color;
 uniform uint page;
 uniform uint clut;
-out vec4 color;
+out vec4 oColor;
 out vec2 oCoord;
 
 void main() {
   gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
-  color = color_ps2gl(ps_color);
+  oColor = color_ps2gl(ps_color);
   oCoord = to_textcoord(coord, page);
 }
 )shader";
@@ -121,26 +120,58 @@ void main() {
 
 static ShaderSrc texture_color_f = TextureFragShaderHeader R"shader(
 out vec4 FragColor;
-in vec4 color;
+in vec4 oColor;
 in vec2 oCoord;
 uniform sampler2D text;
   
 void main() {
-  vec4 c = mix_color(texture_mode(text, oCoord), color);
-  FragColor = vec4(c.rgb, color.a);
+  vec4 c = mix_color(texture_mode(text, oCoord), oColor);
+  FragColor = vec4(c.rgb, oColor.a);
 }
 )shader";
 
 
 static ShaderSrc texture_only_f = TextureFragShaderHeader R"shader(
 out vec4 FragColor;
-in vec4 color;
+in vec4 oColor;
 in vec2 oCoord;
 uniform sampler2D text;
   
 void main() {
   vec4 c = texture_mode(text, oCoord);
-  FragColor = vec4(c.rgb, color.a);
+  FragColor = vec4(c.rgb, oColor.a);
+}
+)shader";
+
+// ---------- ---------- Shaded Polygon
+
+static ShaderSrc shaded_polygon_v = VertexShaderHeader R"shader(
+layout (location = 0) in uint pos;
+layout (location = 1) in uint ps_color;
+out vec4 oColor;
+
+void main() {
+  gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
+  oColor = color_ps2gl(ps_color);
+}
+)shader";
+
+// ---------- ---------- Shaded Polygon With Texture
+
+static ShaderSrc shaded_polygon_texture_v = VertexShaderHeader R"shader(
+layout (location = 0) in uint pos;
+layout (location = 1) in uint ps_color;
+layout (location = 2) in uint coord;
+
+uniform uint page;
+uniform uint clut;
+out vec4 oColor;
+out vec2 oCoord;
+
+void main() {
+  gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
+  oColor = color_ps2gl(ps_color); 
+  oCoord = to_textcoord(coord, page);
 }
 )shader";
 
@@ -180,5 +211,12 @@ ShaderSrc VirtualScreenShader::frag = draw_virtual_screen_frag;
 ShaderSrc MonoColorTexturePolyShader::vertex = texture_mono_color_poly_v;
 ShaderSrc MonoColorTexturePolyShader::frag_with_color = texture_color_f;
 ShaderSrc MonoColorTexturePolyShader::frag_no_color = texture_only_f;
+
+ShaderSrc ShadedPolyShader::vertex = shaded_polygon_v;
+ShaderSrc ShadedPolyShader::frag = color_polygon_frag;
+
+ShaderSrc ShadedPolyWithTextShader::vertex = shaded_polygon_texture_v;
+ShaderSrc ShadedPolyWithTextShader::frag = texture_color_f;
+
 
 }

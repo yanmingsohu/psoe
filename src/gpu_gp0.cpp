@@ -4,22 +4,35 @@
 
 namespace ps1e {
 
+// 实际上 mirror_case 的定义与对应的 case 在渲染上有出入
+// 可以用恶魔城进行测试, 进一步确定渲染方式.
+#define mirror_case(x)  case x
+
+
+class VerticesBase {
+protected:
+  int step;
+  const int element;
+
+public:
+  VerticesBase(int ele) : step(0), element(ele) {}
+  virtual ~VerticesBase() {}
+
+  int elementCount() {
+    return element;
+  }
+};
+
 
 template<int ElementCount>
-class PolygonU32Vertices {
+class PolygonU32Vertices : public VerticesBase {
 private:
   u32 vertices[ElementCount];
-  int step;
 
 public:
   u32 color;
 
-  PolygonU32Vertices() : step(0) {
-  }
-
-  int elementCount() {
-    return ElementCount;
-  }
+  PolygonU32Vertices() : VerticesBase(ElementCount) {}
 
   void setAttr(GLVerticesBuffer& vbo) {
     GLBufferData vbdata(vbo, vertices, sizeof(vertices));
@@ -43,22 +56,16 @@ public:
 
 
 template<int ElementCount>
-class PolyTextureVertices {
+class PolyTextureVertices : public VerticesBase {
 private:
   u32 vertices[ElementCount * 2];
-  int step;
 
 public:
   u32 color;
   u32 clut;
   u32 page;
 
-  PolyTextureVertices() : step(0) {
-  }
-
-  int elementCount() {
-    return ElementCount;
-  }
+  PolyTextureVertices() : VerticesBase(ElementCount) {}
 
   void setAttr(GLVerticesBuffer& vbo) {
     GLBufferData vbdata(vbo, vertices, sizeof(vertices));
@@ -90,21 +97,76 @@ public:
 };
 
 
+template<int ElementCount>
+class ShadedPolyVertices : public VerticesBase {
+private:
+  u32 vertices[ElementCount * 2];
+
+public:
+  ShadedPolyVertices() : VerticesBase(ElementCount) {}
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, 1, 2, 1);
+    vbdata.uintAttr(1, 1, 2, 0);
+  }
+
+  bool write(const u32 c) {
+    vertices[step] = c;
+    return ++step < ElementCount*2;
+  }
+};
+
+
+template<int ElementCount>
+class ShadedPolyWithTextureVertices : public VerticesBase {
+private:
+  u32 vertices[ElementCount * 3];
+
+public:
+  u32 clut;
+  u32 page;
+
+  ShadedPolyWithTextureVertices() : VerticesBase(ElementCount) {}
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, 1, 3, 1);
+    vbdata.uintAttr(1, 1, 3, 0);
+    vbdata.uintAttr(2, 1, 3, 2);
+  }
+
+  bool write(const u32 c) {
+    vertices[step] = c;
+    switch (step) {
+      case 2:
+        clut = c & 0xFFFF'0000;
+        break;
+
+      case 5:
+        page = c & 0xFFFF'0000;
+        break;
+    }
+    return ++step < ElementCount*3;
+  }
+};
+
+
 template< class Vertices, 
           void (*Draw)(GLVertexArrays&, int),
           class Shader = MonoColorPolygonShader,
           bool active_texture = false
           >
-class MonoPolygon : public IDrawShape {
+class Polygon : public IDrawShape {
 private:
   Vertices vertices;
   float transparent;
 
 public:
-  MonoPolygon(float trans) : transparent(trans) {
+  Polygon(float trans) : transparent(trans) {
   }
 
-  ~MonoPolygon() {
+  ~Polygon() {
   }
 
   virtual bool write(const u32 c) {
@@ -132,9 +194,15 @@ void drawTriangles(GLVertexArrays& vao, int elementCount) {
 }
 
 
-void drawSquare(GLVertexArrays& vao, int elementCount) {
+void drawFan(GLVertexArrays& vao, int elementCount) {
   vao.drawTriangleFan(elementCount);
 }
+
+
+void drawTriStrip(GLVertexArrays& vao, int elementCount) {
+  vao.drawTriangleStrip(elementCount);
+}
+ 
  
 
 bool GPU::GP0::parseCommand(const GpuCommand c) {
@@ -182,60 +250,100 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       p.dirtyAttr();
       return false;
       
-    case 0x20:
-      shape = new MonoPolygon<PolygonU32Vertices<3>, drawTriangles>(1);
+    case 0x20: mirror_case(0x21):
+      shape = new Polygon<PolygonU32Vertices<3>, drawTriangles>(1);
       break;
 
-    case 0x22:
-      shape = new MonoPolygon<PolygonU32Vertices<3>, drawTriangles>(0.5);
+    case 0x22: mirror_case(0x23):
+      shape = new Polygon<PolygonU32Vertices<3>, drawTriangles>(0.5);
       break;
 
-    case 0x28:
-      shape = new MonoPolygon<PolygonU32Vertices<4>, drawSquare>(1);
+    case 0x28: mirror_case(0x29):
+      shape = new Polygon<PolygonU32Vertices<4>, drawTriStrip>(1);
       break;
 
-    case 0x2A:
-      shape = new MonoPolygon<PolygonU32Vertices<4>, drawSquare>(0.5);
+    case 0x2A: mirror_case(0x2B):
+      shape = new Polygon<PolygonU32Vertices<4>, drawTriStrip>(0.5);
       break;
 
     case 0x24:
-      shape = new MonoPolygon<PolyTextureVertices<3>, 
+      shape = new Polygon<PolyTextureVertices<3>, 
                   drawTriangles, MonoColorTexturePolyShader, true>(1);
       break;
 
     case 0x25:
-      shape = new MonoPolygon<PolyTextureVertices<3>, 
+      shape = new Polygon<PolyTextureVertices<3>, 
                   drawTriangles, TextureOnlyPolyShader, true>(1);
       break;
 
     case 0x26:
-      shape = new MonoPolygon<PolyTextureVertices<3>, 
+      shape = new Polygon<PolyTextureVertices<3>, 
                   drawTriangles, MonoColorTexturePolyShader, true>(0.5);
       break;
 
     case 0x27:
-      shape = new MonoPolygon<PolyTextureVertices<3>, 
+      shape = new Polygon<PolyTextureVertices<3>, 
                   drawTriangles, TextureOnlyPolyShader, true>(0.5);
       break;
 
     case 0x2C:
-      shape = new MonoPolygon<PolyTextureVertices<4>, 
+      shape = new Polygon<PolyTextureVertices<4>, 
                   drawTriangles, MonoColorTexturePolyShader, true>(1);
       break;
 
     case 0x2D:
-      shape = new MonoPolygon<PolyTextureVertices<4>, 
+      shape = new Polygon<PolyTextureVertices<4>, 
                   drawTriangles, TextureOnlyPolyShader, true>(1);
       break;
 
     case 0x2E:
-      shape = new MonoPolygon<PolyTextureVertices<4>, 
+      shape = new Polygon<PolyTextureVertices<4>, 
                   drawTriangles, MonoColorTexturePolyShader, true>(0.5);
       break;
 
     case 0x2F:
-      shape = new MonoPolygon<PolyTextureVertices<4>, 
+      shape = new Polygon<PolyTextureVertices<4>, 
                   drawTriangles, TextureOnlyPolyShader, true>(0.5);
+      break;
+
+    case 0x30: mirror_case(0x31):
+      shape = new Polygon<ShadedPolyVertices<3>, 
+                  drawTriangles, ShadedPolyShader, false>(1);
+      break;
+
+    case 0x32: mirror_case(0x33):
+      shape = new Polygon<ShadedPolyVertices<3>, 
+                  drawTriangles, ShadedPolyShader, false>(0.5);
+      break;
+
+    case 0x38: mirror_case(0x39):
+      shape = new Polygon<ShadedPolyVertices<4>, 
+                  drawTriStrip, ShadedPolyShader, false>(1);
+      break;
+
+    case 0x3A: mirror_case(0x3B):
+      shape = new Polygon<ShadedPolyVertices<4>, 
+                  drawTriStrip, ShadedPolyShader, false>(0.5);
+      break;
+
+    case 0x34: mirror_case(0x35):
+      shape = new Polygon<ShadedPolyWithTextureVertices<3>,
+                  drawTriangles, ShadedPolyWithTextShader, true>(1);
+      break;
+
+    case 0x36: mirror_case(0x37):
+      shape = new Polygon<ShadedPolyWithTextureVertices<3>,
+                  drawTriangles, ShadedPolyWithTextShader, true>(0.5);
+      break;
+
+    case 0x3C: mirror_case(0x3D):
+      shape = new Polygon<ShadedPolyWithTextureVertices<4>,
+                  drawTriStrip, ShadedPolyWithTextShader, true>(1);
+      break;
+
+    case 0x3E: mirror_case(0x3F):
+      shape = new Polygon<ShadedPolyWithTextureVertices<4>,
+                  drawTriStrip, ShadedPolyWithTextShader, true>(0.5);
       break;
 
     default:
@@ -282,6 +390,10 @@ void GPU::GP0::write(u32 v) {
 
 void GPU::GP0::reset_fifo() {
   stage = ShapeDataStage::read_command;
+  if (shape) {
+    delete shape;
+    shape = NULL;
+  }
 }
 
 

@@ -62,6 +62,11 @@ void GLVertexArrays::drawTriangleFan(u32 indices_count) {
 }
 
 
+void GLVertexArrays::drawTriangleStrip(u32 indices_count) {
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, indices_count);
+}
+
+
 GLVerticesBuffer::GLVerticesBuffer() : vbo(0) {
 }
 
@@ -156,8 +161,8 @@ void GLTexture::init(GLFrameBuffer& fb, void* pixeldata) {
   fb.bind();
   glGenTextures(1, &text);
   bind();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
-      fb.width(), fb.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, pixeldata);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 
+      fb.width(), fb.height(), 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, pixeldata);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glFramebufferTexture2D(GL_FRAMEBUFFER, 

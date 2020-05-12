@@ -117,8 +117,43 @@ static void draw_p3_t1(Bus& bus, int cmd = 0x24) {
 
 static void draw_offset(Bus& bus, int x, int y) {
   // 变更之前必须等待 gpu 绘制完成
-  sleep(150);
+  sleep(300);
   bus.write32(gp0, 0xE500'0000 | (x & 0xfff) | ((y & 0xFFF) << 11));
+}
+
+
+static void draw_p3_s1(Bus& bus, int count = 3, int cmd = 0x30) {
+  bus.write32(gp0, Color(cmd, 0xff, 0, 0).v);
+  bus.write32(gp0, pos(10, 10).v);
+  bus.write32(gp0, Color(0, 0, 0xff, 0).v);
+  bus.write32(gp0, pos(100, 50).v);
+  bus.write32(gp0, Color(0, 0, 0, 0xff).v);
+  bus.write32(gp0, pos(50, 100).v);
+  if (count == 4) {
+    bus.write32(gp0, Color(0, 99, 99, 99).v);
+    bus.write32(gp0, pos(150, 100).v);
+  }
+}
+
+
+static void draw_p3_s2(Bus& bus, int count = 3, int cmd = 0x34) {
+  bus.write32(gp0, Color(cmd, 0xff, 0, 0).v);
+  bus.write32(gp0, pos(10, 10).v);
+  bus.write32(gp0, TCoord(30, 120).v);
+
+  bus.write32(gp0, Color(0, 0, 0xff, 0).v);
+  bus.write32(gp0, pos(100, 50).v);
+  bus.write32(gp0, TCoord(30, 39).v);
+
+  bus.write32(gp0, Color(0, 0, 0, 0xff).v);
+  bus.write32(gp0, pos(50, 100).v);
+  bus.write32(gp0, TCoord(120, 120).v);
+
+  if (count == 4) {
+    bus.write32(gp0, Color(0, 99, 99, 99).v);
+    bus.write32(gp0, pos(150, 100).v);
+    bus.write32(gp0, TCoord(120, 200).v);
+  }
 }
 
 
@@ -144,6 +179,23 @@ void test_gpu(GPU& gpu, Bus& bus) {
 
   draw_offset(bus, 300, 40);
   draw_p3_t1(bus, 0x25);
+
+  draw_p3_s1(bus);
+
+  draw_offset(bus, 30, 40);
+  draw_p3_s1(bus, 3, 0x32);
+
+  draw_offset(bus, 30, 120);
+  draw_p3_s1(bus, 4, 0x38);
+
+  draw_offset(bus, 130, 120);
+  draw_p3_s1(bus, 4, 0x3A);
+
+  draw_offset(bus, 240, 120);
+  draw_p3_s2(bus, 4, 0x3c);
+
+  draw_offset(bus, 40, 200);
+  draw_p3_s2(bus, 3, 0x36);
 }
 
 }

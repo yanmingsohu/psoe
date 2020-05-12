@@ -99,6 +99,45 @@ public:
 };
 
 
+class ShadedPolyShader : public PSShaderBase {
+protected:
+  static ShaderSrc vertex;
+  static ShaderSrc frag;
+
+public:
+  ShadedPolyShader() : PSShaderBase(vertex, frag) {}
+
+  template<class Vertices>
+  void setShaderUni(Vertices& v, GPU& gpu, float _transparent) {
+    transparent.setFloat(_transparent);
+  }
+};
+
+
+class ShadedPolyWithTextShader : public PSShaderBase {
+private:
+  static ShaderSrc vertex;
+  static ShaderSrc frag;
+  
+  GLUniform page;
+  GLUniform clut;
+
+public:
+  ShadedPolyWithTextShader() : PSShaderBase(vertex, frag) {
+    use();
+    page  = getUniform("page");
+    clut  = getUniform("clut");
+  }
+
+  template<class Vertices>
+  void setShaderUni(Vertices& v, GPU& gpu, float _transparent) {
+    transparent.setFloat(_transparent);
+    page.setUint(v.page);
+    clut.setUint(v.clut);
+  }
+};
+
+
 class VirtualScreenShader : public OpenGLShader {
 private:
   static ShaderSrc vertex;
