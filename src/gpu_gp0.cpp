@@ -83,10 +83,10 @@ public:
       default: {
         switch (step) {
           case 1:
-            clut = c & 0xFFFF'0000;
+            clut = (c & 0xFFFF'0000)>>16;
             break;
           case 3:
-            page = c & 0xFFFF'0000;
+            page = (c & 0xFFFF'0000)>>16;
             break;
         }
         vertices[step] = c;
@@ -141,11 +141,11 @@ public:
     vertices[step] = c;
     switch (step) {
       case 2:
-        clut = c & 0xFFFF'0000;
+        clut = (c & 0xFFFF'0000)>>16;
         break;
 
       case 5:
-        page = c & 0xFFFF'0000;
+        page = (c & 0xFFFF'0000)>>16;
         break;
     }
     return ++step < (ElementCount *3);
@@ -231,7 +231,7 @@ public:
 
   bool write(const u32 c) {
     // 55555555h ? 50005000h ??
-    if ((count >= mincount) && (c & END)==END) {
+    if ((count >= mincount) && (c & 0xF000F000)==END) {
       return false;
     }
 
