@@ -208,6 +208,54 @@ static void draw_lm2(Bus& bus, int cmd = 0x58) {
 }
 
 
+static void draw_box1(Bus& bus, int x, int y, int cmd=0x60, int w=100, int h=100) {
+  bus.write32(gp0, Color(cmd, 0x93, 0x93, x % 255).v);
+  bus.write32(gp0, pos(x, y).v);
+  if (cmd == 0x60 || cmd == 0x62) {
+    bus.write32(gp0, pos(w, h).v);
+  }
+}
+
+
+static void draw_box2(Bus& bus, int x, int y, int cmd = 0x64) {
+  bus.write32(gp0, Color(cmd, 0x43, 0x93, x % 255).v);
+  bus.write32(gp0, pos(x, y).v);
+  u16 clut = 0;
+  bus.write32(gp0, TCoord(0, 0, clut).v);
+  if (cmd >= 0x64 && cmd <= 0x67) {
+    bus.write32(gp0, pos(50, 50).v);
+  }
+}
+
+
+static void draw_pt(Bus& bus, int count = 100, int cmd = 0x68) {
+  for (int i=0; i<count; ++i) {
+    draw_box1(bus, random(100, 150), random(100, 150), cmd);
+  }
+}
+
+
+static void draw_pt2(Bus& bus, int x, int y, int count = 100, int cmd = 0x6C) {
+  for (int i=0; i<count; ++i) {
+    bus.write32(gp0, Color(cmd, 0, 0, 200).v);
+    bus.write32(gp0, pos(x+i, y).v);
+    u16 clut = 0;
+    bus.write32(gp0, TCoord(i, i, clut).v);
+  }
+}
+
+
+static void set_text_page(Bus& bus, int x, int y) {
+  sleep(100);
+  TexpageAttr ta{0};
+  ta.cmd = 0xE1;
+  ta.px = x / 64;
+  ta.py = y / 256;
+  ta.draw = 1;
+  bus.write32(gp0, ta.v);
+}
+
+
 void test_gpu(GPU& gpu, Bus& bus) {
   gpu_basic();
   bus.write32(gp1, 0x0300'0001); // open display
@@ -224,6 +272,9 @@ void test_gpu(GPU& gpu, Bus& bus) {
   draw_l2(bus);
   draw_l2(bus, 0x52, 5);
   draw_lm2(bus);
+
+  draw_box1(bus, 10, 100, 0x62);
+  draw_box1(bus, 300, 100);
 
   draw_p3_1(bus, 100, 100, 5, 0x20);
   draw_p3_1(bus, 10, 10, 5, 0x22);
@@ -254,6 +305,40 @@ void test_gpu(GPU& gpu, Bus& bus) {
 
   draw_offset(bus, 40, 200);
   draw_p3_s2(bus, 3, 0x36);
+
+  draw_offset(bus, 0, 0);
+  draw_pt(bus, 100);
+  draw_offset(bus, 100, 0);
+  draw_pt(bus, 100, 0x6A);
+
+  draw_box1(bus, 320, 130, 0x60, 120, 120);
+
+  draw_box1(bus, 400, 100, 0x70);
+  draw_box1(bus, 380, 100, 0x72);
+  draw_box1(bus, 360, 100, 0x78);
+  draw_box1(bus, 340, 100, 0x7A);
+
+  set_text_page(bus, 100, 100);
+  draw_box2(bus, 340, 150, 0x64);
+  draw_box2(bus, 340, 200, 0x65);
+
+  draw_box2(bus, 390, 150, 0x66);
+  draw_box2(bus, 390, 200, 0x67);
+
+  draw_pt2(bus, 340, 260, 100, 0x6C);
+  draw_pt2(bus, 340, 262, 100, 0x6D);
+  draw_pt2(bus, 340, 264, 100, 0x6E);
+  draw_pt2(bus, 340, 266, 100, 0x6F);
+
+  draw_box2(bus, 340, 270, 0x74);
+  draw_box2(bus, 350, 270, 0x75);
+  draw_box2(bus, 360, 270, 0x76);
+  draw_box2(bus, 370, 270, 0x77);
+
+  draw_box2(bus, 340, 280, 0x7C);
+  draw_box2(bus, 360, 280, 0x7D);
+  draw_box2(bus, 380, 280, 0x7E);
+  draw_box2(bus, 400, 280, 0x7F);
 }
 
 }

@@ -77,6 +77,11 @@ void GLVertexArrays::drawLineStrip(u32 i) {
 }
 
 
+void GLVertexArrays::drawPoints(u32 i) {
+  glDrawArrays(GL_POINTS, 0, i);
+}
+
+
 GLVerticesBuffer::GLVerticesBuffer() : vbo(0) {
 }
 
@@ -141,6 +146,10 @@ GLBufferData::GLBufferData(GLVerticesBuffer& b, void* data, size_t length) : vbo
 }
 
 
+// loc - Location on GSGL
+// ele - Element count byte
+// spc - Element spacing byte
+// beg - Begin of element byte
 void GLBufferData::floatAttr(u32 loc, u32 ele, u32 spc, u32 beg) {
   vbo.bind();
   const u8 UZ = sizeof(float);
@@ -149,6 +158,10 @@ void GLBufferData::floatAttr(u32 loc, u32 ele, u32 spc, u32 beg) {
 }
 
 
+// loc - Location on GSGL
+// ele - Element count byte
+// spc - Element spacing byte
+// beg - Begin of element byte
 void GLBufferData::uintAttr(u32 loc, u32 ele, u32 spc, u32 beg) {
   vbo.bind();
   const u8 UZ = sizeof(u32);

@@ -202,21 +202,21 @@ void main() {
 )shader";
 
 
-ShaderSrc MonoColorPolygonShader::vertex = mono_color_polygon_vertex;
-ShaderSrc MonoColorPolygonShader::frag = color_polygon_frag;
+ShaderSrc MonoColorShader::vertex = mono_color_polygon_vertex;
+ShaderSrc MonoColorShader::frag = color_polygon_frag;
 
 ShaderSrc VirtualScreenShader::vertex = draw_virtual_screen_vertex;
 ShaderSrc VirtualScreenShader::frag = draw_virtual_screen_frag;
 
-ShaderSrc MonoColorTexturePolyShader::vertex = texture_mono_color_poly_v;
-ShaderSrc MonoColorTexturePolyShader::frag_with_color = texture_color_f;
-ShaderSrc MonoColorTexturePolyShader::frag_no_color = texture_only_f;
+ShaderSrc MonoColorTextureMixShader::vertex = texture_mono_color_poly_v;
+ShaderSrc MonoColorTextureMixShader::frag_with_color = texture_color_f;
+ShaderSrc MonoColorTextureMixShader::frag_no_color = texture_only_f;
 
-ShaderSrc ShadedPolyShader::vertex = shaded_polygon_v;
-ShaderSrc ShadedPolyShader::frag = color_polygon_frag;
+ShaderSrc ShadedColorShader::vertex = shaded_polygon_v;
+ShaderSrc ShadedColorShader::frag = color_polygon_frag;
 
-ShaderSrc ShadedPolyWithTextShader::vertex = shaded_polygon_texture_v;
-ShaderSrc ShadedPolyWithTextShader::frag = texture_color_f;
+ShaderSrc ShadedColorTextureMixShader::vertex = shaded_polygon_texture_v;
+ShaderSrc ShadedColorTextureMixShader::frag = texture_color_f;
 
 
 }

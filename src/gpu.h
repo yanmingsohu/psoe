@@ -16,7 +16,7 @@ namespace std {
 namespace ps1e {
 
 class GPU;
-class MonoColorPolygonShader;
+class MonoColorShader;
 class VirtualScreenShader;
 
 
@@ -113,6 +113,8 @@ union GpuTextFlip {
     u32 _1 : 10;
   };
 };
+
+u32 textureAttr(GpuStatus& st, GpuTextFlip& flip);
 
 
 union GpuDrawOffset {

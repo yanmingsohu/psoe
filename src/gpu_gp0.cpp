@@ -11,6 +11,9 @@ namespace ps1e {
 
 
 class VerticesBase {
+private:
+  VerticesBase(VerticesBase&);
+
 protected:
   int step;
   const int element;
@@ -22,18 +25,25 @@ public:
   int elementCount() {
     return element;
   }
+
+  u32 mask_add(u32 a, u32 b, u32 mask) {
+    u32 s = (a & mask) + (b & mask);
+    return (a & ~mask) | (s & mask);
+  }
+
+  void updateTextureInfo(GPU& gpu) {}
 };
 
 
 template<int ElementCount>
-class PolygonU32Vertices : public VerticesBase {
+class PolygonVertices : public VerticesBase {
 private:
   u32 vertices[ElementCount];
 
 public:
   u32 color;
 
-  PolygonU32Vertices() : VerticesBase(ElementCount, -1) {}
+  PolygonVertices() : VerticesBase(ElementCount, -1) {}
 
   void setAttr(GLVerticesBuffer& vbo) {
     GLBufferData vbdata(vbo, vertices, sizeof(vertices));
@@ -229,6 +239,8 @@ public:
     return count;
   }
 
+  void updateTextureInfo(GPU& gpu) {}
+
   bool write(const u32 c) {
     // 55555555h ? 50005000h ??
     if ((count >= mincount) && (c & 0xF000F000)==END) {
@@ -293,9 +305,197 @@ public:
 };
 
 
+template<u8 Fixed>
+class SquareVertices : public VerticesBase {
+private:
+  static const int ElementCount = 4;
+  u32 vertices[ElementCount];
+
+  void update_vertices(u32 offset) {
+    vertices[1] = vertices[0] + (0x000003ff & offset);
+    vertices[2] = vertices[0] + (0x01ff0000 & offset);
+    vertices[3] = vertices[0] + (0x01ff03ff & offset);
+  }
+
+public:
+  u32 color;
+
+  SquareVertices() : VerticesBase(ElementCount) {
+  }
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, 1, 1, 0);
+  }
+
+  bool write(const u32 c) {
+    switch (step) {
+      case 0:
+        color = c;
+        break;
+
+      case 1:
+        vertices[0] = c;
+        break;
+
+      case 2:
+        update_vertices(c);
+        break;
+    }
+
+    if (Fixed) {
+      update_vertices(Fixed + (Fixed << 16));
+      return ++step < 2;
+    } else {
+      return ++step < 3;
+    }
+  }
+};
+
+
+template<u8 Fixed>
+class SquareWithTextureVertices : public VerticesBase {
+private:
+  static const int ElementCount = 4;
+  u32 vertices[ElementCount*2];
+
+  void update_vertices(u32 offset) {
+    vertices[2] = vertices[0] + (0x000003ff & offset);
+    vertices[4] = vertices[0] + (0x01ff0000 & offset);
+    vertices[6] = vertices[0] + (0x01ff03ff & offset);
+    
+    const u32 x = (0x000000ff & offset);
+    const u32 y = (0x00FF0000 & offset) >> 8;
+    vertices[3] = mask_add(vertices[1], x, 0xFF);
+    vertices[5] = mask_add(vertices[1], y, 0xFF00);
+    vertices[7] = mask_add(vertices[5], x, 0xFF);
+  }
+
+public:
+  u32 color;
+  u32 clut;
+  u32 page;
+
+  SquareWithTextureVertices() : VerticesBase(ElementCount) {
+  }
+
+  void updateTextureInfo(GPU& gpu) {
+    page = textureAttr(gpu.status, gpu.text_flip);
+  }
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, 1, 2, 0);
+    vbdata.uintAttr(1, 1, 2, 1);
+  }
+
+  bool write(const u32 c) {
+    switch (step) {
+      case 0:
+        color = c;
+        break;
+
+      case 1:
+        vertices[0] = c;
+        break;
+
+      case 2:
+        clut = 0xFFFF & (c >> 16);
+        vertices[1] = 0xFFFF & c;
+        break;
+
+      case 3:
+        update_vertices(c);
+        break;
+    }
+
+    if (Fixed) {
+      update_vertices(Fixed + (Fixed << 16));
+      return ++step < 3;
+    } else {
+      return ++step < 4;
+    }
+  }
+};
+
+
+class PointVertices : public VerticesBase {
+private:
+  static const int ElementCount = 1;
+  u32 vertices[ElementCount];
+
+public:
+  u32 color;
+
+  PointVertices() : VerticesBase(ElementCount) {
+  }
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, 1, 1, 0);
+  }
+
+  bool write(const u32 c) {
+    switch (step) {
+      case 0:
+        color = c;
+        break;
+
+      case 1:
+        vertices[0] = c;
+        break;
+    }
+    return ++step < 2;
+  }
+};
+
+
+class PointTextVertices : public VerticesBase {
+private:
+  static const int ElementCount = 1;
+  u32 vertices[ElementCount * 2];
+
+public:
+  u32 color;
+  u32 clut;
+  u32 page;
+
+  PointTextVertices() : VerticesBase(ElementCount) {
+  }
+
+  void updateTextureInfo(GPU& gpu) {
+    page = textureAttr(gpu.status, gpu.text_flip);
+  }
+
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, 1, 2, 0);
+    vbdata.uintAttr(1, 1, 2, 1);
+  }
+
+  bool write(const u32 c) {
+    switch (step) {
+      case 0:
+        color = c;
+        break;
+
+      case 1:
+        vertices[0] = c;
+        break;
+
+      case 2:
+        clut = 0xFFFF & (c >> 16);
+        vertices[1] = 0xFFFF & c;
+        break;
+    }
+    return ++step < 3;
+  }
+};
+
+
 template< class Vertices, 
           void (*Draw)(GLVertexArrays&, int),
-          class Shader = MonoColorPolygonShader,
+          class Shader = MonoColorShader,
           bool active_texture = false
           >
 class Polygon : public IDrawShape {
@@ -319,6 +519,7 @@ public:
     vbo.init(vao);
     gl_scope(vbo);
     vertices.setAttr(vbo);
+    vertices.updateTextureInfo(gpu);
 
     auto prog = gpu.useProgram<Shader>();
     prog->setShaderUni(vertices, gpu, transparent);
@@ -352,6 +553,11 @@ void drawQuads(GLVertexArrays& vao, int elementCount) {
 
 void drawLines(GLVertexArrays& vao, int elementCount) {
   vao.drawLineStrip(elementCount);
+}
+
+
+void drawPoints(GLVertexArrays& vao, int elementCount) {
+  vao.drawPoints(elementCount);
 }
  
 
@@ -401,134 +607,254 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       return false;
       
     case 0x20: mirror_case(0x21):
-      shape = new Polygon<PolygonU32Vertices<3>, drawTriangles>(1);
+      shape = new Polygon<PolygonVertices<3>, drawTriangles>(1);
       break;
 
     case 0x22: mirror_case(0x23):
-      shape = new Polygon<PolygonU32Vertices<3>, drawTriangles>(0.5);
+      shape = new Polygon<PolygonVertices<3>, drawTriangles>(0.5);
       break;
 
     case 0x28: mirror_case(0x29):
-      shape = new Polygon<PolygonU32Vertices<4>, drawQuads>(1);
+      shape = new Polygon<PolygonVertices<4>, drawQuads>(1);
       break;
 
     case 0x2A: mirror_case(0x2B):
-      shape = new Polygon<PolygonU32Vertices<4>, drawQuads>(0.5);
+      shape = new Polygon<PolygonVertices<4>, drawQuads>(0.5);
       break;
 
     case 0x24:
       shape = new Polygon<PolyTextureVertices<3>, 
-                  drawTriangles, MonoColorTexturePolyShader, true>(1);
+                  drawTriangles, MonoColorTextureMixShader, true>(1);
       break;
 
     case 0x25:
       shape = new Polygon<PolyTextureVertices<3>, 
-                  drawTriangles, TextureOnlyPolyShader, true>(1);
+                  drawTriangles, TextureOnlyShader, true>(1);
       break;
 
     case 0x26:
       shape = new Polygon<PolyTextureVertices<3>, 
-                  drawTriangles, MonoColorTexturePolyShader, true>(0.5);
+                  drawTriangles, MonoColorTextureMixShader, true>(0.5);
       break;
 
     case 0x27:
       shape = new Polygon<PolyTextureVertices<3>, 
-                  drawTriangles, TextureOnlyPolyShader, true>(0.5);
+                  drawTriangles, TextureOnlyShader, true>(0.5);
       break;
 
     case 0x2C:
       shape = new Polygon<PolyTextureVertices<4>, 
-                  drawTriangles, MonoColorTexturePolyShader, true>(1);
+                  drawTriangles, MonoColorTextureMixShader, true>(1);
       break;
 
     case 0x2D:
       shape = new Polygon<PolyTextureVertices<4>, 
-                  drawTriangles, TextureOnlyPolyShader, true>(1);
+                  drawTriangles, TextureOnlyShader, true>(1);
       break;
 
     case 0x2E:
       shape = new Polygon<PolyTextureVertices<4>, 
-                  drawTriangles, MonoColorTexturePolyShader, true>(0.5);
+                  drawTriangles, MonoColorTextureMixShader, true>(0.5);
       break;
 
     case 0x2F:
       shape = new Polygon<PolyTextureVertices<4>, 
-                  drawTriangles, TextureOnlyPolyShader, true>(0.5);
+                  drawTriangles, TextureOnlyShader, true>(0.5);
       break;
 
     case 0x30: mirror_case(0x31):
       shape = new Polygon<ShadedPolyVertices<3>, 
-                  drawTriangles, ShadedPolyShader, false>(1);
+                  drawTriangles, ShadedColorShader, false>(1);
       break;
 
     case 0x32: mirror_case(0x33):
       shape = new Polygon<ShadedPolyVertices<3>, 
-                  drawTriangles, ShadedPolyShader, false>(0.5);
+                  drawTriangles, ShadedColorShader, false>(0.5);
       break;
 
     case 0x38: mirror_case(0x39):
       shape = new Polygon<ShadedPolyVertices<4>, 
-                  drawQuads, ShadedPolyShader, false>(1);
+                  drawQuads, ShadedColorShader, false>(1);
       break;
 
     case 0x3A: mirror_case(0x3B):
       shape = new Polygon<ShadedPolyVertices<4>, 
-                  drawQuads, ShadedPolyShader, false>(0.5);
+                  drawQuads, ShadedColorShader, false>(0.5);
       break;
 
     case 0x34: mirror_case(0x35):
       shape = new Polygon<ShadedPolyWithTextureVertices<3>,
-                  drawTriangles, ShadedPolyWithTextShader, true>(1);
+                  drawTriangles, ShadedColorTextureMixShader, true>(1);
       break;
 
     case 0x36: mirror_case(0x37):
       shape = new Polygon<ShadedPolyWithTextureVertices<3>,
-                  drawTriangles, ShadedPolyWithTextShader, true>(0.5);
+                  drawTriangles, ShadedColorTextureMixShader, true>(0.5);
       break;
 
     case 0x3C: mirror_case(0x3D):
       shape = new Polygon<ShadedPolyWithTextureVertices<4>,
-                  drawQuads, ShadedPolyWithTextShader, true>(1);
+                  drawQuads, ShadedColorTextureMixShader, true>(1);
       break;
 
     case 0x3E: mirror_case(0x3F):
       shape = new Polygon<ShadedPolyWithTextureVertices<4>,
-                  drawQuads, ShadedPolyWithTextShader, true>(0.5);
+                  drawQuads, ShadedColorTextureMixShader, true>(0.5);
       break;
 
     case 0x40:
       shape = new Polygon<MonoLineFixVertices, 
-                  drawLines, MonoColorPolygonShader, false>(1);
+                  drawLines, MonoColorShader, false>(1);
       break;
 
     case 0x42:
       shape = new Polygon<MonoLineFixVertices, 
-                  drawLines, MonoColorPolygonShader, false>(0.5);
+                  drawLines, MonoColorShader, false>(0.5);
       break;
 
     case 0x48:
       shape = new Polygon<MonoLineMulVertices, 
-                  drawLines, MonoColorPolygonShader, false>(1);
+                  drawLines, MonoColorShader, false>(1);
       break;
 
     case 0x4A:
       shape = new Polygon<MonoLineMulVertices, 
-                  drawLines, MonoColorPolygonShader, false>(0.5);
+                  drawLines, MonoColorShader, false>(0.5);
       break;
 
     case 0x50: 
       shape = new Polygon<ShadedPolyVertices<2>, 
-                  drawLines, ShadedPolyShader, false>(1);
+                  drawLines, ShadedColorShader, false>(1);
       break;
 
     case 0x52: 
       shape = new Polygon<ShadedPolyVertices<2>, 
-                  drawLines, ShadedPolyShader, false>(0.5);
+                  drawLines, ShadedColorShader, false>(0.5);
       break;
 
     case 0x58:
       shape = new Polygon<ShadedLineMulVertices, 
-                  drawLines, ShadedPolyShader, false>(1);
+                  drawLines, ShadedColorShader, false>(1);
+      break;
+
+    case 0x60:
+      shape = new Polygon<SquareVertices<0>,
+                  drawTriStrip, MonoColorShader, false>(1);
+      break;
+
+    case 0x62:
+      shape = new Polygon<SquareVertices<0>,
+                  drawTriStrip, MonoColorShader, false>(0.5);
+      break;
+
+    case 0x68:
+      shape = new Polygon<PointVertices,
+                  drawPoints, MonoColorShader, false>(1);
+      break;
+
+    case 0x6A:
+      shape = new Polygon<PointVertices,
+                  drawPoints, MonoColorShader, false>(0.5);
+      break;
+
+    case 0x70:
+      shape = new Polygon<SquareVertices<7>,
+                  drawTriStrip, MonoColorShader, false>(1);
+      break;
+
+    case 0x72:
+      shape = new Polygon<SquareVertices<7>,
+                  drawTriStrip, MonoColorShader, false>(0.5);
+      break;
+
+    case 0x78:
+      shape = new Polygon<SquareVertices<15>,
+                  drawTriStrip, MonoColorShader, false>(1);
+      break;
+
+    case 0x7A:
+      shape = new Polygon<SquareVertices<15>,
+                  drawTriStrip, MonoColorShader, false>(0.5);
+      break;
+
+    case 0x64:
+      shape = new Polygon<SquareWithTextureVertices<0>,
+                  drawTriStrip, MonoColorTextureMixShader, true>(1);
+      break;
+
+    case 0x65:
+      shape = new Polygon<SquareWithTextureVertices<0>,
+                  drawTriStrip, TextureOnlyShader, true>(1);
+      break;
+
+    case 0x66:
+      shape = new Polygon<SquareWithTextureVertices<0>,
+                  drawTriStrip, MonoColorTextureMixShader, true>(0.5);
+      break;
+
+    case 0x67:
+      shape = new Polygon<SquareWithTextureVertices<0>,
+                  drawTriStrip, TextureOnlyShader, true>(0.5);
+      break;
+
+    case 0x6C:
+      shape = new Polygon<PointTextVertices,
+                  drawPoints, MonoColorTextureMixShader, true>(1);
+      break;
+
+    case 0x6D:
+      shape = new Polygon<PointTextVertices,
+                  drawPoints, TextureOnlyShader, true>(1);
+      break;
+
+    case 0x6E:
+      shape = new Polygon<PointTextVertices,
+                  drawPoints, MonoColorTextureMixShader, true>(0.5);
+      break;
+
+    case 0x6F:
+      shape = new Polygon<PointTextVertices,
+                  drawPoints, TextureOnlyShader, true>(0.5);
+      break;
+
+    case 0x74:
+      shape = new Polygon<SquareWithTextureVertices<7>,
+                  drawTriStrip, MonoColorTextureMixShader, true>(1);
+      break;
+
+    case 0x75:
+      shape = new Polygon<SquareWithTextureVertices<7>,
+                  drawTriStrip, TextureOnlyShader, true>(1);
+      break;
+
+    case 0x76:
+      shape = new Polygon<SquareWithTextureVertices<7>,
+                  drawTriStrip, MonoColorTextureMixShader, true>(0.5);
+      break;
+
+    case 0x77:
+      shape = new Polygon<SquareWithTextureVertices<7>,
+                  drawTriStrip, TextureOnlyShader, true>(0.5);
+      break;
+
+    case 0x7C:
+      shape = new Polygon<SquareWithTextureVertices<15>,
+                  drawTriStrip, MonoColorTextureMixShader, true>(1);
+      break;
+
+    case 0x7D:
+      shape = new Polygon<SquareWithTextureVertices<15>,
+                  drawTriStrip, TextureOnlyShader, true>(1);
+      break;
+
+    case 0x7E:
+      shape = new Polygon<SquareWithTextureVertices<15>,
+                  drawTriStrip, MonoColorTextureMixShader, true>(0.5);
+      break;
+
+    case 0x7F:
+      shape = new Polygon<SquareWithTextureVertices<15>,
+                  drawTriStrip, TextureOnlyShader, true>(0.5);
       break;
 
     default:

@@ -40,14 +40,14 @@ public:
 };
 
 
-class MonoColorPolygonShader : public PSShaderBase {
+class MonoColorShader : public PSShaderBase {
 private:
   static ShaderSrc vertex;
   static ShaderSrc frag;
   GLUniform color;
 
 public:
-  MonoColorPolygonShader() : PSShaderBase(vertex, frag) {
+  MonoColorShader() : PSShaderBase(vertex, frag) {
     use();
     color = getUniform("ps_color");
   }
@@ -60,7 +60,7 @@ public:
 };
 
 
-class MonoColorTexturePolyShader : public PSShaderBase {
+class MonoColorTextureMixShader : public PSShaderBase {
 protected:
   static ShaderSrc vertex;
   static ShaderSrc frag_with_color;
@@ -74,9 +74,9 @@ private:
 public:
   using PSShaderBase::update;
 
-  MonoColorTexturePolyShader() : MonoColorTexturePolyShader(frag_with_color) {}
+  MonoColorTextureMixShader() : MonoColorTextureMixShader(frag_with_color) {}
 
-  MonoColorTexturePolyShader(ShaderSrc frag) : PSShaderBase(vertex, frag) {
+  MonoColorTextureMixShader(ShaderSrc frag) : PSShaderBase(vertex, frag) {
     use();
     color = getUniform("ps_color");
     page  = getUniform("page");
@@ -93,19 +93,19 @@ public:
 };
 
 
-class TextureOnlyPolyShader : public MonoColorTexturePolyShader {
+class TextureOnlyShader : public MonoColorTextureMixShader {
 public:
-  TextureOnlyPolyShader() : MonoColorTexturePolyShader(frag_no_color) {}
+  TextureOnlyShader() : MonoColorTextureMixShader(frag_no_color) {}
 };
 
 
-class ShadedPolyShader : public PSShaderBase {
+class ShadedColorShader : public PSShaderBase {
 protected:
   static ShaderSrc vertex;
   static ShaderSrc frag;
 
 public:
-  ShadedPolyShader() : PSShaderBase(vertex, frag) {}
+  ShadedColorShader() : PSShaderBase(vertex, frag) {}
 
   template<class Vertices>
   void setShaderUni(Vertices& v, GPU& gpu, float _transparent) {
@@ -114,7 +114,7 @@ public:
 };
 
 
-class ShadedPolyWithTextShader : public PSShaderBase {
+class ShadedColorTextureMixShader : public PSShaderBase {
 private:
   static ShaderSrc vertex;
   static ShaderSrc frag;
@@ -123,7 +123,7 @@ private:
   GLUniform clut;
 
 public:
-  ShadedPolyWithTextShader() : PSShaderBase(vertex, frag) {
+  ShadedColorTextureMixShader() : PSShaderBase(vertex, frag) {
     use();
     page  = getUniform("page");
     clut  = getUniform("clut");

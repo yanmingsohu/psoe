@@ -100,7 +100,7 @@ private:
       cop0.cause.bd = 0;
       cop0.epc = pc;
     }
-    // printf("Got exception %x\n", e);
+    //printf("Got exception %x\n", e);
   }
 
   void process_exception() {
@@ -626,7 +626,7 @@ private:
   }
 
   inline bool check_exe_break() {
-    if (cop0.dcic.v & COP0_DCIC_BK_CODE_MK == COP0_DCIC_BK_CODE_MK) {
+    if ((cop0.dcic.v & COP0_DCIC_BK_CODE_MK) == COP0_DCIC_BK_CODE_MK) {
       if (((pc ^ cop0.bpc) & cop0.bpcm) == 0) {
         cop0.dcic.tany = 1;
         cop0.dcic.tc   = 1;
@@ -638,7 +638,7 @@ private:
   }
 
   inline bool check_data_read_break(u32 addr) {
-    if (cop0.dcic.v & COP0_DCIC_BK_DATA_MK == COP0_DCIC_BK_DATA_MK) {
+    if ((cop0.dcic.v & COP0_DCIC_BK_DATA_MK) == COP0_DCIC_BK_DATA_MK) {
       if (((addr ^ cop0.bda) & cop0.bdam) == 0) {
         cop0.dcic.tany = 1;
         cop0.dcic.td   = 1;
@@ -651,7 +651,7 @@ private:
   }
 
   inline bool check_data_write_break(u32 addr) {
-    if (cop0.dcic.v & COP0_DCIC_BK_DATA_MK == COP0_DCIC_BK_DATA_MK) {
+    if ((cop0.dcic.v & COP0_DCIC_BK_DATA_MK) == COP0_DCIC_BK_DATA_MK) {
       if (((addr ^ cop0.bda) & cop0.bdam) == 0) {
         cop0.dcic.tany = 1;
         cop0.dcic.td   = 1;
@@ -664,7 +664,7 @@ private:
   }
 
   inline bool check_jump_break() {
-    if (cop0.dcic.v & COP0_DCIC_BK_JMP_MK == COP0_DCIC_BK_JMP_MK) {
+    if ((cop0.dcic.v & COP0_DCIC_BK_JMP_MK) == COP0_DCIC_BK_JMP_MK) {
       cop0.dcic.tj   = 1;
       cop0.dcic.tany = 1;
       exception(ExeCodeTable::BP);

@@ -7,6 +7,15 @@
 namespace ps1e {
 
 
+u32 textureAttr(GpuStatus& st, GpuTextFlip& flip) {
+  u32 a = ((1 << 10) -1) & st.v;
+  a |= (1 & st.text_off) << 11;
+  a |= (1 & flip.x) << 12;
+  a |= (1 & flip.y) << 13;
+  return a;
+}
+
+
 GPU::GPU(Bus& bus) : 
     DMADev(bus, DmaDeviceNum::gpu), status{0}, screen{0}, display{0},
     gp0(*this), gp1(*this), cmd_respons(0), vram(1), ds(0), disp_hori{0},

@@ -77,6 +77,7 @@ public:
   void drawTriangleStrip(u32);
   void drawQuads(u32);
   void drawLineStrip(u32);
+  void drawPoints(u32);
 };
 
 
