@@ -47,6 +47,19 @@ void GLVertexArrays::unbind() {
 }
 
 
+void GLVertexArrays::setColor(u32 ps_color) {
+  float r =  (ps_color & 0xff) /255.0;
+  float g = ((ps_color >>  8) & 0xff) /255.0;
+  float b = ((ps_color >> 16) & 0xff) /255.0;
+  glColor3f(r, g, b);
+}
+
+
+GLPolygon GLVertexArrays::beginPolygon() {
+  return GLPolygon();
+}
+
+
 void GLVertexArrays::drawTriangles(u32 indices_count) {
   glDrawArrays(GL_TRIANGLES, 0, indices_count);
 }
@@ -392,5 +405,36 @@ void GLDrawState::initGlad() {
   info("PS1 GPU used OpenGL %d.%d\n", GLVersion.major, GLVersion.minor);
 }
 
+
+GLShape::GLShape(int T) : ref(1) {
+  glBegin(T);
+}
+  
+
+GLShape::~GLShape() {
+  end();
+}
+
+
+void GLShape::end() {
+  if (ref > 0) {
+    glEnd();
+  }
+  --ref;
+}
+
+
+void GLShape::flush() {
+  end();
+  glFlush();
+}
+
+
+void GLShape::addPoint(int x, int y) {
+  glVertex2i(x, y);
+}
+
+
+GLPolygon::GLPolygon() : GLShape(GL_POLYGON) {}
 
 }

@@ -61,6 +61,26 @@ template<class T, class Func> void _gl_scope(T& obj, Func func) {
 }
 
 
+class GLShape {
+private:
+  int ref;
+public:
+  GLShape(int);
+  virtual ~GLShape();
+  void end();
+  void flush();
+  void addPoint(int x, int y);
+};
+
+
+class GLPolygon : public GLShape {
+private:
+  GLPolygon();
+
+friend class GLVertexArrays;
+};
+
+
 class GLVertexArrays {
 private:
   GLHANDLE vao;
@@ -70,6 +90,7 @@ public:
   void init();
   void bind();
   void unbind();
+  void setColor(u32 ps_color);
   // type : GL_TRIANGLES ...
   void drawTriangles(u32 count);
   void drawLines(u32 count);
@@ -78,6 +99,7 @@ public:
   void drawQuads(u32);
   void drawLineStrip(u32);
   void drawPoints(u32);
+  GLPolygon beginPolygon();
 };
 
 

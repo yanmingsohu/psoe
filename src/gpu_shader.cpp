@@ -3,9 +3,9 @@
 
 namespace ps1e {
 
+#define GSGL_VERSION "#version 330 core\n"
 
-#define VertexShaderHeader R"shader(
-#version 330 core
+#define VertexShaderHeader GSGL_VERSION R"shader(
 uniform uint frame_width;
 uniform uint frame_height;
 uniform int offx;
@@ -31,10 +31,18 @@ float get_x(uint ps_pos) {
 float get_y(uint ps_pos) {
   uint t = (0xFFFFu & (ps_pos>>16u));
   uint s = t & 0x400u;
-  int a  = int(t) & 0x3FF;
+  int a  = int(t) & 0x1FF;
   if (s != 0u) a = ~(a) + 1;
   int y = a + offy;
   return -(float(y) / frame_height  * 2 - 1);
+}
+
+float norm_x(uint n) { 
+  return float(n) / frame_width  * 2 - 1;
+}
+
+float norm_y(uint n) {
+  return -(float(n) / frame_height  * 2 - 1);
 }
 
 vec2 to_textcoord(uint coord, uint page) {
@@ -47,8 +55,7 @@ vec2 to_textcoord(uint coord, uint page) {
 )shader"
 
 
-#define TextureFragShaderHeader R"shader(
-#version 330 core
+#define TextureFragShaderHeader  GSGL_VERSION R"shader(
 uniform uint page;
 uniform uint clut;
 
@@ -89,7 +96,7 @@ void main() {
 )shader";
 
 
-static ShaderSrc color_polygon_frag = R"shader(
+static ShaderSrc color_direct_frag = R"shader(
 #version 330 core
 out vec4 FragColor;
 in vec4 oColor;
@@ -175,10 +182,24 @@ void main() {
 }
 )shader";
 
+// ---------- ---------- Fill Rectangle
+
+static ShaderSrc fill_rect_v = VertexShaderHeader R"shader(
+layout (location = 0) in uint pos;
+uniform uint ps_color;
+out vec4 oColor;
+
+void main() {
+  uint x = 0x03F0u & pos;
+  uint y = 0x01FFu & (pos >> 16);
+  gl_Position = vec4(norm_x(x), norm_y(y), 0, 1);
+  oColor = color_ps2gl(ps_color);
+}
+)shader";
+
 // ---------- ---------- Shader for virtual ps ram (frame buffer)
 
-static ShaderSrc draw_virtual_screen_vertex = R"shader(
-#version 330 core
+static ShaderSrc draw_virtual_screen_vertex = GSGL_VERSION R"shader(
 layout (location = 0) in vec2 pos;
 layout (location = 1) in vec2 coord;
 out vec2 TexCoord;
@@ -190,8 +211,7 @@ void main() {
 )shader";
 
 
-static ShaderSrc draw_virtual_screen_frag = R"shader(
-#version 330 core
+static ShaderSrc draw_texture_frag = GSGL_VERSION R"shader(
 out vec4 FragColor;
 uniform sampler2D text;
 in vec2 TexCoord;
@@ -203,20 +223,23 @@ void main() {
 
 
 ShaderSrc MonoColorShader::vertex = mono_color_polygon_vertex;
-ShaderSrc MonoColorShader::frag = color_polygon_frag;
+ShaderSrc MonoColorShader::frag = color_direct_frag;
 
 ShaderSrc VirtualScreenShader::vertex = draw_virtual_screen_vertex;
-ShaderSrc VirtualScreenShader::frag = draw_virtual_screen_frag;
+ShaderSrc VirtualScreenShader::frag = draw_texture_frag;
 
 ShaderSrc MonoColorTextureMixShader::vertex = texture_mono_color_poly_v;
 ShaderSrc MonoColorTextureMixShader::frag_with_color = texture_color_f;
 ShaderSrc MonoColorTextureMixShader::frag_no_color = texture_only_f;
 
 ShaderSrc ShadedColorShader::vertex = shaded_polygon_v;
-ShaderSrc ShadedColorShader::frag = color_polygon_frag;
+ShaderSrc ShadedColorShader::frag = color_direct_frag;
 
 ShaderSrc ShadedColorTextureMixShader::vertex = shaded_polygon_texture_v;
 ShaderSrc ShadedColorTextureMixShader::frag = texture_color_f;
+
+ShaderSrc FillRectShader::vertex = fill_rect_v;
+ShaderSrc FillRectShader::frag = color_direct_frag;
 
 
 }

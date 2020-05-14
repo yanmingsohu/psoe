@@ -115,9 +115,10 @@ void test_mips_inter() {
   bus.bind_irq_receiver(&t);
   t.reset();
   test_cpu_help();
-  test_gpu(gpu, bus);
+  //test_gpu(gpu, bus);
 
-  for (;;); //!!死循环
+  int ext_count = 0;
+  //for (;;); //!!死循环
 
   if (0) {
     debug_cpu(t);
@@ -126,8 +127,9 @@ void test_mips_inter() {
     for (;;) {
       t.next();
       if (t.has_exception()) {
-        warn("Got Exception");
-        break;
+        ++ext_count;
+        warn("Got Exception %d\r", ext_count);
+        //t.__show_interpreter = 1;
       }
     }
   }

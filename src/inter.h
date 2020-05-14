@@ -23,9 +23,12 @@ private:
 public:
   bool __show_interpreter = 1;
 
-  InterpreterMips(Bus& _bus) 
-  : bus(_bus), reg({0}), cop0({0}), pc(0), hi(0), lo(0), 
-    jump_delay_slot(0), slot_delay_time(0) {
+  InterpreterMips(Bus& _bus)  : 
+      bus(_bus), reg({0}), cop0({0}), pc(0), hi(0), lo(0), 
+      jump_delay_slot(0), slot_delay_time(0) 
+  {
+    cop0.sr.im = 0xFF;
+    cop0.sr.bev = 1;
   }
 
   void reset() {
@@ -84,6 +87,10 @@ public:
     return (cop0.sr.im & cop0.cause.ip);
   }
 
+  void send_bus_exception() {
+    exception(ExeCodeTable::DBW);
+  }
+
 private:
   void exception(ExeCodeTable e, CpuCauseInt i = CpuCauseInt::software) {
     cop0.cause.ip |= static_cast<u8>(i);
@@ -100,12 +107,11 @@ private:
       cop0.cause.bd = 0;
       cop0.epc = pc;
     }
-    //printf("Got exception %x\n", e);
   }
 
   void process_exception() {
     if (!has_exception()) return;
-    debug("Got exception %x\n", cop0.cause.ExcCode);
+    debug("Got exception %x %x %o\n", cop0.cause.ExcCode, pc, cop0.sr.v);
 
     if (cop0.sr.bev) {
       // if tlb 0xBFC0'0100
@@ -122,6 +128,7 @@ private:
         pc = 0x8000'0080;
       }
     }
+    cop0.sr.v = SET_BIT(cop0.sr.v, COP0_SR_RFE_SHIFT_MASK, cop0.sr.v << 2);
   }
 
   void nop() override {

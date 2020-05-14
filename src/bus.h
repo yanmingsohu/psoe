@@ -61,6 +61,9 @@ public:
   void send_irq(u32 m) {
     mask = m;
   }
+
+  // 接收方实现, 发送总线异常
+  virtual void send_bus_exception() = 0;
 };
 
 
@@ -173,7 +176,8 @@ public:
       *tp = v;
       return;
     }
-    warn("WRIT BUS invaild %x: %x\n", addr, v);
+    warn("WRIT BUS invaild %x: %x\r", addr, v);
+    ir->send_bus_exception();
   }
 
 
@@ -217,7 +221,8 @@ public:
     if (tp) {
       return *tp;
     }
-    warn("READ BUS invaild %x\n", addr);
+    warn("READ BUS invaild %x\r", addr);
+    ir->send_bus_exception();
     return 0;
   }
 

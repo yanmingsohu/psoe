@@ -33,7 +33,7 @@ namespace ps1e {
 
 // tar(nochange=~mask, change=mask) = mask & src
 // tar 中 maks 为 0 的部分不变; 为 1 的部分从 src 复制.
-#define SET_BIT(tar, mask, src)  ((tar & (~mask)) | (src & mask))
+#define SET_BIT(tar, mask, src)  (((tar) & (~mask)) | ((src) & (mask)))
 
 #define CASE_MEM_MIRROR(d1) \
     case ((d1 & 0x0FFF'FFFF) | 0x1000'0000): \

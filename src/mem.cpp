@@ -12,11 +12,10 @@ u8* MMU::memPoint(u32 addr) {
     case 0x0000'0000:
     case 0x8000'0000:
     case 0xA000'0000:
-      #ifdef SAFE_MEM
       if (addr & 0x0FE0'0000) {
-        warn("MMU: mem out of bounds %x fix: %x\n", addr, addr & (RAM_SIZE-1));
+        //warn("MMU: mem out of bounds %x fix: %x\n", addr, addr & (RAM_SIZE-1));
+        return 0;
       }
-      #endif
       return ram.point(addr & (RAM_SIZE-1));
   }
 
@@ -57,25 +56,22 @@ u8* MMU::memPoint(u32 addr) {
 
   switch (addr & 0xFFF0'0000) {
     CASE_MEM_MIRROR(0xBFC0'0000):
-      #ifdef SAFE_MEM
       if (addr & 0x0038'0000) { 
-        warn("MMU: bios out of bounds %x\n", addr);
+        //warn("MMU: bios out of bounds %x\n", addr);
+        return 0;
       }
-      #endif
       return bios.point(addr & (BIOS_SIZE-1));
 
     case 0x1F80'0000:
     case 0x9F80'0000:
-      #ifdef SAFE_MEM
       if (addr & 0x000F'800) {
-        warn("MMU: scratchpad out of bounds %x\n", addr);
+        //warn("MMU: scratchpad out of bounds %x\n", addr);
         return 0;
       }
-      #endif
       return scratchpad.point(addr & (DCACHE_SZ-1));
 
     CASE_MEM_MIRROR(0x1FA0'0000):
-      warn("Expansion MEM 3 not implements");
+      //warn("Expansion MEM 3 not implements");
       return 0;
   }
 

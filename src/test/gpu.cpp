@@ -256,6 +256,13 @@ static void set_text_page(Bus& bus, int x, int y) {
 }
 
 
+static void gclear(Bus& bus, int x, int y, int w, int h) {
+  bus.write32(gp0, Color(0x02, 11, 11, 11).v);
+  bus.write32(gp0, pos(x, y).v);
+  bus.write32(gp0, pos(w, h).v);
+}
+
+
 void test_gpu(GPU& gpu, Bus& bus) {
   gpu_basic();
   bus.write32(gp1, 0x0300'0001); // open display
@@ -311,7 +318,7 @@ void test_gpu(GPU& gpu, Bus& bus) {
   draw_offset(bus, 100, 0);
   draw_pt(bus, 100, 0x6A);
 
-  draw_box1(bus, 320, 130, 0x60, 120, 120);
+  draw_box1(bus, 320, 130, 0x60, 100, 100);
 
   draw_box1(bus, 400, 100, 0x70);
   draw_box1(bus, 380, 100, 0x72);
@@ -339,6 +346,8 @@ void test_gpu(GPU& gpu, Bus& bus) {
   draw_box2(bus, 360, 280, 0x7D);
   draw_box2(bus, 380, 280, 0x7E);
   draw_box2(bus, 400, 280, 0x7F);
+
+  gclear(bus, 100, 100, 50, 50);
 }
 
 }
