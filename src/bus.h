@@ -176,7 +176,7 @@ public:
       *tp = v;
       return;
     }
-    warn("WRIT BUS invaild %x: %x\r", addr, v);
+    warn("WRIT BUS invaild %x: %x\n", addr, v);
     ir->send_bus_exception();
   }
 
@@ -221,7 +221,7 @@ public:
     if (tp) {
       return *tp;
     }
-    warn("READ BUS invaild %x\r", addr);
+    warn("READ BUS invaild %x\n", addr);
     ir->send_bus_exception();
     return 0;
   }

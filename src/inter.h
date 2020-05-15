@@ -8,7 +8,7 @@
 namespace ps1e {
 
 
-class InterpreterMips : public InstructionReceiver, public IrqReceiver {
+class InterpreterMips : public IrqReceiver {
 private:
   Bus& bus;
   MipsReg reg;
@@ -131,12 +131,13 @@ private:
     cop0.sr.v = SET_BIT(cop0.sr.v, COP0_SR_RFE_SHIFT_MASK, cop0.sr.v << 2);
   }
 
-  void nop() override {
+public:
+  void nop() {
     jj("NOP", 0);
     pc += 4;
   }
 
-  void add(mips_reg d, mips_reg s, mips_reg t) override {
+  void add(mips_reg d, mips_reg s, mips_reg t) {
     rr("ADD", d, s, t);
     Overflow<s32> o(reg.s[s], reg.s[t]);
     reg.s[d] = reg.s[s] + reg.s[t]; 
@@ -147,13 +148,13 @@ private:
     pc += 4;
   }
 
-  void addu(mips_reg d, mips_reg s, mips_reg t) override {
+  void addu(mips_reg d, mips_reg s, mips_reg t) {
     rr("ADDu", d, s, t);
     reg.u[d] = reg.u[s] + reg.u[t]; 
     pc += 4;
   }
 
-  void sub(mips_reg d, mips_reg s, mips_reg t) override {
+  void sub(mips_reg d, mips_reg s, mips_reg t) {
     rr("SUB", d, s, t);
     Overflow<s32> o(reg.s[s], reg.s[t]);
     reg.s[d] = reg.s[s] - reg.s[t];
@@ -164,75 +165,75 @@ private:
     pc += 4;
   }
 
-  void subu(mips_reg d, mips_reg s, mips_reg t) override {
+  void subu(mips_reg d, mips_reg s, mips_reg t) {
     rr("SUBu", d, s, t);
     reg.u[d] = reg.u[s] - reg.u[t];
     pc += 4;
   }
 
-  void mul(mips_reg s, mips_reg t) override {
+  void mul(mips_reg s, mips_reg t) {
     rx("MUL", s, t);
     sethl(static_cast<s64>(reg.s[s]) * reg.s[t]);
     pc += 4;
   }
 
-  void mulu(mips_reg s, mips_reg t) override {
+  void mulu(mips_reg s, mips_reg t) {
     rx("MULu", s, t);
     sethl(static_cast<u64>(reg.u[s]) * reg.u[t]);
     pc += 4;
   }
 
-  void div(mips_reg s, mips_reg t) override {
+  void div(mips_reg s, mips_reg t) {
     rx("DIV", s, t);
     lo = reg.s[s] / reg.s[t];
     hi = reg.s[s] % reg.s[t];
     pc += 4;
   }
 
-  void divu(mips_reg s, mips_reg t) override {
+  void divu(mips_reg s, mips_reg t) {
     rx("DIVu", s, t);
     lo = reg.u[s] / reg.u[t];
     hi = reg.u[s] % reg.u[t];
     pc += 4;
   }
 
-  void slt(mips_reg d, mips_reg s, mips_reg t) override {
+  void slt(mips_reg d, mips_reg s, mips_reg t) {
     rr("SLT", d, s, t);
     reg.s[d] = reg.s[s] < reg.s[t] ? 1 : 0;
     pc += 4;
   }
 
-  void sltu(mips_reg d, mips_reg s, mips_reg t) override {
+  void sltu(mips_reg d, mips_reg s, mips_reg t) {
     rr("SLTu", d, s, t);
     reg.u[d] = reg.u[s] < reg.u[t] ? 1 : 0;
     pc += 4;
   }
 
-  void _and(mips_reg d, mips_reg s, mips_reg t) override {
+  void _and(mips_reg d, mips_reg s, mips_reg t) {
     rr("AND", d, s, t);
     reg.u[d] = reg.u[s] & reg.u[t];
     pc += 4;
   }
 
-  void _or(mips_reg d, mips_reg s, mips_reg t) override {
+  void _or(mips_reg d, mips_reg s, mips_reg t) {
     rr("OR", d, s, t);
     reg.u[d] = reg.u[s] | reg.u[t];
     pc += 4;
   }
 
-  void _nor(mips_reg d, mips_reg s, mips_reg t) override {
+  void _nor(mips_reg d, mips_reg s, mips_reg t) {
     rr("NOR", d, s, t);
     reg.u[d] = ~(reg.u[s] | reg.u[t]);
     pc += 4;
   }
 
-  void _xor(mips_reg d, mips_reg s, mips_reg t) override {
+  void _xor(mips_reg d, mips_reg s, mips_reg t) {
     rr("XOR", d, s, t);
     reg.u[d] = reg.u[s] ^ reg.u[t];
     pc += 4;
   }
 
-  void addi(mips_reg t, mips_reg s, s32 i) override {
+  void addi(mips_reg t, mips_reg s, s32 i) {
     ii("ADDi", t, s, i);
     Overflow<s32> o(reg.s[s], i);
     reg.s[t] = reg.s[s] + i;
@@ -243,43 +244,43 @@ private:
     pc += 4;
   }
 
-  void addiu(mips_reg t, mips_reg s, u32 i) override {
+  void addiu(mips_reg t, mips_reg s, u32 i) {
     ii("ADDiu", t, s, i);
     reg.u[t] = reg.u[s] + i;
     pc += 4;
   }
 
-  void slti(mips_reg t, mips_reg s, s32 i) override {
+  void slti(mips_reg t, mips_reg s, s32 i) {
     ii("SLTi", t, s, i);
     reg.s[t] = reg.s[s] < i ? 1 : 0;
     pc += 4;
   }
 
-  void sltiu(mips_reg t, mips_reg s, u32 i) override {
+  void sltiu(mips_reg t, mips_reg s, u32 i) {
     ii("SLTiu", t, s, i);
     reg.u[t] = reg.u[s] < i ? 1 : 0;
     pc += 4;
   }
 
-  void andi(mips_reg t, mips_reg s, u32 i) override {
+  void andi(mips_reg t, mips_reg s, u32 i) {
     ii("ANDi", t, s, i);
     reg.u[t] = reg.u[s] & i;
     pc += 4;
   }
 
-  void ori(mips_reg t, mips_reg s, u32 i) override {
+  void ori(mips_reg t, mips_reg s, u32 i) {
     ii("ORi", t, s, i);
     reg.u[t] = reg.u[s] | i;
     pc += 4;
   }
 
-  void xori(mips_reg t, mips_reg s, u32 i) override {
+  void xori(mips_reg t, mips_reg s, u32 i) {
     ii("XORi", t, s, i);
     reg.u[t] = reg.u[s] ^ i;
     pc += 4;
   }
 
-  void lw(mips_reg t, mips_reg s, s32 i) override {
+  void lw(mips_reg t, mips_reg s, s32 i) {
     ii("LW", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 0b11) {
@@ -293,7 +294,7 @@ private:
     pc += 4;
   }
 
-  void sw(mips_reg t, mips_reg s, s32 i) override {
+  void sw(mips_reg t, mips_reg s, s32 i) {
     iw("SW", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 0b11) {
@@ -307,7 +308,7 @@ private:
     pc += 4;
   }
 
-  void lb(mips_reg t, mips_reg s, s32 i) override {
+  void lb(mips_reg t, mips_reg s, s32 i) {
     ii("LB", t, s, i);
     u32 addr = reg.u[s] + i;
     if (check_data_read_break(addr)) {
@@ -317,7 +318,7 @@ private:
     pc += 4;
   }
 
-  void lbu(mips_reg t, mips_reg s, s32 i) override {
+  void lbu(mips_reg t, mips_reg s, s32 i) {
     ii("LBu", t, s, i);
     u32 addr = reg.u[s] + i;
     if (check_data_read_break(addr)) {
@@ -327,7 +328,7 @@ private:
     pc += 4;
   }
 
-  void sb(mips_reg t, mips_reg s, s32 i) override {
+  void sb(mips_reg t, mips_reg s, s32 i) {
     iw("SB", t, s, i);
     u32 addr = reg.u[s] + i;
     if (check_data_write_break(addr)) {
@@ -379,13 +380,13 @@ private:
     pc += 4;
   }
 
-  void lui(mips_reg t, u32 i) override {
+  void lui(mips_reg t, u32 i) {
     i2("LUi", t, i);
     reg.u[t] = i << 16;
     pc += 4;
   }
 
-  void beq(mips_reg t, mips_reg s, s32 i) override {
+  void beq(mips_reg t, mips_reg s, s32 i) {
     ii("BEQ", t, s, i);
     if (check_jump_break()) {
       return;
@@ -398,7 +399,7 @@ private:
     }
   }
 
-  void bne(mips_reg t, mips_reg s, s32 i) override {
+  void bne(mips_reg t, mips_reg s, s32 i) {
     ii("BNE", t, s, i);
     if (check_jump_break()) {
       return;
@@ -411,7 +412,7 @@ private:
     }
   }
 
-  void blez(mips_reg s, s32 i) override {
+  void blez(mips_reg s, s32 i) {
     i2("BLEZ", s, i);
     if (check_jump_break()) {
       return;
@@ -424,7 +425,7 @@ private:
     }
   }
 
-  void bgtz(mips_reg s, s32 i) override {
+  void bgtz(mips_reg s, s32 i) {
     i2("BGTZ", s, i);
     if (check_jump_break()) {
       return;
@@ -437,7 +438,7 @@ private:
     }
   }
 
-  void bltz(mips_reg s, s32 i) override {
+  void bltz(mips_reg s, s32 i) {
     i2("BLTZ", s, i);
     if (check_jump_break()) {
       return;
@@ -450,7 +451,7 @@ private:
     }
   }
 
-  void bgez(mips_reg s, s32 i) override {
+  void bgez(mips_reg s, s32 i) {
     i2("BGEZ", s, i);
     if (check_jump_break()) {
       return;
@@ -463,7 +464,7 @@ private:
     }
   }
 
-  void bgezal(mips_reg s, s32 i) override {
+  void bgezal(mips_reg s, s32 i) {
     i2("BGEZAL", s, i);
     if (check_jump_break()) {
       return;
@@ -477,7 +478,7 @@ private:
     }
   }
 
-  void bltzal(mips_reg s, s32 i) override {
+  void bltzal(mips_reg s, s32 i) {
     i2("BLTZAL", s, i);
     if (check_jump_break()) {
       return;
@@ -491,7 +492,7 @@ private:
     }
   }
 
-  void j(u32 i) override {
+  void j(u32 i) {
     jj("J", i);
     if (check_jump_break()) {
       return;
@@ -500,7 +501,7 @@ private:
     pc = (pc & 0xF000'0000) | (i << 2);
   }
 
-  void jal(u32 i) override {
+  void jal(u32 i) {
     jj("JAL", i);
     if (check_jump_break()) {
       return;
@@ -510,7 +511,7 @@ private:
     pc = (pc & 0xF000'0000) | (i << 2);
   }
 
-  void jr(mips_reg s) override {
+  void jr(mips_reg s) {
     j1("JR", s);
     if (check_jump_break()) {
       return;
@@ -519,7 +520,7 @@ private:
     pc = reg.u[s];
   }
 
-  void jalr(mips_reg d, mips_reg s) override {
+  void jalr(mips_reg d, mips_reg s) {
     rx("JALR", d, s);
     if (check_jump_break()) {
       return;
@@ -529,37 +530,37 @@ private:
     pc = reg.u[s];
   }
 
-  void mfhi(mips_reg d) override {
+  void mfhi(mips_reg d) {
     j1("MFHI", d);
     reg.u[d] = hi;
     pc += 4;
   }
 
-  void mflo(mips_reg d) override {
+  void mflo(mips_reg d) {
     j1("MFLO", d);
     reg.u[d] = lo;
     pc += 4;
   }
 
-  void mthi(mips_reg s) override {
+  void mthi(mips_reg s) {
     j1("MTHI", s);
     hi = reg.u[s];
     pc += 4;
   }
 
-  void mtlo(mips_reg s) override {
+  void mtlo(mips_reg s) {
     j1("MTLO", s);
     lo = reg.u[s];
     pc += 4;
   }
 
-  void mfc0(mips_reg t, mips_reg d) override {
+  void mfc0(mips_reg t, mips_reg d) {
     i2("MFC0", t, d);
     reg.u[t] = cop0.r[d];
     pc += 4;
   }
 
-  void mtc0(mips_reg t, mips_reg d) override {
+  void mtc0(mips_reg t, mips_reg d) {
     i2("MTC0", t, d);
     switch (d) {
       case COP0_CAUSE_REG_IDX:
@@ -574,37 +575,37 @@ private:
     pc += 4;
   }
 
-  void sll(mips_reg d, mips_reg t, u32 i) override {
+  void sll(mips_reg d, mips_reg t, u32 i) {
     ii("SLL", d, t, i);
     reg.u[d] = reg.u[t] << i;
     pc += 4;
   }
 
-  void sllv(mips_reg d, mips_reg t, mips_reg s) override {
+  void sllv(mips_reg d, mips_reg t, mips_reg s) {
     rr("SLLV", d, t, s);
     reg.u[d] = reg.u[t] << reg.u[s];
     pc += 4;
   }
 
-  void sra(mips_reg d, mips_reg t, u32 i) override {
+  void sra(mips_reg d, mips_reg t, u32 i) {
     ii("SRA", d, t, i);
     reg.u[d] = reg.s[t] >> i;
     pc += 4;
   }
 
-  void srav(mips_reg d, mips_reg t, mips_reg s) override {
+  void srav(mips_reg d, mips_reg t, mips_reg s) {
     rr("SRAV", d, t, s);
     reg.u[d] = reg.s[t] >> reg.u[s];
     pc += 4;
   }
 
-  void srl(mips_reg d, mips_reg t, u32 i) override {
+  void srl(mips_reg d, mips_reg t, u32 i) {
     ii("SRL", d, t, i);
     reg.u[d] = reg.u[t] >> i;
     pc += 4;
   }
 
-  void srlv(mips_reg d, mips_reg t, mips_reg s) override {
+  void srlv(mips_reg d, mips_reg t, mips_reg s) {
     rr("SRLV", d, t, s);
     reg.u[d] = reg.u[t] >> reg.u[s];
     pc += 4;
@@ -620,7 +621,7 @@ private:
     exception(ExeCodeTable::BP);
   }
 
-  void rfe() override {
+  void rfe() {
     u32 sr = (COP0_SR_RFE_SHIFT_MASK & cop0.sr.v) >> 2;
     cop0.sr.v = (COP0_SR_RFE_RESERVED_MASK & cop0.sr.v) | sr;
   }
