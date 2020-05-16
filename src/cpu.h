@@ -5,6 +5,7 @@ namespace ps1e {
 
 
 extern const char*  MipsRegName[];
+static const int MIPS_REG_COUNT = 32;
 
 
 // Cpu Cause Reg 8-15
@@ -18,8 +19,8 @@ enum class CpuCauseInt : u8 {
 
 
 typedef union {
-  u32 u[32];
-  s32 s[32];
+  u32 u[MIPS_REG_COUNT];
+  s32 s[MIPS_REG_COUNT];
 
   struct {
     u32 zero; // r00
@@ -226,6 +227,7 @@ union Gte {
 
 
 void printSR(Cop0SR sr);
+void printMipsReg(MipsReg&);
 
 
 }

@@ -24,18 +24,24 @@ public:
   bool __show_interpreter = 1;
 
   InterpreterMips(Bus& _bus)  : 
-      bus(_bus), reg({0}), cop0({0}), pc(0), hi(0), lo(0), 
+      bus(_bus), cop0({0}), pc(0), hi(0), lo(0), 
       jump_delay_slot(0), slot_delay_time(0) 
   {
-    cop0.sr.im = 0xFF;
-    cop0.sr.bev = 1;
+    reset();
   }
 
   void reset() {
     pc = MMU::BOOT_ADDR;
-    cop0.sr.cu = 0b0101;
-    cop0.sr.sr = 0;
-    cop0.sr.ie = 1;
+    cop0.sr.cu  = 0b0101;
+    cop0.sr.sr  = 0;
+    cop0.sr.ie  = 1;
+    cop0.sr.im  = 0xFF;
+    cop0.sr.bev = 1;
+    reg.zero    = 0;
+
+    for (int i=0; i<MIPS_REG_COUNT; ++i) {
+      reg.u[i] = 0xE0E0'7073;
+    }
   }
 
   void next() {

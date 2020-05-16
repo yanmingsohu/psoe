@@ -1,4 +1,4 @@
-#include "test.h"
+﻿#include "test.h"
 #include "math.h"
 
 namespace ps1e_t {
@@ -97,7 +97,7 @@ static void __io(DeviceIO**io, u32 addr, u32 v) {
 
 
 void test_io_mirrors() {
-  DeviceIOLatch iol;
+  DeviceIOLatch<> iol;
   DeviceIO* io[io_map_size];
   for (int i=0; i<io_map_size; ++i) {
     io[i] = &iol;

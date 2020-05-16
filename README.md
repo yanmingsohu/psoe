@@ -62,7 +62,8 @@ WIP
 
 # Helpful website
 
-* [MIPS Assembler Online](https://alanhogan.com/asu/assembler.php)
+* [MIPS Assembler Online](http://www.kurtm.net/mipsasm/index.cgi)
+* [MIPS Interpreter Online](https://dannyqiu.me/mips-interpreter/)
 * [MIPS opcodes](https://opencores.org/projects/plasma/opcodes)
 * [x86 Assembler/Disassembler Online](https://defuse.ca/online-x86-assembler.htm#disassembly)
 * [x86 opcodes](http://www.mathemainzel.info/files/x86asmref.html)

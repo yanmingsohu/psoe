@@ -1,4 +1,4 @@
-#include <string.h>
+﻿#include <string.h>
 #include <cstdlib>
 
 #include "test.h"
@@ -37,7 +37,8 @@ int main() {
   test_util();
   test_jit();
   test_dma();
-  test_disassembly();
+  test_cpu();
+  //test_disassembly();
   info("Test all passd\n");
   return 0;
 }

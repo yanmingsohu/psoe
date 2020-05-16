@@ -25,4 +25,12 @@ void printSR(Cop0SR sr) {
 }
 
 
+void printMipsReg(MipsReg& r) {
+  for (int i=0; i<MIPS_REG_COUNT; ++i) {
+    printf("$%2d  $%s  %08x [ %12d_s %12u_u ]\n",
+           i, MipsRegName[i], r.u[i], r.s[i], r.u[i]);
+  }
+}
+
+
 }

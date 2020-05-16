@@ -56,6 +56,9 @@
     <ClInclude Include="..\src\opengl-wrap.h">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\serial_port.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">
@@ -95,6 +98,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\gpu_gp1.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\serial_port.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
