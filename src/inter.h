@@ -30,18 +30,19 @@ public:
     reset();
   }
 
-  void reset() {
+  void reset(const u32 regVal = 0xE1E3'7E73) {
     pc = MMU::BOOT_ADDR;
     cop0.sr.cu  = 0b0101;
     cop0.sr.sr  = 0;
-    cop0.sr.ie  = 1;
+    cop0.sr.ie  = 1; // ?1
     cop0.sr.im  = 0xFF;
     cop0.sr.bev = 1;
-    reg.zero    = 0;
+    cop0.dcic.v = 0;
 
     for (int i=0; i<MIPS_REG_COUNT; ++i) {
-      reg.u[i] = 0xE0E0'7073;
+      reg.u[i] = regVal;
     }
+    reg.zero = 0;
   }
 
   void next() {
@@ -100,7 +101,10 @@ public:
 private:
   void exception(ExeCodeTable e, CpuCauseInt i = CpuCauseInt::software) {
     cop0.cause.ip |= static_cast<u8>(i);
-    if (!has_exception()) return;
+    if (!has_exception()) {
+      pc += 4;
+      return;
+    }
 
     cop0.sr.KUc = 0;
     cop0.cause.wp = 1;
@@ -117,7 +121,8 @@ private:
 
   void process_exception() {
     if (!has_exception()) return;
-    debug("Got exception %x %x %o\n", cop0.cause.ExcCode, pc, cop0.sr.v);
+    debug("Got exception (%X)%s sr:%x [PC:0x%08x, 0x%08x]\n", 
+      cop0.cause.ExcCode, MipsCauseStr[cop0.cause.ExcCode], cop0.sr.v, pc, bus.read32(pc));
 
     if (cop0.sr.bev) {
       // if tlb 0xBFC0'0100
@@ -397,11 +402,10 @@ public:
     if (check_jump_break()) {
       return;
     }
+    pc += 4;
     if (reg.u[t] == reg.u[s]) {
-      jump_delay_slot = pc + 4;
+      jump_delay_slot = pc;
       pc += i << 2;
-    } else {
-      pc += 4;
     }
   }
 
@@ -410,11 +414,10 @@ public:
     if (check_jump_break()) {
       return;
     }
+    pc += 4;
     if (reg.u[t] != reg.u[s]) {
-      jump_delay_slot = pc + 4;
+      jump_delay_slot = pc;
       pc += i << 2;
-    } else {
-      pc += 4;
     }
   }
 
@@ -423,11 +426,10 @@ public:
     if (check_jump_break()) {
       return;
     }
+    pc += 4;
     if (reg.s[s] <= 0) {
-      jump_delay_slot = pc + 4;
+      jump_delay_slot = pc;
       pc += i << 2;
-    } else {
-      pc += 4;
     }
   }
 
@@ -436,11 +438,10 @@ public:
     if (check_jump_break()) {
       return;
     }
+    pc += 4;
     if (reg.s[s] > 0) {
-      jump_delay_slot = pc + 4;
+      jump_delay_slot = pc;
       pc += i << 2;
-    } else {
-      pc += 4;
     }
   }
 
@@ -449,11 +450,10 @@ public:
     if (check_jump_break()) {
       return;
     }
+    pc += 4;
     if (reg.s[s] < 0) {
-      jump_delay_slot = pc + 4;
+      jump_delay_slot = pc;
       pc += i << 2;
-    } else {
-      pc += 4;
     }
   }
 
@@ -462,11 +462,10 @@ public:
     if (check_jump_break()) {
       return;
     }
+    pc += 4;
     if (reg.s[s] >= 0) {
-      jump_delay_slot = pc + 4;
+      jump_delay_slot = pc;
       pc += i << 2;
-    } else {
-      pc += 4;
     }
   }
 
@@ -475,12 +474,11 @@ public:
     if (check_jump_break()) {
       return;
     }
+    pc += 4;
     if (reg.s[s] >= 0) {
-      jump_delay_slot = pc + 4;
-      reg.ra = pc + 8;
+      jump_delay_slot = pc;
+      reg.ra = pc + 4;
       pc += i << 2;
-    } else {
-      pc += 4;
     }
   }
 
@@ -489,12 +487,11 @@ public:
     if (check_jump_break()) {
       return;
     }
+    pc += 4;
     if (reg.s[s] < 0) {
-      jump_delay_slot = pc + 4;
-      reg.ra = pc + 8;
+      jump_delay_slot = pc;
+      reg.ra = pc + 4;
       pc += i << 2;
-    } else {
-      pc += 4;
     }
   }
 
@@ -618,7 +615,7 @@ public:
   }
 
   void syscall() {
-    jj("SYSCALL", reg.v0);
+    jj("SYSCAl", reg.v0);
     exception(ExeCodeTable::SYS);
   }
 

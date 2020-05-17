@@ -109,7 +109,7 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
           // $d = ~($s | $t)
           r->_nor(i.R.rd, i.R.rs, i.R.rt);
           break;
-        case 40:
+        case 38:
           // $d = $s ^ $t 
           r->_xor(i.R.rd, i.R.rs, i.R.rt);
           break;
