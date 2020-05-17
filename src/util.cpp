@@ -211,6 +211,23 @@ void MemJit::free(void* p) {
 }
 
 
+size_t readFile(void *buf, size_t bufsize, char const *filename) {
+  FILE* f = fopen(filename, "rb");
+  if (!f) {
+    warn("cannot open file %s\n", filename);
+    return -1;
+  }
+  auto closeFile = createFuncLocal([f] { 
+    fclose(f);
+  });
+  size_t readsize = fread(buf, 1, bufsize, f);
+  if (readsize < 0) {
+    return -1;
+  }
+  return readsize;
+}
+
+
 void print_code(const char* src) {
   char buf[255];
   int i = 0;

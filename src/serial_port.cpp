@@ -17,6 +17,7 @@ SerialPort::SerialPort(Bus& bus) :
 
 
 u32 ConsoleDataPort::read() {
+  return 0xEEE1'0000;
 }
 
 

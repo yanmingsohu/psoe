@@ -92,18 +92,11 @@ u8* MMU::memPoint(u32 addr) {
 
 bool MMU::loadBios(char const* filename) {
   u8* buf = bios.point(0);
-  FILE* f = fopen(filename, "rb");
-  if (!f) {
-    ps1e::error("cannot open bios file %s\n", filename);
-    return false;
-  }
-  auto closeFile = createFuncLocal([f] { fclose(f); debug("file closed\n"); });
-
-  if (bios.size() != fread(buf, 1, bios.size(), f)) {
+  size_t rz = readFile(buf, bios.size(), filename);
+  if (rz <= 0) {
     printf(RED("cannot read bios %s\n"), filename);
     return false;
   }
-  debug("Bios loaded.\n");
   return true;
 }
 

@@ -15,6 +15,23 @@ const char* MipsRegName[] = {
 };
 
 
+const char* MipsCauseStr[] = {
+  /*  0 */ "External Interrupt",
+  /*  1 */ "TLB modification exception",
+  /*  2 */ "TLB load exception",
+  /*  3 */ "TLB store exception",
+  /*  4 */ "Address error, Data load or Instruction fetch",
+  /*  5 */ "Address error, Data store",
+  /*  6 */ "Bus error on Instruction fetch",
+  /*  7 */ "Bus error on Data load/store",
+  /*  8 */ "Syscall",
+  /*  9 */ "Breakpoint",
+  /* 10 */ "Reserved instruction",
+  /* 11 */ "Coprocessor unusable",
+  /* 12 */ "Arithmetic overflow",
+};
+
+
 void printSR(Cop0SR sr) {
   printf("COP0\tIE =%x KUc=%x IEp=%x KUp=%x IEo=%x IEp=%x SX=%x KX=%x \
             \n\tIM =%x NMI=%x SR =%x TS =%x BEV=%x PX=%x \

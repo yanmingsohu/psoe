@@ -175,6 +175,7 @@ void*   melloc_exec(size_t size, void* near = 0);
 bool    free_exec(void* p, size_t size = 0);
 size_t  get_page_size();
 void    print_code(const char* src);
+size_t  readFile(void *buf, size_t bufsize, char const* filename);
 
 void debug(const char* format, ...);
 void info(const char* format, ...);

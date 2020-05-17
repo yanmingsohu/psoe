@@ -5,6 +5,7 @@ namespace ps1e {
 
 
 extern const char*  MipsRegName[];
+extern const char*  MipsCauseStr[];
 static const int MIPS_REG_COUNT = 32;
 
 
@@ -182,7 +183,7 @@ enum class ExeCodeTable {
   SYS  = 8,   // SYSCALL
   BP   = 9,   // Breakpoint(Debug)
   RI   = 10,  // 保留指令异常
-  CPU  = 11,  // 协处理器不可用异常
+  COP  = 11,  // 协处理器不可用异常
   OVF  = 12,  // 数学溢出异常
 };
 
