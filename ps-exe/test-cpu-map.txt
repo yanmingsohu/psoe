@@ -1,0 +1,240 @@
+
+Memory Configuration
+
+Name             Origin             Length            
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+Address of section .text set to 0x100
+LOAD test-cpu.o
+                0x0000000080100000                .=0x80100000
+
+.init
+ *(.init)
+
+.text           0x0000000000000100      0x5f4
+                0x0000000000000100                _ftext=.
+ *(.text)
+ .text          0x0000000000000100      0x5f4 test-cpu.o
+                0x000000000000063c                __main
+                0x00000000000003e4                print
+                0x0000000000000488                pnumi
+                0x000000000000065c                memset
+                0x0000000000000100                main
+                0x0000000000000394                pf
+ *(.stub)
+ *(.gnu.warning)
+ *(.gnu.linkonce.t*)
+ *(.mips16.fn.*)
+ *(.mips16.call.*)
+                0x00000000000006f4                _etext=.
+                0x00000000000006f4                PROVIDE (etext, .)
+
+.rodata         0x00000000000006f4       0xad
+ *(.rodata)
+ .rodata        0x00000000000006f4       0xad test-cpu.o
+ *(.gnu.linkonce.r*)
+
+.rodata1
+ *(.rodata1)
+
+.fini
+ *(.fini)
+
+.data           0x00000000000007a1        0x0
+                0x00000000000007a1                _fdata=.
+ *(.data)
+ *(.gnu.linkonce.d*)
+
+.data1
+ *(.data1)
+
+.ctors
+ *(.ctors)
+
+.dtors
+ *(.dtors)
+                0x00000000000087b0                _gp=DEFINED(_gp)?_gp:(ALIGN(0x10)+0x8000)
+
+.got
+ *(.got.plt)
+ *(.got)
+
+.sdata
+ *(.sdata)
+
+.lit8
+ *(.lit8)
+
+.lit4
+ *(.lit4)
+                0x00000000000007a1                _edata=.
+                0x00000000000007a1                PROVIDE (edata, .)
+                0x00000000000007a1                __bss_start=.
+                0x00000000000007a1                _fbss=.
+
+.sbss
+ *(.sbss)
+ *(.scommon)
+
+.bss            0x00000000000007a1        0x0
+ *(.dynbss)
+ *(.bss)
+ *(COMMON)
+                0x00000000000007a1                _end=.
+                0x00000000000007a1                PROVIDE (end, .)
+
+.interp
+ *(.interp)
+
+.reginfo        0x00000000000007a4       0x18
+ *(.reginfo)
+ .reginfo       0x00000000000007a4       0x18 test-cpu.o
+
+.dynamic
+ *(.dynamic)
+
+.dynstr
+ *(.dynstr)
+
+.dynsym
+ *(.dynsym)
+
+.hash
+ *(.hash)
+
+.rel.text
+ *(.rel.text)
+ *(.rel.gnu.linkonce.t*)
+
+.rela.text
+ *(.rela.text)
+ *(.rela.gnu.linkonce.t*)
+
+.rel.data
+ *(.rel.data)
+ *(.rel.gnu.linkonce.d*)
+
+.rela.data
+ *(.rela.data)
+ *(.rela.gnu.linkonce.d*)
+
+.rel.rodata
+ *(.rel.rodata)
+ *(.rel.gnu.linkonce.r*)
+
+.rela.rodata
+ *(.rela.rodata)
+ *(.rela.gnu.linkonce.r*)
+
+.rel.got
+ *(.rel.got)
+
+.rela.got
+ *(.rela.got)
+
+.rel.ctors
+ *(.rel.ctors)
+
+.rela.ctors
+ *(.rela.ctors)
+
+.rel.dtors
+ *(.rel.dtors)
+
+.rela.dtors
+ *(.rela.dtors)
+
+.rel.init
+ *(.rel.init)
+
+.rela.init
+ *(.rela.init)
+
+.rel.fini
+ *(.rel.fini)
+
+.rela.fini
+ *(.rela.fini)
+
+.rel.bss
+ *(.rel.bss)
+
+.rela.bss
+ *(.rela.bss)
+
+.rel.plt
+ *(.rel.plt)
+
+.rela.plt
+ *(.rela.plt)
+
+.stab
+ *(.stab)
+
+.stabstr
+ *(.stabstr)
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges
+ *(.debug_aranges)
+
+.debug_pubnames
+ *(.debug_pubnames)
+
+.debug_info
+ *(.debug_info)
+
+.debug_abbrev
+ *(.debug_abbrev)
+
+.debug_line
+ *(.debug_line)
+
+.debug_frame
+ *(.debug_frame)
+
+.debug_str
+ *(.debug_str)
+
+.debug_loc
+ *(.debug_loc)
+
+.debug_macinfo
+ *(.debug_macinfo)
+
+.debug_weaknames
+ *(.debug_weaknames)
+
+.debug_funcnames
+ *(.debug_funcnames)
+
+.debug_typenames
+ *(.debug_typenames)
+
+.debug_varnames
+ *(.debug_varnames)
+
+.gptab.sdata
+ *(.gptab.data)
+ *(.gptab.sdata)
+
+.gptab.sbss
+ *(.gptab.bss)
+ *(.gptab.sbss)
+OUTPUT(test-cpu.bin binary)
+
+.mdebug         0x00000000000007bc      0x3e8
+ .mdebug        0x00000000000007bc      0x3e8 test-cpu.o

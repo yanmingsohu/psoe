@@ -11,6 +11,9 @@ Debug
 demo/*
 .DS_Store
 .vscode/**
+ps-exe/gcc/**
+ps-exe/*.bin
+ps-exe/*.o
 
 *.dll
 *.db
