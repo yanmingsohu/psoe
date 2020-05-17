@@ -64,14 +64,14 @@ public:
     }
 
     if (pc & 0b11) {
-      exception(ExeCodeTable::ADEL);
+      exception(ExeCodeTable::ADEL, true);
       return;
     }
 
     reg.zero = 0;
     u32 code = bus.read32(pc);
     if (!mips_decode(code, this)) {
-      exception(ExeCodeTable::RI);
+      exception(ExeCodeTable::RI, true);
     }
   }
 
@@ -80,7 +80,7 @@ public:
   }
 
   void set_ext_int(CpuCauseInt i) {
-    exception(ExeCodeTable::INT, i);
+    exception(ExeCodeTable::INT, false, i);
   }
 
   void clr_ext_int(CpuCauseInt i) {
@@ -95,14 +95,23 @@ public:
   }
 
   void send_bus_exception() {
-    exception(ExeCodeTable::DBW);
+    exception(ExeCodeTable::DBW, false);
+  }
+  
+  // 当 cpu 执行到 addr 时中断
+  void set_int_exc_point(u32 addr) {
+    cop0.bpc = 0xFFFFFFFF;
+    cop0.bpcm = addr;
+    cop0.dcic.v = COP0_DCIC_BK_CODE_MK;
   }
 
 private:
-  void exception(ExeCodeTable e, CpuCauseInt i = CpuCauseInt::software) {
+  void exception(ExeCodeTable e, bool from_instruction, CpuCauseInt i = CpuCauseInt::software) {
     cop0.cause.ip |= static_cast<u8>(i);
     if (!has_exception()) {
-      pc += 4;
+      if (from_instruction) {
+        pc += 4;
+      }
       return;
     }
 
@@ -153,7 +162,7 @@ public:
     Overflow<s32> o(reg.s[s], reg.s[t]);
     reg.s[d] = reg.s[s] + reg.s[t]; 
     if (o.check(reg.s[d])) {
-      exception(ExeCodeTable::OVF);
+      exception(ExeCodeTable::OVF, true);
       return;
     }
     pc += 4;
@@ -170,7 +179,7 @@ public:
     Overflow<s32> o(reg.s[s], reg.s[t]);
     reg.s[d] = reg.s[s] - reg.s[t];
     if (o.check(reg.s[d])) {
-      exception(ExeCodeTable::OVF);
+      exception(ExeCodeTable::OVF, true);
       return;
     }
     pc += 4;
@@ -249,13 +258,13 @@ public:
     Overflow<s32> o(reg.s[s], i);
     reg.s[t] = reg.s[s] + i;
     if (o.check(reg.s[t])) {
-      exception(ExeCodeTable::OVF);
+      exception(ExeCodeTable::OVF, true);
       return;
     }
     pc += 4;
   }
 
-  void addiu(mips_reg t, mips_reg s, u32 i) {
+  void addiu(mips_reg t, mips_reg s, s32 i) {
     ii("ADDiu", t, s, i);
     reg.u[t] = reg.u[s] + i;
     pc += 4;
@@ -295,7 +304,7 @@ public:
     ii("LW", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 0b11) {
-      exception(ExeCodeTable::ADEL);
+      exception(ExeCodeTable::ADEL, true);
       return;
     }
     if (check_data_read_break(addr)) {
@@ -309,7 +318,7 @@ public:
     iw("SW", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 0b11) {
-      exception(ExeCodeTable::ADES);
+      exception(ExeCodeTable::ADES, true);
       return;
     }
     if (check_data_write_break(addr)) {
@@ -353,7 +362,7 @@ public:
     ii("LH", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 1) {
-      exception(ExeCodeTable::ADEL);
+      exception(ExeCodeTable::ADEL, true);
       return;
     }
     if (check_data_read_break(addr)) {
@@ -367,7 +376,7 @@ public:
     ii("LHu", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 1) {
-      exception(ExeCodeTable::ADEL);
+      exception(ExeCodeTable::ADEL, true);
       return;
     }
     if (check_data_read_break(addr)) {
@@ -381,7 +390,7 @@ public:
     iw("SH", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 1) {
-      exception(ExeCodeTable::ADES);
+      exception(ExeCodeTable::ADES, true);
       return;
     }
     if (check_data_write_break(addr)) {
@@ -616,12 +625,12 @@ public:
 
   void syscall() {
     jj("SYSCAl", reg.v0);
-    exception(ExeCodeTable::SYS);
+    exception(ExeCodeTable::SYS, true);
   }
 
   void brk(u32 code) {
     jj("BREAK", code);
-    exception(ExeCodeTable::BP);
+    exception(ExeCodeTable::BP, true);
   }
 
   void rfe() {
@@ -641,7 +650,7 @@ private:
       if (((pc ^ cop0.bpc) & cop0.bpcm) == 0) {
         cop0.dcic.tany = 1;
         cop0.dcic.tc   = 1;
-        exception(ExeCodeTable::BP);
+        exception(ExeCodeTable::BP, true);
         return true;
       }
     }
@@ -654,7 +663,7 @@ private:
         cop0.dcic.tany = 1;
         cop0.dcic.td   = 1;
         cop0.dcic.tdr  = cop0.dcic.v && COP0_DCIC_BK_DR_MK;
-        exception(ExeCodeTable::BP);
+        exception(ExeCodeTable::BP, true);
         return true;
       }
     }
@@ -667,7 +676,7 @@ private:
         cop0.dcic.tany = 1;
         cop0.dcic.td   = 1;
         cop0.dcic.tdw  = cop0.dcic.v && COP0_DCIC_BK_DW_MK;
-        exception(ExeCodeTable::BP);
+        exception(ExeCodeTable::BP, true);
         return true;
       }
     }
@@ -678,7 +687,7 @@ private:
     if ((cop0.dcic.v & COP0_DCIC_BK_JMP_MK) == COP0_DCIC_BK_JMP_MK) {
       cop0.dcic.tj   = 1;
       cop0.dcic.tany = 1;
-      exception(ExeCodeTable::BP);
+      exception(ExeCodeTable::BP, true);
       return true;
     }
     return false;
@@ -700,7 +709,7 @@ private:
 
   inline void ii(char const* iname, mips_reg t, mips_reg s, s16 i) {
     if (!__show_interpreter) return;
-    debug("%08x | %08x %6s $%s, $%s, 0x%08x \t # $%s=%x, $%s=%x, jump=%x\n",
+    debug("%08x | %08x %6s $%s, $%s, 0x%08x \t # $%s=%x, $%s=%x, addr=%x\n",
       pc, bus.read32(pc), iname, rname(t), rname(s), i,
       rname(t), reg.u[t], rname(s), reg.u[s], pc + (i << 2));
   }

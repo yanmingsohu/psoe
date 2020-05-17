@@ -38,8 +38,8 @@ u8* MMU::memPoint(u32 addr) {
       return 0;
 
     CASE_MEM_MIRROR(0x1F80'1010):
-      warn("Cannot change BIOS delay/size\n");
-      return 0;
+      //warn("Cannot change BIOS delay/size\n");
+      return (u8*)&bios_size;
 
     CASE_MEM_MIRROR(0x1F80'1014):
       warn("Cannot change SPU delay/size\n");

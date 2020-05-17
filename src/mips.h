@@ -180,7 +180,7 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
 
     case 9:
       // $t = $s + i
-      r->addiu(i.I.rt, i.I.rs, i.I.immu); 
+      r->addiu(i.I.rt, i.I.rs, i.I.imm); 
       break;
 
     case 10:
@@ -246,6 +246,7 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
     case 41:
       // s[$s + i] = $t
       r->sh(i.I.rt, i.I.rs, i.I.imm);
+      break;
 
     case 40:
       // byte[$s + i] = $t

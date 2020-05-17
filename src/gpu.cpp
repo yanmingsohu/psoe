@@ -87,9 +87,13 @@ void GPU::gpu_thread() {
       vram.drawScreen();
     }
 
-    if (status.irq_on) {
+    //if (status.irq_on) {
       bus.send_irq(IrqDevMask::vblank);
       debug("SEND vblank\r");
+    //}
+
+    if (status.height) {
+      status.lcf = ~status.lcf;
     }
 
     glfwSwapBuffers(glwindow);
@@ -104,6 +108,9 @@ void GPU::gpu_thread() {
 void GPU::reset() {
   gp0.reset_fifo();
   status.v = 0x14802000;
+  status.r_cmd = 1; //TODO: 与状态同步
+  status.r_cpu = 1;
+  status.r = 1;
 }
 
 

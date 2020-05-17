@@ -79,6 +79,7 @@ private:
 
   u32 expansion1_base = 0x1F00'0000;
   u32 expansion2_base = 0x1F80'2000;
+  u32 bios_size = 0;
 
 public:
   MMU(MemJit&);
