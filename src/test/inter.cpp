@@ -2,6 +2,8 @@
 #include "../util.h"
 #include "../mips.h"
 #include "../inter.h"
+#include "../spu.h"
+#include "../serial_port.h"
 #include <conio.h>
 
 
@@ -28,29 +30,32 @@ void test_mips_inter() {
 
   Bus bus(mmu);
   GPU gpu(bus);
+  SoundProcessing spu(bus);
+  SerialPort spi(bus);
   InterpreterMips t(bus);
   bus.bind_irq_receiver(&t);
   t.reset();
   //test_gpu(gpu, bus);
 
   int ext_count = 0;
-  //for (;;); //!!死循环
 
-  t.__show_interpreter = 0;
-  t.set_int_exc_point(0xbfc00404);
+  t.__show_interpreter = 1;
+  //t.set_int_exc_point(0xbfc00404);
   int show_code = 0;
+  int counter = 0;
 
   for (;;) {
     t.next();
     --show_code;
+    ++counter;
 
-    if (show_code < -100000) {
+    /*if (show_code < -100000) {
       t.__show_interpreter = 1;
       show_code = 30;
-      debug("-------- -------- -------- \n");
+      debug("\t\t\t\tI-> %d\n", counter);
     } else if (show_code < 0) {
       t.__show_interpreter = 0;
-    }
+    }*/
 
     if (t.has_exception()) {
       ++ext_count;

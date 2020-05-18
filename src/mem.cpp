@@ -30,28 +30,28 @@ u8* MMU::memPoint(u32 addr) {
       return (u8*)&expansion2_base;
 
     CASE_MEM_MIRROR(0x1F80'1008):
-      warn("Cannot change Exp 1 delay/size\n");
-      return 0;
+      return (u8*)&expansion1_delay;
 
     CASE_MEM_MIRROR(0x1F80'100C):
-      warn("Cannot change Exp 3 delay/size\n");
-      return 0;
+      return (u8*)&expansion3_delay;
 
     CASE_MEM_MIRROR(0x1F80'1010):
-      //warn("Cannot change BIOS delay/size\n");
       return (u8*)&bios_size;
 
     CASE_MEM_MIRROR(0x1F80'1014):
-      warn("Cannot change SPU delay/size\n");
-      return 0;
+      return (u8*)&spu_delay;
 
     CASE_MEM_MIRROR(0x1F80'1018):
-      warn("Cannot change CDROM delay/size\n");
-      return 0;
+      return (u8*)&cdrom_delay;
 
     CASE_MEM_MIRROR(0x1F80'101C):
-      warn("Cannot change Exp 2 delay/size\n");
-      return 0;
+      return (u8*)&expansion2_delay;
+
+    CASE_MEM_MIRROR(0x1F80'1020):
+      return (u8*)&common_delay;
+
+    CASE_MEM_MIRROR(0x1F80'1060):
+      return (u8*)&ram_size;
   }
 
   switch (addr & 0xFFF0'0000) {

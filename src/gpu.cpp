@@ -88,8 +88,8 @@ void GPU::gpu_thread() {
     }
 
     //if (status.irq_on) {
-      bus.send_irq(IrqDevMask::vblank);
-      debug("SEND vblank\r");
+    bus.send_irq(IrqDevMask::vblank);
+    //debug("SEND vblank\r");
     //}
 
     if (status.height) {

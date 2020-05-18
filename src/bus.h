@@ -118,6 +118,12 @@ public:
   u16 read16(psmem addr);
   u8 read8(psmem addr);
 
+  // 类必须有 static DeviceIOMapper 类型的 Port 成员
+  template<class DIO>
+  void bind_io(DIO* device) {
+    bind_io(DIO::Port, device);
+  }
+
 
   template<class T> void write(psmem addr, T v) {
     switch (addr) {

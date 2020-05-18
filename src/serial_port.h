@@ -43,35 +43,30 @@ public:
 class SerialPort {
 private:
   class Data : public InnerDeviceIO<SerialPort, ConsoleDataPort> {
+  public:
     using InnerDeviceIO::InnerDeviceIO;
+    static const DeviceIOMapper Port = DeviceIOMapper::sio_tx_data;
   };
 
   class Stat : public InnerDeviceIO<SerialPort, SerialPortState> {
+  public:
     using InnerDeviceIO::InnerDeviceIO;
+    static const DeviceIOMapper Port = DeviceIOMapper::sio_stat;
   };
 
-  class Mode : public InnerDeviceIO<SerialPort> {
+  template<DeviceIOMapper P>
+  class Nomr : public InnerDeviceIO<SerialPort, U32Reg> {
+  public:
     using InnerDeviceIO::InnerDeviceIO;
-  };
-
-  class Ctrl : public InnerDeviceIO<SerialPort> {
-    using InnerDeviceIO::InnerDeviceIO;
-  };
-
-  class Misc : public InnerDeviceIO<SerialPort> {
-    using InnerDeviceIO::InnerDeviceIO;
-  };
-
-  class Baud : public InnerDeviceIO<SerialPort> {
-    using InnerDeviceIO::InnerDeviceIO;
+    static const DeviceIOMapper Port = P;
   };
 
   Data data;
   Stat stat;
-  Mode mode;
-  Ctrl ctrl;
-  Misc misc;
-  Baud baud;
+  Nomr<DeviceIOMapper::sio_mode> mode;
+  Nomr<DeviceIOMapper::sio_ctrl> ctrl;
+  Nomr<DeviceIOMapper::sio_misc> misc;
+  Nomr<DeviceIOMapper::sio_baud> baud;
 
 public:
   SerialPort(Bus&);

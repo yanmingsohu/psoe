@@ -80,6 +80,14 @@ private:
   u32 expansion1_base = 0x1F00'0000;
   u32 expansion2_base = 0x1F80'2000;
   u32 bios_size = 0;
+  u32 expansion1_delay;
+  u32 expansion2_delay;
+  u32 expansion3_delay;
+  u32 cdrom_delay;
+  u32 spu_delay;
+  u32 common_delay;
+  u32 ram_size;
+
 
 public:
   MMU(MemJit&);

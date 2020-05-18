@@ -67,7 +67,7 @@ extern LogLevel log_level;
 //
 class MemBlock {
 public:
-  typedef std::unordered_set<void*> AddrSet;
+  typedef std::unordered_set<void*> AddrSet; 
 
 private:
   AddrSet addr_set;

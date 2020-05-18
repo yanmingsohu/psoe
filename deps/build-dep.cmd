@@ -33,5 +33,19 @@ goto end
 :buld_glad
 goto end
 
+:build_FTXUI
+cd %bin_home%
+set ftxui_home=%deps_home%\FTXUI
+md ftxui
+cd ftxui
+cmake %deps_home%
+cmake --build . --config Release
+mv Release/*.lib %bin_home%/
+cd %bin_home%
+rm -rf ftxui
+if ERRORLEVEL 1 goto end
+goto end
+
 :end
 if ERRORLEVEL 1 pause
+exit
