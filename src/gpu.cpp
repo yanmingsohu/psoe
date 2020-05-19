@@ -17,7 +17,7 @@ u32 textureAttr(GpuStatus& st, GpuTextFlip& flip) {
 
 
 GPU::GPU(Bus& bus) : 
-    DMADev(bus, DeviceIOMapper::dma_gpu), status{0}, screen{0}, display{0},
+    DMADev(bus, DeviceIOMapper::dma_gpu_base), status{0}, screen{0}, display{0},
     gp0(*this), gp1(*this), cmd_respons(0), vram(1), ds(0), disp_hori{0},
     disp_veri{0}, text_win{0}, draw_offset{0}, draw_tp_lf{0}, draw_bm_rt{0},
     status_change_count(0)

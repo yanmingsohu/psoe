@@ -91,13 +91,27 @@ namespace ps1e {
     rw(0x1F80'105C, sio_misc            , a, v, 2) \
     rw(0x1F80'105E, sio_baud            , a, v, 2) \
                                                    \
-    rw(0x1F80'1080, dma_mdec_in         , a, v, 4) \
-    rw(0x1F80'1090, dma_mdec_out        , a, v, 4) \
-    rw(0x1F80'10A0, dma_gpu             , a, v, 4) \
-    rw(0x1F80'10B0, dma_cdrom           , a, v, 4) \
-    rw(0x1F80'10C0, dma_spu             , a, v, 4) \
-    rw(0x1F80'10D0, dma_pio             , a, v, 4) \
-    rw(0x1F80'10E0, dma_otc             , a, v, 4) \
+    rw(0x1F80'1080, dma_mdec_in_base    , a, v, 4) \
+    rw(0x1F80'1084, dma_mdec_in_blk     , a, v, 4) \
+    rw(0x1F80'1088, dma_mdec_in_ctrl    , a, v, 4) \
+    rw(0x1F80'1090, dma_mdec_out_base   , a, v, 4) \
+    rw(0x1F80'1094, dma_mdec_out_blk    , a, v, 4) \
+    rw(0x1F80'1098, dma_mdec_out_ctrl   , a, v, 4) \
+    rw(0x1F80'10A0, dma_gpu_base        , a, v, 4) \
+    rw(0x1F80'10A4, dma_gpu_blk         , a, v, 4) \
+    rw(0x1F80'10A8, dma_gpu_ctrl        , a, v, 4) \
+    rw(0x1F80'10B0, dma_cdrom_base      , a, v, 4) \
+    rw(0x1F80'10B4, dma_cdrom_blk       , a, v, 4) \
+    rw(0x1F80'10B8, dma_cdrom_ctrl      , a, v, 4) \
+    rw(0x1F80'10C0, dma_spu_base        , a, v, 4) \
+    rw(0x1F80'10C4, dma_spu_blk         , a, v, 4) \
+    rw(0x1F80'10C8, dma_spu_ctrl        , a, v, 4) \
+    rw(0x1F80'10D0, dma_pio_base        , a, v, 4) \
+    rw(0x1F80'10D4, dma_pio_blk         , a, v, 4) \
+    rw(0x1F80'10D8, dma_pio_ctrl        , a, v, 4) \
+    rw(0x1F80'10E0, dma_otc_base        , a, v, 4) \
+    rw(0x1F80'10E4, dma_otc_blk         , a, v, 4) \
+    rw(0x1F80'10E8, dma_otc_ctrl        , a, v, 4) \
                                                    \
     rw(0x1F80'1100, time0_count_val     , a, v, 4) \
     rw(0x1F80'1104, time0_mode          , a, v, 4) \

@@ -61,10 +61,9 @@ void test_mips_inter() {
         disa.decode(-i);
       }
 
-      ++ext_count;
       show_code = 300;
         
-      info("Exception %d >> ?", ext_count);
+      info("Exception %d, %d >> ?", ext_count, counter);
       int ch = _getch();
       printf("\r                \r");
 
@@ -75,14 +74,16 @@ void test_mips_inter() {
           break;
 
         case 'x':
+          ext_count += cpu.exception_counter;
           cpu.exception_counter = 0;
-          show_code = 0;
+          show_code = -1;
           break;
 
         case '1':
           for (int i=0; i<100; ++i) {
             disa.current();
             cpu.next();
+            ++counter;
           }
           break;
 

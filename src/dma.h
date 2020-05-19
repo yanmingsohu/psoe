@@ -183,7 +183,7 @@ protected:
   virtual void dma_order_list(psmem addr, u32 bytesize, u32 inc);
 
 public:
-  DMADev(Bus& _bus, DeviceIOMapper type0);
+  DMADev(Bus& _bus, DeviceIOMapper dma_x_base);
   virtual ~DMADev() {};
 
   // 子类重写, 对传输方向支持返回 true
