@@ -118,13 +118,26 @@ void Bus::show_mem_console(psmem begin, u32 len) {
   for (int i=0; i<0x10; ++i) {
     printf(" -%X", (i+begin)%0x10);
   }
-  printf(" |");
+  printf(" | ----------------");
 
-  for (u32 i=begin; i<len+begin; ++i) {
-    if ((i-begin)%16==0) printf("\n 0x%08X| ", i);
-    printf(" %02X", read8(i));
+  for (u32 i=begin; i<len+begin; i+=16) {
+    printf("\n 0x%08X| ", i);
+
+    for (u32 j=i; j<i+16; ++j) {
+      printf(" %02X", read8(j));
+    }
+    
+    printf("   ");
+    for (u32 j=i; j<i+16; ++j) {
+      u8 c = read8(j);
+      if (c >= 32) {
+        putchar(c);
+      } else {
+        putchar('.');
+      }
+    }
   }
-  printf("\n|-over-----|- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- |\n");
+  printf("\n|-over-----|- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- | ----------------\n");
 }
 
 }
