@@ -9,7 +9,6 @@
 namespace ps1e {
 
 
-
 enum class IrqDevMask : u32 {
   vblank  = 1,
   gpu     = 1 << 1,
@@ -118,13 +117,18 @@ public:
   u16 read16(psmem addr);
   u8 read8(psmem addr);
 
+  void show_mem_console(psmem begin, u32 len = 0x20);
+
   // 类必须有 static DeviceIOMapper 类型的 Port 成员
   template<class DIO>
   void bind_io(DIO* device) {
     bind_io(DIO::Port, device);
   }
+  
+  // 检查状态, 满足条件则启动/停止DMA过程
+  void change_running_state(DMADev* dd);
 
-
+  // TODO: IO端口对word的操作不足
   template<class T> void write(psmem addr, T v) {
     switch (addr) {
       CASE_IO_MIRROR(0x1F80'10F0):
@@ -149,32 +153,11 @@ public:
         update_irq_to_reciver();
         return;
 
-      IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_WRITE, io, v);
-    }
-
-    if (isDMA(addr)) {
-      u32 devnum = (addr & 0x70) >> 4;
-      DMADev* dd = dmadev[devnum];
-      if (!dd) {
-        warn("DMA Device Not exist %x: %x", devnum, v);
+      CASE_IO_MIRROR(0x1f80'2041):
+        warn("BIOS Boot status <%X>\n", v);
         return;
-      }
-      switch (addr & 0xF) {
-        case 0x0:
-          dd->send_base(v);
-          break;
-        case 0x4:
-          dd->send_block(v);
-          break;
-        case 0x8:
-          if (dd->send_ctrl(v) != v) {
-            change_running_state(dd);
-          }
-          break;
-        default:
-          warn("Unknow DMA address %x: %x", devnum, v);
-      }
-      return;
+
+      IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_WRITE, io, v);
     }
 
     T* tp = (T*)mmu.memPoint(addr);
@@ -182,7 +165,7 @@ public:
       *tp = v;
       return;
     }
-    warn("WRIT BUS invaild %x: %x\n", addr, v);
+    warn("WRIT BUS invaild %x[%d]: %x\n", addr, sizeof(T), v);
     ir->send_bus_exception();
   }
 
@@ -204,30 +187,11 @@ public:
       IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_READ, io, NULL);
     }
 
-    if (isDMA(addr)) {
-      DMADev* dd = dmadev[(addr & 0x70) >> 4];
-      if (!dd) {
-        warn("DMA Device Not exist %x", addr);
-        return 0;
-      }
-      switch (addr & 0xF) {
-        case 0x0:
-          return (T)dd->read_base();
-        case 0x4:
-          return (T)dd->read_block();
-        case 0x8:
-          return (T)dd->read_status();
-        default:
-          warn("Unknow DMA address %x", addr);
-      }
-      return 0;
-    }
-
     T* tp = (T*)mmu.memPoint(addr);
     if (tp) {
       return *tp;
     }
-    warn("READ BUS invaild %x\n", addr);
+    warn("READ BUS invaild %x[%d]\n", addr, sizeof(T));
     ir->send_bus_exception();
     return 0;
   }
@@ -235,16 +199,14 @@ public:
 private:
   // dma_dpcr 同步到 dma 设备上
   void set_dma_dev_status();
-  // 检查状态, 满足条件则启动/停止DMA过程
-  void change_running_state(DMADev* dd);
 
   u32 has_dma_irq() {
-    return dma_irq.master_flag = dma_irq.force || (dma_irq.master_enable 
-                              && (dma_irq.dd_enable & dma_irq.dd_flag));
+    return dma_irq.master_flag;
   }
 
-  inline bool isDMA(psmem addr) {
-    return ((addr & 0xFFFF'FF80) | DMA_MASK) == 0;
+  void update_irq_flag() {
+    dma_irq.master_flag = 
+      dma_irq.force || (dma_irq.master_enable && (dma_irq.dd_enable & dma_irq.dd_flag));
   }
 };
 

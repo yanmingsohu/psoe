@@ -1,9 +1,12 @@
 ﻿#include "util.h" 
 #include <stdio.h>
+#include <string.h>
 #include <exception>
 #include <new>
 #include <stdexcept>
-#include <string.h>
+#include <unordered_map>
+#include <unordered_set>
+#include <list>
 
 #if defined(LINUX) || defined(MACOS)
 #include <sys/mman.h>

@@ -52,9 +52,9 @@ void Bus::set_dma_dev_status() {
 
 void Bus::send_dma_irq(DMADev* dd) {
   u32 flag_mask = (1 << static_cast<u32>(dd->number()));
-  if (flag_mask & dma_irq.dd_enable) {
-    dma_irq.dd_flag |= flag_mask;
-  }
+  dma_irq.dd_flag |= flag_mask;
+  update_irq_flag();
+
   if (has_dma_irq()) {
     send_irq(IrqDevMask::dma);
   }
@@ -77,9 +77,9 @@ void Bus::update_irq_to_reciver() {
 void Bus::change_running_state(DMADev* dd) {
   if ((dd->mask() & dma_dpcr.v) == 0) {
     dd->stop();
-    return;
+  } else {
+    dd->start();
   }
-  dd->start();
 }
 
 
@@ -110,6 +110,21 @@ u16 Bus::read16(psmem addr) {
 
 u8 Bus::read8(psmem addr) {
   return read<u8>(addr);
+}
+
+
+void Bus::show_mem_console(psmem begin, u32 len) {
+  printf("|----------|-");
+  for (int i=0; i<0x10; ++i) {
+    printf(" -%X", (i+begin)%0x10);
+  }
+  printf(" |");
+
+  for (u32 i=begin; i<len+begin; ++i) {
+    if ((i-begin)%16==0) printf("\n 0x%08X| ", i);
+    printf(" %02X", read8(i));
+  }
+  printf("\n|-over-----|- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- |\n");
 }
 
 }

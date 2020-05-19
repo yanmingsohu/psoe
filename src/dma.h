@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "util.h"
+#include "io.h"
 
 namespace ps1e {
 
@@ -25,6 +26,8 @@ enum class DmaDeviceNum : u32 {
   pio     = 5,
   otc     = 6,
 };
+
+DmaDeviceNum convertToDmaNumber(DeviceIOMapper s);
 
 
 enum class ChcrMode : u32 {
@@ -130,33 +133,57 @@ enum class dma_chcr_dir {
 
 class DMADev {
 private:
+  class RegBase : public DeviceIO {
+  public:
+    u32 base; // 目标内存基址
+    void write(u32 value);
+    u32 read();
+  };
+
+  class RegBlock : public DeviceIO {
+  public:
+    u32 blocks;    // stream 模式数据包数量
+    u32 blocksize; // 一个数据包 u32 的数量
+    void write(u32 value);
+    u32 read();
+  };
+
+  class RegCtrl : public DeviceIO {
+  public:
+    DMAChcr chcr;
+    Bus& bus;
+    DMADev* parent;
+
+    RegCtrl(Bus& b, DMADev* p) : bus(b), parent(p) {}
+    void write(u32 value);
+    u32 read();
+  };
+
   const DmaDeviceNum devnum;
   u32 _mask;
   u32 priority;
   bool running;
 
 protected:
-  u32 base;      // 目标内存基址
-  u32 blocks;    // stream 模式数据包数量
-  u32 blocksize; // 一个数据包 u32 的数量
-  DMAChcr chcr;
+  
   Bus& bus;
+  RegBase base_io;
+  RegBlock blocks_io;
+  RegCtrl ctrl_io;
 
   // DMA 传输过程, 由设备调用该方法开始 DMA 传输,
   // 应该在单独的线程中执行
   void transport();
 
   // 子类实现内存到设备传输
-  void dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc);
+  virtual void dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc);
   // 子类实现设备到内存传输
-  void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc);
+  virtual void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc);
+  // 子类实现 otc 传输
+  virtual void dma_order_list(psmem addr, u32 bytesize, u32 inc);
 
 public:
-  DMADev(Bus& _bus, DmaDeviceNum _devnum) 
-  : devnum(_devnum), priority(0), running(false), bus(_bus) {
-    _mask = 1 << (static_cast<u32>(number()) * 4);
-  }
-
+  DMADev(Bus& _bus, DeviceIOMapper type0);
   virtual ~DMADev() {};
 
   // 子类重写, 对传输方向支持返回 true
@@ -179,35 +206,6 @@ public:
   inline DmaDeviceNum number() {
     return devnum;
   }
-
-  void send_base(u32 b) {
-    base = b & 0x00FF'FFFF;
-  }
-
-  void send_block(u32 b) {
-    blocks = (b & 0xffff'0000) >> 16;
-    blocksize = b & 0x0'FFFF;
-  }
-
-  u32 send_ctrl(u32 b) {
-    u32 old = chcr.v;
-    chcr.v = b;
-    return old;
-  }
-
-  u32 read_base() {
-    return base;
-  }
-
-  u32 read_block() {
-    return blocksize | (blocks << 16);
-  }
-
-  u32 read_status() {
-    return chcr.v;
-  }
-
-private:
 };
 
 }
