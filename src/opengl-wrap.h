@@ -149,6 +149,8 @@ public:
   GLTexture();
   ~GLTexture();
   void init(GLFrameBuffer&, void* pixeldata = 0);
+  // pixeldata 应使用 GL_UNSIGNED_INT_8_8_8_8 格式
+  void init(int w, int h, void* pixeldata);
   void bind();
   void unbind();
 };

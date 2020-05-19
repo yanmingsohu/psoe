@@ -88,7 +88,6 @@ public:
       panic("Cannot read bin file");
     }
 
-    t.__show_interpreter = 0;
     t.reset();
     r.sp = 0x10000;
 
@@ -98,7 +97,6 @@ public:
       t.next();
     }
 
-    t.__show_interpreter = 1;
     t.next();
     printMipsReg();
   }

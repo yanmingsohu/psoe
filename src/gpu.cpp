@@ -17,7 +17,7 @@ u32 textureAttr(GpuStatus& st, GpuTextFlip& flip) {
 
 
 GPU::GPU(Bus& bus) : 
-    DMADev(bus, DmaDeviceNum::gpu), status{0}, screen{0}, display{0},
+    DMADev(bus, DeviceIOMapper::dma_gpu), status{0}, screen{0}, display{0},
     gp0(*this), gp1(*this), cmd_respons(0), vram(1), ds(0), disp_hori{0},
     disp_veri{0}, text_win{0}, draw_offset{0}, draw_tp_lf{0}, draw_bm_rt{0},
     status_change_count(0)
@@ -87,10 +87,8 @@ void GPU::gpu_thread() {
       vram.drawScreen();
     }
 
-    //if (status.irq_on) {
     bus.send_irq(IrqDevMask::vblank);
     //debug("SEND vblank\r");
-    //}
 
     if (status.height) {
       status.lcf = ~status.lcf;
@@ -100,7 +98,7 @@ void GPU::gpu_thread() {
     glfwPollEvents();
     transport();
 
-    debug("%d, %f\r", ++frames, glfwGetTime());
+    //debug("\r\t\t\t\t\t\t%d, %f\r", ++frames, glfwGetTime());
   }
 }
 
@@ -129,7 +127,7 @@ static void initBoxVertices(float* vertices) {
 
 
 VirtualFrameBuffer::VirtualFrameBuffer(int _mul) : 
-    multiple(_mul), gsize{0, 0, Width * _mul, Height * _mul}, ds(0.03)
+    multiple(_mul), gsize{0, 0, Width * _mul, Height * _mul}, ds(0.03f)
 {
 }
 

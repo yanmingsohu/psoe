@@ -195,14 +195,19 @@ GLTexture::~GLTexture() {
 
 void GLTexture::init(GLFrameBuffer& fb, void* pixeldata) {
   fb.bind();
+  init(fb.width(), fb.height(), pixeldata);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, 
+      GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, text, 0);
+}
+
+
+void GLTexture::init(int w, int h, void* pixeldata) {
   glGenTextures(1, &text);
   bind();
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 
-      fb.width(), fb.height(), 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, pixeldata);
+      w, h, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, pixeldata);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, 
-      GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, text, 0);
 }
 
 

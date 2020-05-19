@@ -114,7 +114,7 @@ public:
 
 template<int ElementCount>
 class ShadedPolyVertices : public VerticesBase {
-private:
+protected:
   u32 vertices[ElementCount *2];
 
 public:
@@ -359,7 +359,7 @@ public:
 
 template<u8 Fixed>
 class SquareWithTextureVertices : public VerticesBase {
-private:
+protected:
   static const int ElementCount = 4;
   u32 vertices[ElementCount*2];
 
@@ -518,6 +518,72 @@ public:
 };
 
 
+class FillTexture : public ShadedPolyVertices<4> {
+private:
+  u32 coord;
+  int buf_length;
+  u32* buf;
+  GLTexture text;
+  int w, h;
+
+  void update_vertices(u32 offset) {
+    vertices[0] = coord;
+    vertices[2] = vertices[0] + (X_MASK  & offset);
+    vertices[4] = vertices[0] + (Y_MASK  & offset);
+    vertices[6] = vertices[0] + (XY_MASK & offset);
+   
+    vertices[1] = 0x0000'0000;
+    vertices[3] = 0x0001'0000;
+    vertices[5] = 0x0000'0001;
+    vertices[7] = 0x0001'0001;
+  }
+
+public:
+  FillTexture() : ShadedPolyVertices(), buf(0) {
+    step = -3;
+  }
+
+  ~FillTexture() {
+    if (buf) {
+      delete [] buf;
+      buf = 0;
+    }
+  }
+  
+  void setAttr(GLVerticesBuffer& vbo) {
+    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
+    vbdata.uintAttr(0, 1, 2, 0);
+    vbdata.uintAttr(1, 1, 2, 1);
+    text.init(w, h, buf);
+    text.bind();
+  }
+
+  bool write(const u32 c) {
+    switch (step) {
+      case -3:
+        break;
+
+      case -2:
+        coord = c;
+        break;
+
+      case -1:
+        w = (c & X_MASK);
+        h = (c & Y_MASK) >> 16;
+        buf_length = (w * h) >> 1;
+        buf = new u32[buf_length];
+        update_vertices(c);
+        break;
+
+      default:
+        buf[step] = c;
+        break;
+    }
+    return ++step < buf_length;
+  }
+};
+
+
 template< class Vertices, 
           void (*Draw)(GLVertexArrays&, int),
           class Shader = MonoColorShader
@@ -597,6 +663,10 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     case 0x02:
       shape = new Polygon<FillVertices, drawTriStrip, FillRectShader>(1);
+      break;
+
+    case 0xA0:
+      shape = new Polygon<FillTexture, drawTriStrip, CopyTextureShader>(1);
       break;
 
     case 0x1F:

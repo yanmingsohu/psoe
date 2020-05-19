@@ -166,6 +166,21 @@ public:
 };
 
 
+class CopyTextureShader : public PSShaderBase {
+private:
+  static ShaderSrc vertex;
+  static ShaderSrc frag;
+
+public:
+  static const bool Texture = false;
+  CopyTextureShader() : PSShaderBase(vertex, frag) {}
+
+  template<class Vertices>
+  void setShaderUni(Vertices& v, GPU& gpu, float _transparent) {
+  }
+};
+
+
 class VirtualScreenShader : public OpenGLShader {
 private:
   static ShaderSrc vertex;

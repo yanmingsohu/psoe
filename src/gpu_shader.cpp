@@ -197,6 +197,24 @@ void main() {
 }
 )shader";
 
+// ---------- ---------- Draw texture to screen, direct pos/coord
+
+static ShaderSrc copy_texture_v = VertexShaderHeader R"shader(
+layout (location = 0) in uint pos;
+layout (location = 1) in uint coord;
+out vec2 TexCoord;
+
+void main() {
+  uint x = 0x03F0u & pos;
+  uint y = 0x01FFu & (pos >> 16);
+  gl_Position = vec4(norm_x(x), norm_y(y), 0, 1);
+
+  uint cx = 0xffffu & coord;
+  uint cy = 0xffffu & (coord >> 16);
+  TexCoord = vec2(cx, cy);
+}
+)shader";
+
 // ---------- ---------- Shader for virtual ps ram (frame buffer)
 
 static ShaderSrc draw_virtual_screen_vertex = GSGL_VERSION R"shader(
@@ -240,6 +258,9 @@ ShaderSrc ShadedColorTextureMixShader::frag = texture_color_f;
 
 ShaderSrc FillRectShader::vertex = fill_rect_v;
 ShaderSrc FillRectShader::frag = color_direct_frag;
+
+ShaderSrc CopyTextureShader::vertex = copy_texture_v;
+ShaderSrc CopyTextureShader::frag = draw_texture_frag;
 
 
 }

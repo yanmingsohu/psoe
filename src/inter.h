@@ -21,7 +21,8 @@ private:
   u32 slot_out_pc;
 
 public:
-  bool __show_interpreter = 1;
+  // 仅用于统计调试, 无实际用途
+  u32 exception_counter = 0;
 
   InterpreterMips(Bus& _bus)  : 
       bus(_bus), cop0({0}), pc(0), hi(0), lo(0), 
@@ -34,7 +35,7 @@ public:
     pc = MMU::BOOT_ADDR;
     cop0.sr.cu  = 0b0101;
     cop0.sr.sr  = 0;
-    cop0.sr.ie  = 1; // ?1
+    cop0.sr.ie  = 1;
     cop0.sr.im  = 0xFF;
     cop0.sr.bev = 1;
     cop0.dcic.v = 0;
@@ -89,8 +90,6 @@ public:
 
   inline u32 has_exception() {
     if (cop0.sr.ie == 0) return 0;
-    //if (cop0.sr.KUc == 0) return 0; // necessary?
-    //if (cop0.sr.erl == 1) return 0; // necessary?
     return (cop0.sr.im & cop0.cause.ip);
   }
 
@@ -107,6 +106,7 @@ public:
 
 private:
   void exception(ExeCodeTable e, bool from_instruction, CpuCauseInt i = CpuCauseInt::software) {
+    ++exception_counter;
     cop0.cause.ip |= static_cast<u8>(i);
     if (!has_exception()) {
       if (from_instruction) {
@@ -153,12 +153,10 @@ private:
 
 public:
   void nop() {
-    jj("NOP", 0);
     pc += 4;
   }
 
   void add(mips_reg d, mips_reg s, mips_reg t) {
-    rr("ADD", d, s, t);
     Overflow<s32> o(reg.s[s], reg.s[t]);
     reg.s[d] = reg.s[s] + reg.s[t]; 
     if (o.check(reg.s[d])) {
@@ -169,13 +167,11 @@ public:
   }
 
   void addu(mips_reg d, mips_reg s, mips_reg t) {
-    rr("ADDu", d, s, t);
     reg.u[d] = reg.u[s] + reg.u[t]; 
     pc += 4;
   }
 
   void sub(mips_reg d, mips_reg s, mips_reg t) {
-    rr("SUB", d, s, t);
     Overflow<s32> o(reg.s[s], reg.s[t]);
     reg.s[d] = reg.s[s] - reg.s[t];
     if (o.check(reg.s[d])) {
@@ -186,75 +182,63 @@ public:
   }
 
   void subu(mips_reg d, mips_reg s, mips_reg t) {
-    rr("SUBu", d, s, t);
     reg.u[d] = reg.u[s] - reg.u[t];
     pc += 4;
   }
 
   void mul(mips_reg s, mips_reg t) {
-    rx("MUL", s, t);
     sethl(static_cast<s64>(reg.s[s]) * reg.s[t]);
     pc += 4;
   }
 
   void mulu(mips_reg s, mips_reg t) {
-    rx("MULu", s, t);
     sethl(static_cast<u64>(reg.u[s]) * reg.u[t]);
     pc += 4;
   }
 
   void div(mips_reg s, mips_reg t) {
-    rx("DIV", s, t);
     lo = reg.s[s] / reg.s[t];
     hi = reg.s[s] % reg.s[t];
     pc += 4;
   }
 
   void divu(mips_reg s, mips_reg t) {
-    rx("DIVu", s, t);
     lo = reg.u[s] / reg.u[t];
     hi = reg.u[s] % reg.u[t];
     pc += 4;
   }
 
   void slt(mips_reg d, mips_reg s, mips_reg t) {
-    rr("SLT", d, s, t);
     reg.s[d] = reg.s[s] < reg.s[t] ? 1 : 0;
     pc += 4;
   }
 
   void sltu(mips_reg d, mips_reg s, mips_reg t) {
-    rr("SLTu", d, s, t);
     reg.u[d] = reg.u[s] < reg.u[t] ? 1 : 0;
     pc += 4;
   }
 
   void _and(mips_reg d, mips_reg s, mips_reg t) {
-    rr("AND", d, s, t);
     reg.u[d] = reg.u[s] & reg.u[t];
     pc += 4;
   }
 
   void _or(mips_reg d, mips_reg s, mips_reg t) {
-    rr("OR", d, s, t);
     reg.u[d] = reg.u[s] | reg.u[t];
     pc += 4;
   }
 
   void _nor(mips_reg d, mips_reg s, mips_reg t) {
-    rr("NOR", d, s, t);
     reg.u[d] = ~(reg.u[s] | reg.u[t]);
     pc += 4;
   }
 
   void _xor(mips_reg d, mips_reg s, mips_reg t) {
-    rr("XOR", d, s, t);
     reg.u[d] = reg.u[s] ^ reg.u[t];
     pc += 4;
   }
 
   void addi(mips_reg t, mips_reg s, s32 i) {
-    ii("ADDi", t, s, i);
     Overflow<s32> o(reg.s[s], i);
     reg.s[t] = reg.s[s] + i;
     if (o.check(reg.s[t])) {
@@ -265,43 +249,36 @@ public:
   }
 
   void addiu(mips_reg t, mips_reg s, s32 i) {
-    ii("ADDiu", t, s, i);
     reg.u[t] = reg.u[s] + i;
     pc += 4;
   }
 
   void slti(mips_reg t, mips_reg s, s32 i) {
-    ii("SLTi", t, s, i);
     reg.s[t] = reg.s[s] < i ? 1 : 0;
     pc += 4;
   }
 
   void sltiu(mips_reg t, mips_reg s, u32 i) {
-    ii("SLTiu", t, s, i);
     reg.u[t] = reg.u[s] < i ? 1 : 0;
     pc += 4;
   }
 
   void andi(mips_reg t, mips_reg s, u32 i) {
-    ii("ANDi", t, s, i);
     reg.u[t] = reg.u[s] & i;
     pc += 4;
   }
 
   void ori(mips_reg t, mips_reg s, u32 i) {
-    ii("ORi", t, s, i);
     reg.u[t] = reg.u[s] | i;
     pc += 4;
   }
 
   void xori(mips_reg t, mips_reg s, u32 i) {
-    ii("XORi", t, s, i);
     reg.u[t] = reg.u[s] ^ i;
     pc += 4;
   }
 
   void lw(mips_reg t, mips_reg s, s32 i) {
-    ii("LW", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 0b11) {
       exception(ExeCodeTable::ADEL, true);
@@ -315,7 +292,6 @@ public:
   }
 
   void sw(mips_reg t, mips_reg s, s32 i) {
-    iw("SW", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 0b11) {
       exception(ExeCodeTable::ADES, true);
@@ -329,7 +305,6 @@ public:
   }
 
   void lb(mips_reg t, mips_reg s, s32 i) {
-    ii("LB", t, s, i);
     u32 addr = reg.u[s] + i;
     if (check_data_read_break(addr)) {
       return;
@@ -339,7 +314,6 @@ public:
   }
 
   void lbu(mips_reg t, mips_reg s, s32 i) {
-    ii("LBu", t, s, i);
     u32 addr = reg.u[s] + i;
     if (check_data_read_break(addr)) {
       return;
@@ -349,7 +323,6 @@ public:
   }
 
   void sb(mips_reg t, mips_reg s, s32 i) {
-    iw("SB", t, s, i);
     u32 addr = reg.u[s] + i;
     if (check_data_write_break(addr)) {
       return;
@@ -359,7 +332,6 @@ public:
   }
 
   void lh(mips_reg t, mips_reg s, s32 i) {
-    ii("LH", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 1) {
       exception(ExeCodeTable::ADEL, true);
@@ -373,7 +345,6 @@ public:
   }
 
   void lhu(mips_reg t, mips_reg s, s32 i) {
-    ii("LHu", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 1) {
       exception(ExeCodeTable::ADEL, true);
@@ -387,7 +358,6 @@ public:
   }
 
   void sh(mips_reg t, mips_reg s, s32 i) {
-    iw("SH", t, s, i);
     u32 addr = reg.u[s] + i;
     if (addr & 1) {
       exception(ExeCodeTable::ADES, true);
@@ -401,13 +371,11 @@ public:
   }
 
   void lui(mips_reg t, u32 i) {
-    i2("LUi", t, i);
     reg.u[t] = i << 16;
     pc += 4;
   }
 
   void beq(mips_reg t, mips_reg s, s32 i) {
-    ii("BEQ", t, s, i);
     if (check_jump_break()) {
       return;
     }
@@ -419,7 +387,6 @@ public:
   }
 
   void bne(mips_reg t, mips_reg s, s32 i) {
-    ii("BNE", t, s, i);
     if (check_jump_break()) {
       return;
     }
@@ -431,7 +398,6 @@ public:
   }
 
   void blez(mips_reg s, s32 i) {
-    i2("BLEZ", s, i);
     if (check_jump_break()) {
       return;
     }
@@ -443,7 +409,6 @@ public:
   }
 
   void bgtz(mips_reg s, s32 i) {
-    i2("BGTZ", s, i);
     if (check_jump_break()) {
       return;
     }
@@ -455,7 +420,6 @@ public:
   }
 
   void bltz(mips_reg s, s32 i) {
-    i2("BLTZ", s, i);
     if (check_jump_break()) {
       return;
     }
@@ -467,7 +431,6 @@ public:
   }
 
   void bgez(mips_reg s, s32 i) {
-    i2("BGEZ", s, i);
     if (check_jump_break()) {
       return;
     }
@@ -479,7 +442,6 @@ public:
   }
 
   void bgezal(mips_reg s, s32 i) {
-    i2("BGEZAL", s, i);
     if (check_jump_break()) {
       return;
     }
@@ -492,7 +454,6 @@ public:
   }
 
   void bltzal(mips_reg s, s32 i) {
-    i2("BLTZAL", s, i);
     if (check_jump_break()) {
       return;
     }
@@ -505,7 +466,6 @@ public:
   }
 
   void j(u32 i) {
-    jj("J", i);
     if (check_jump_break()) {
       return;
     }
@@ -514,7 +474,6 @@ public:
   }
 
   void jal(u32 i) {
-    jj("JAL", i);
     if (check_jump_break()) {
       return;
     }
@@ -524,7 +483,6 @@ public:
   }
 
   void jr(mips_reg s) {
-    j1("JR", s);
     if (check_jump_break()) {
       return;
     }
@@ -533,7 +491,6 @@ public:
   }
 
   void jalr(mips_reg d, mips_reg s) {
-    rx("JALR", d, s);
     if (check_jump_break()) {
       return;
     }
@@ -543,37 +500,31 @@ public:
   }
 
   void mfhi(mips_reg d) {
-    j1("MFHI", d);
     reg.u[d] = hi;
     pc += 4;
   }
 
   void mflo(mips_reg d) {
-    j1("MFLO", d);
     reg.u[d] = lo;
     pc += 4;
   }
 
   void mthi(mips_reg s) {
-    j1("MTHI", s);
     hi = reg.u[s];
     pc += 4;
   }
 
   void mtlo(mips_reg s) {
-    j1("MTLO", s);
     lo = reg.u[s];
     pc += 4;
   }
 
   void mfc0(mips_reg t, mips_reg d) {
-    i2("MFC0", t, d);
     reg.u[t] = cop0.r[d];
     pc += 4;
   }
 
   void mtc0(mips_reg t, mips_reg d) {
-    i2("MTC0", t, d);
     switch (d) {
       case COP0_CAUSE_REG_IDX:
         cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_CAUSE_RW_MASK);
@@ -588,48 +539,40 @@ public:
   }
 
   void sll(mips_reg d, mips_reg t, u32 i) {
-    ii("SLL", d, t, i);
     reg.u[d] = reg.u[t] << i;
     pc += 4;
   }
 
   void sllv(mips_reg d, mips_reg t, mips_reg s) {
-    rr("SLLV", d, t, s);
     reg.u[d] = reg.u[t] << reg.u[s];
     pc += 4;
   }
 
   void sra(mips_reg d, mips_reg t, u32 i) {
-    ii("SRA", d, t, i);
-    reg.u[d] = reg.s[t] >> i;
+    reg.s[d] = reg.s[t] >> i;
     pc += 4;
   }
 
   void srav(mips_reg d, mips_reg t, mips_reg s) {
-    rr("SRAV", d, t, s);
-    reg.u[d] = reg.s[t] >> reg.u[s];
+    reg.s[d] = reg.s[t] >> reg.u[s];
     pc += 4;
   }
 
   void srl(mips_reg d, mips_reg t, u32 i) {
-    ii("SRL", d, t, i);
     reg.u[d] = reg.u[t] >> i;
     pc += 4;
   }
 
   void srlv(mips_reg d, mips_reg t, mips_reg s) {
-    rr("SRLV", d, t, s);
     reg.u[d] = reg.u[t] >> reg.u[s];
     pc += 4;
   }
 
   void syscall() {
-    jj("SYSCAl", reg.v0);
     exception(ExeCodeTable::SYS, true);
   }
 
   void brk(u32 code) {
-    jj("BREAK", code);
     exception(ExeCodeTable::BP, true);
   }
 
@@ -693,58 +636,337 @@ private:
     return false;
   }
 
-  inline void rx(char const* iname, mips_reg s, mips_reg t) {
-    if (!__show_interpreter) return;
-    debug("%08x | %08x %6s H/L, $%s, $%s \t\t # $%s=%x, $%s=%x\n", 
+friend class DisassemblyMips;
+};
+
+
+class DisassemblyMips {
+private:
+  Bus& bus;
+  const MipsReg& reg;
+  const u32& cpc;
+  u32 pc;
+
+public:
+  DisassemblyMips(InterpreterMips& im) : bus(im.bus), reg(im.reg), cpc(im.pc), pc(im.pc) {}
+
+  // 解析当前pc指向的指令
+  void current() {
+    pc = cpc;
+    mips_decode(bus.read32(pc), this);
+  }
+
+  // 解析 pc 偏移指向的指令
+  void decode(int offset) {
+    pc = cpc + (offset << 2);
+    mips_decode(bus.read32(pc), this);
+  }
+
+  void nop() const {
+    nn("NOP");
+  }
+
+  void add(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("ADD", d, s, t);
+  }
+
+  void addu(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("ADDu", d, s, t);
+  }
+
+  void sub(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("SUB", d, s, t);
+  }
+
+  void subu(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("SUBu", d, s, t);
+  }
+
+  void mul(mips_reg s, mips_reg t) const {
+    rx("MUL", s, t);
+  }
+
+  void mulu(mips_reg s, mips_reg t) const {
+    rx("MULu", s, t);
+  }
+
+  void div(mips_reg s, mips_reg t) const {
+    rx("DIV", s, t);
+  }
+
+  void divu(mips_reg s, mips_reg t) const {
+    rx("DIVu", s, t);
+  }
+
+  void slt(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("SLT", d, s, t);
+  }
+
+  void sltu(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("SLTu", d, s, t);
+  }
+
+  void _and(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("AND", d, s, t);
+  }
+
+  void _or(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("OR", d, s, t);
+  }
+
+  void _nor(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("NOR", d, s, t);
+  }
+
+  void _xor(mips_reg d, mips_reg s, mips_reg t) const {
+    rr("XOR", d, s, t);
+  }
+
+  void addi(mips_reg t, mips_reg s, s32 i) const {
+    ii("ADDi", t, s, i);
+  }
+
+  void addiu(mips_reg t, mips_reg s, s32 i) const {
+    ii("ADDiu", t, s, i);
+  }
+
+  void slti(mips_reg t, mips_reg s, s32 i) const {
+    ii("SLTi", t, s, i);
+  }
+
+  void sltiu(mips_reg t, mips_reg s, u32 i) const {
+    ii("SLTiu", t, s, i);
+  }
+
+  void andi(mips_reg t, mips_reg s, u32 i) const {
+    ii("ANDi", t, s, i);
+  }
+
+  void ori(mips_reg t, mips_reg s, u32 i) const {
+    ii("ORi", t, s, i);
+  }
+
+  void xori(mips_reg t, mips_reg s, u32 i) const {
+    ii("XORi", t, s, i);
+  }
+
+  void lw(mips_reg t, mips_reg s, s32 i) const {
+    ii("LW", t, s, i);
+  }
+
+  void sw(mips_reg t, mips_reg s, s32 i) const {
+    iw("SW", t, s, i);
+  }
+
+  void lb(mips_reg t, mips_reg s, s32 i) const {
+    ii("LB", t, s, i);
+  }
+
+  void lbu(mips_reg t, mips_reg s, s32 i) const {
+    ii("LBu", t, s, i);
+  }
+
+  void sb(mips_reg t, mips_reg s, s32 i) const {
+    iw("SB", t, s, i);
+  }
+
+  void lh(mips_reg t, mips_reg s, s32 i) const {
+    ii("LH", t, s, i);
+  }
+
+  void lhu(mips_reg t, mips_reg s, s32 i) const {
+    ii("LHu", t, s, i);
+  }
+
+  void sh(mips_reg t, mips_reg s, s32 i) const {
+    iw("SH", t, s, i);
+  }
+
+  void lui(mips_reg t, u32 i) const {
+    i2("LUi", t, i);
+  }
+
+  void beq(mips_reg t, mips_reg s, s32 i) const {
+    ji("BEQ", t, s, i);
+  }
+
+  void bne(mips_reg t, mips_reg s, s32 i) const {
+    ji("BNE", t, s, i);
+  }
+
+  void blez(mips_reg s, s32 i) const {
+    j2("BLEZ", s, i);
+  }
+
+  void bgtz(mips_reg s, s32 i) const {
+    j2("BGTZ", s, i);
+  }
+
+  void bltz(mips_reg s, s32 i) const {
+    j2("BLTZ", s, i);
+  }
+
+  void bgez(mips_reg s, s32 i) const {
+    j2("BGEZ", s, i);
+  }
+
+  void bgezal(mips_reg s, s32 i) const {
+    j2("BGEZAL", s, i);
+  }
+
+  void bltzal(mips_reg s, s32 i) const {
+    j2("BLTZAL", s, i);
+  }
+
+  void j(u32 i) const {
+    jj("J", i);
+  }
+
+  void jal(u32 i) const {
+    jj("JAL", i);
+  }
+
+  void jr(mips_reg s) const {
+    j1("JR", s);
+  }
+
+  void jalr(mips_reg d, mips_reg s) const {
+    rx("JALR", d, s);
+  }
+
+  void mfhi(mips_reg d) const {
+    m1("MFHI", d);
+  }
+
+  void mflo(mips_reg d) const {
+    m1("MFLO", d);
+  }
+
+  void mthi(mips_reg s) const {
+    m1("MTHI", s);
+  }
+
+  void mtlo(mips_reg s) const {
+    m1("MTLO", s);
+  }
+
+  void mfc0(mips_reg t, mips_reg d) const {
+    i2("MFC0", t, d);
+  }
+
+  void mtc0(mips_reg t, mips_reg d) const {
+    i2("MTC0", t, d);
+  }
+
+  void sll(mips_reg d, mips_reg t, u32 i) const {
+    ii("SLL", d, t, i);
+  }
+
+  void sllv(mips_reg d, mips_reg t, mips_reg s) const {
+    rr("SLLV", d, t, s);
+  }
+
+  void sra(mips_reg d, mips_reg t, u32 i) const {
+    ii("SRA", d, t, i);
+  }
+
+  void srav(mips_reg d, mips_reg t, mips_reg s) const {
+    rr("SRAV", d, t, s);
+  }
+
+  void srl(mips_reg d, mips_reg t, u32 i) const {
+    ii("SRL", d, t, i);
+  }
+
+  void srlv(mips_reg d, mips_reg t, mips_reg s) const {
+    rr("SRLV", d, t, s);
+  }
+
+  void syscall() const {
+    jj("SYSCAl", reg.v0);
+  }
+
+  void brk(u32 code) const {
+    jj("BREAK", code);
+  }
+
+  void rfe() const {
+    nn("Rfe");
+  }
+
+private:
+#define DBG_HD "%08x | %08x \x1b[35m%6s \033[0m"
+
+  void rx(char const* iname, mips_reg s, mips_reg t) const {
+    debug(DBG_HD "H/L, $%s, $%s \t\t \x1b[1;30m# $%s=%x, $%s=%x\n", 
       pc, bus.read32(pc), iname, rname(s), rname(t), 
       rname(s), reg.u[s], rname(t), reg.u[t]);
   }
 
-  inline void rr(char const* iname, mips_reg d, mips_reg s, mips_reg t) {
-    if (!__show_interpreter) return;
-    debug("%08x | %08x %6s $%s, $%s, $%s \t\t # $%s=%x, $%s=%x, $%s=%x\n",
+  void rr(char const* iname, mips_reg d, mips_reg s, mips_reg t) const {
+    debug(DBG_HD "$%s, $%s, $%s \t\t \x1b[1;30m# $%s=%x, $%s=%x, $%s=%x\n",
       pc, bus.read32(pc), iname, rname(d), rname(s), rname(t),
       rname(d), reg.u[d], rname(s), reg.u[s], rname(t), reg.u[t]);
   }
-
-  inline void ii(char const* iname, mips_reg t, mips_reg s, s16 i) {
-    if (!__show_interpreter) return;
-    debug("%08x | %08x %6s $%s, $%s, 0x%08x \t # $%s=%x, $%s=%x, addr=%x\n",
+  
+  template<class T>
+  void mem(char const* iname, mips_reg t, mips_reg s, s16 i) const {
+    debug(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x, addr[%x]=%x\n",
       pc, bus.read32(pc), iname, rname(t), rname(s), i,
-      rname(t), reg.u[t], rname(s), reg.u[s], pc + (i << 2));
+      rname(t), reg.u[t], rname(s), reg.u[s], reg.u[s]+i, bus.read<T>(reg.u[s]+i));
   }
 
-  inline void iw(char const* iname, mips_reg t, mips_reg s, s16 i) {
-    if (!__show_interpreter) return;
-    debug("%08x | %08x %6s [$%s + 0x%x], $%s\t\t # $%s=%x, $%s=%x\n",
+  void ii(char const* iname, mips_reg t, mips_reg s, s16 i) const {
+    debug(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x\n",
+      pc, bus.read32(pc), iname, rname(t), rname(s), i,
+      rname(t), reg.u[t], rname(s), reg.u[s]);
+  }
+
+  void iw(char const* iname, mips_reg t, mips_reg s, s16 i) const {
+    debug(DBG_HD "[$%s + 0x%08x], $%s\t \x1b[1;30m# $%s=%x, $%s=%x\n",
       pc, bus.read32(pc), iname, rname(s), i, rname(t),
       rname(t), reg.u[t], rname(s), reg.u[s]);
   }
 
-  inline void i2(char const* iname, mips_reg t, s16 i) {
-    if (!__show_interpreter) return;
-    debug("%08x | %08x %6s $%s, 0x%x\t\t # $%s=%x\n",
+  void i2(char const* iname, mips_reg t, s16 i) const {
+    debug(DBG_HD "$%s, 0x%08x\t\t \x1b[1;30m# $%s=%x\n",
       pc, bus.read32(pc), iname, rname(t), i, rname(t), reg.u[t]);
   }
 
-  inline void jj(char const* iname, u32 i) {
-    if (!__show_interpreter) return;
-    debug("%08x | %08x %6s 0x%08x\t\t\t # %x\n", pc, bus.read32(pc), iname, i, i<<2);
+  void jj(char const* iname, u32 i) const {
+    info(DBG_HD "0x%08x\t\t\t \x1b[1;30m# %x\n", pc, bus.read32(pc), iname, i, i<<2);
   }
 
-  inline void j1(char const* iname, mips_reg s) {
-    if (!__show_interpreter) return;
-    debug("%08x | %08x %6s %s\t\t\t # $%s=%x\n",
+  void j1(char const* iname, mips_reg s) const {
+    info(DBG_HD "%s\t\t\t\t \x1b[1;30m# $%s=%x\n",
       pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
   }
 
-  inline const char* rname(mips_reg s) {
-    #ifdef SAFE_MEM
+  void ji(char const* iname, mips_reg t, mips_reg s, s16 i) const {
+    info(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x, addr[%x]\n",
+      pc, bus.read32(pc), iname, rname(t), rname(s), i,
+      rname(t), reg.u[t], rname(s), reg.u[s], pc + (i << 2));
+  }
+
+  void j2(char const* iname, mips_reg t, s16 i) const {
+    debug(DBG_HD "$%s, 0x%08x\t\t \x1b[1;30m# $%s=%x\n",
+      pc, bus.read32(pc), iname, rname(t), i, rname(t), reg.u[t]);
+  }
+
+  void nn(char const* iname) const {
+    debug(DBG_HD "\n", pc, bus.read32(pc), iname);
+  }
+
+  void m1(char const* iname, mips_reg s) const {
+    debug(DBG_HD "%s\t\t\t \x1b[1;30m# $%s=%x\n",
+      pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
+  }
+
+  const char* rname(mips_reg s) const {
     if (s & (~0x1f)) {
       error("! Invaild reg index %d\n", s);
       return 0;
     }
-    #endif
     return MipsRegName[s];
   }
 };

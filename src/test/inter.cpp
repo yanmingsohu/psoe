@@ -32,40 +32,73 @@ void test_mips_inter() {
   GPU gpu(bus);
   SoundProcessing spu(bus);
   SerialPort spi(bus);
-  InterpreterMips t(bus);
-  bus.bind_irq_receiver(&t);
-  t.reset();
+  InterpreterMips cpu(bus);
+  bus.bind_irq_receiver(&cpu);
+  cpu.reset();
+  DisassemblyMips disa(cpu);
   //test_gpu(gpu, bus);
 
   int ext_count = 0;
 
-  t.__show_interpreter = 1;
   //t.set_int_exc_point(0xbfc00404);
-  int show_code = 0;
+  int show_code = 10;
   int counter = 0;
+  u32 address = 0;
 
   for (;;) {
-    t.next();
+    if (show_code > 0) {
+      disa.current();
+    } else if (show_code == 0) {
+      info(" ... \n");
+    }
+
+    cpu.next();
     --show_code;
     ++counter;
 
-    /*if (show_code < -100000) {
-      t.__show_interpreter = 1;
-      show_code = 30;
-      debug("\t\t\t\tI-> %d\n", counter);
-    } else if (show_code < 0) {
-      t.__show_interpreter = 0;
-    }*/
+    if (cpu.exception_counter) {
+      for (int i = 30 - (show_code > 0 ? show_code : 0); i > 0; --i) {
+        disa.decode(-i);
+      }
 
-    if (t.has_exception()) {
       ++ext_count;
-      t.__show_interpreter = 1;
-      show_code = 30;
+      show_code = 300;
         
-      info("Exception %d, Press 'Enter' Key continue\n", ext_count);
-      switch (_getch()) {
+      info("Exception %d >> ?", ext_count);
+      int ch = _getch();
+      printf("\r                \r");
+
+      switch (ch) {
+        case ' ':
         case 'r':
-          printMipsReg(t.getreg());
+          printMipsReg(cpu.getreg());
+          break;
+
+        case 'x':
+          cpu.exception_counter = 0;
+          show_code = 0;
+          break;
+
+        case '1':
+          for (int i=0; i<100; ++i) {
+            disa.current();
+            cpu.next();
+          }
+          break;
+
+        case 'a':
+          printf("Address HEX:");
+          fflush(stdin);
+          if (scanf("%x", &address)) {
+            bus.show_mem_console(address, 0x60);
+          } else {
+            printf("\rFail Address Value\n");
+          }
+          break;
+
+        case 'h':
+          printf("\r'r' show reg.\t'x' run, hide debug.\t");
+          printf("'1' debug 100.\t'a' show address value.\n");
           break;
       }
     }

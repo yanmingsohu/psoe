@@ -52,7 +52,7 @@ public:
 };
 
 
-#define SPU_CHANNEL_TYPES(_, name, __, ___)  DeviceIOMapper::name,
+#define SPU_CHANNEL_TYPES(_addr, name, _arr, _v, _wide)  DeviceIOMapper::name,
 #define SPU_CHANNEL_CLASS(n)  SPUChannel<IO_SPU_CHANNEL(SPU_CHANNEL_TYPES, 0, 0, n) n>
 #define SPU_DEF_VAL(name, n)  SPU_CHANNEL_CLASS(n) name ## n;
 #define SPU_DEF_ALL_CHANNELS(name, func) \
