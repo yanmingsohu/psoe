@@ -533,32 +533,32 @@ public:
   }
 
   void sll(mips_reg d, mips_reg t, u32 i) {
-    reg.u[d] = reg.u[t] << i;
+    reg.u[d] = reg.u[t] << (i & 0x1f);
     pc += 4;
   }
 
   void sllv(mips_reg d, mips_reg t, mips_reg s) {
-    reg.u[d] = reg.u[t] << reg.u[s];
+    reg.u[d] = reg.u[t] << (reg.u[s] & 0x1f);
     pc += 4;
   }
 
   void sra(mips_reg d, mips_reg t, u32 i) {
-    reg.s[d] = reg.s[t] >> i;
+    reg.s[d] = reg.s[t] >> (i & 0x1f);
     pc += 4;
   }
 
   void srav(mips_reg d, mips_reg t, mips_reg s) {
-    reg.s[d] = reg.s[t] >> reg.u[s];
+    reg.s[d] = reg.s[t] >> (reg.u[s] & 0x1f);
     pc += 4;
   }
 
   void srl(mips_reg d, mips_reg t, u32 i) {
-    reg.u[d] = reg.u[t] >> i;
+    reg.u[d] = reg.u[t] >> (i & 0x1f);
     pc += 4;
   }
 
   void srlv(mips_reg d, mips_reg t, mips_reg s) {
-    reg.u[d] = reg.u[t] >> reg.u[s];
+    reg.u[d] = reg.u[t] >> (reg.u[s] & 0x1f);
     pc += 4;
   }
 
