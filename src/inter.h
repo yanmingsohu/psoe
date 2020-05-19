@@ -16,9 +16,8 @@ private:
   u32 pc;
   u32 hi;
   u32 lo;
-  u32 jump_delay_slot;
-  u32 slot_delay_time;
-  u32 slot_out_pc;
+  u32 slot_over_pc;
+  bool on_slot_time;
 
 public:
   // 仅用于统计调试, 无实际用途
@@ -26,7 +25,7 @@ public:
 
   InterpreterMips(Bus& _bus)  : 
       bus(_bus), cop0({0}), pc(0), hi(0), lo(0), 
-      jump_delay_slot(0), slot_delay_time(0) 
+      slot_over_pc(0), on_slot_time(false)
   {
     reset();
   }
@@ -47,32 +46,30 @@ public:
   }
 
   void next() {
-    if (slot_delay_time > 0) {
-      if (--slot_delay_time == 0) {
-        pc = slot_out_pc;
-      }
-    } 
-    else if (jump_delay_slot) {
-      slot_delay_time++;
-      slot_out_pc = pc;
-      pc = jump_delay_slot;
-      jump_delay_slot = 0;
-    }
-    else {
-      ready_recv_irq();
-      check_exe_break();
-      process_exception();
-    }
+    u32 npc = pc;
+    ready_recv_irq();
+    check_exe_break();
+    process_exception();
 
-    if (pc & 0b11) {
+    if (npc & 0b11) {
       exception(ExeCodeTable::ADEL, true);
       return;
     }
 
+    // 跳过一个延迟槽指令的检测.
+    // 如果 npc 指向跳转指令, 该指令会设置延迟槽 prejump
+    // 下一条指令则进入延迟槽的处理
+    bool is_on_slot = on_slot_time;
+
     reg.zero = 0;
-    u32 code = bus.read32(pc);
+    u32 code = bus.read32(npc);
     if (!mips_decode(code, this)) {
       exception(ExeCodeTable::RI, true);
+    }
+    
+    if (is_on_slot) {
+      pc = slot_over_pc;
+      on_slot_time = false;
     }
   }
 
@@ -119,7 +116,7 @@ private:
     cop0.cause.wp = 1;
     cop0.cause.ExcCode = static_cast<u32>(e);
 
-    if (slot_delay_time) {
+    if (on_slot_time) {
       cop0.cause.bd = 1;
       cop0.epc = pc - 4; 
     } else {
@@ -149,6 +146,11 @@ private:
       }
     }
     cop0.sr.v = SET_BIT(cop0.sr.v, COP0_SR_RFE_SHIFT_MASK, cop0.sr.v << 2);
+  }
+
+  void prejump(u32 target_pc) {
+    slot_over_pc = target_pc;
+    on_slot_time = true;
   }
 
 public:
@@ -381,8 +383,7 @@ public:
     }
     pc += 4;
     if (reg.u[t] == reg.u[s]) {
-      jump_delay_slot = pc;
-      pc += i << 2;
+      prejump(pc + (i << 2));
     }
   }
 
@@ -392,8 +393,7 @@ public:
     }
     pc += 4;
     if (reg.u[t] != reg.u[s]) {
-      jump_delay_slot = pc;
-      pc += i << 2;
+      prejump(pc + (i << 2));
     }
   }
 
@@ -403,8 +403,7 @@ public:
     }
     pc += 4;
     if (reg.s[s] <= 0) {
-      jump_delay_slot = pc;
-      pc += i << 2;
+      prejump(pc + (i << 2));
     }
   }
 
@@ -414,8 +413,7 @@ public:
     }
     pc += 4;
     if (reg.s[s] > 0) {
-      jump_delay_slot = pc;
-      pc += i << 2;
+      prejump(pc + (i << 2));
     }
   }
 
@@ -425,8 +423,7 @@ public:
     }
     pc += 4;
     if (reg.s[s] < 0) {
-      jump_delay_slot = pc;
-      pc += i << 2;
+      prejump(pc + (i << 2));
     }
   }
 
@@ -436,8 +433,7 @@ public:
     }
     pc += 4;
     if (reg.s[s] >= 0) {
-      jump_delay_slot = pc;
-      pc += i << 2;
+      prejump(pc + (i << 2));
     }
   }
 
@@ -447,9 +443,8 @@ public:
     }
     pc += 4;
     if (reg.s[s] >= 0) {
-      jump_delay_slot = pc;
       reg.ra = pc + 4;
-      pc += i << 2;
+      prejump(pc + (i << 2));
     }
   }
 
@@ -459,9 +454,8 @@ public:
     }
     pc += 4;
     if (reg.s[s] < 0) {
-      jump_delay_slot = pc;
       reg.ra = pc + 4;
-      pc += i << 2;
+      prejump(pc + (i << 2));
     }
   }
 
@@ -469,34 +463,34 @@ public:
     if (check_jump_break()) {
       return;
     }
-    jump_delay_slot = pc + 4;
-    pc = (pc & 0xF000'0000) | (i << 2);
+    pc += 4;
+    prejump((pc & 0xF000'0000) | (i << 2));
   }
 
   void jal(u32 i) {
     if (check_jump_break()) {
       return;
     }
-    jump_delay_slot = pc + 4;
-    reg.ra = pc + 8;
-    pc = (pc & 0xF000'0000) | (i << 2);
+    pc += 4;
+    reg.ra = pc + 4;
+    prejump((pc & 0xF000'0000) | (i << 2));
   }
 
   void jr(mips_reg s) {
     if (check_jump_break()) {
       return;
     }
-    jump_delay_slot = pc + 4;
-    pc = reg.u[s];
+    pc += 4;
+    prejump(reg.u[s]);
   }
 
   void jalr(mips_reg d, mips_reg s) {
     if (check_jump_break()) {
       return;
     }
-    jump_delay_slot = pc + 4;
-    reg.u[d] = pc + 8;
-    pc = reg.u[s];
+    pc += 4;
+    reg.u[d] = pc + 4;
+    prejump(reg.u[s]);
   }
 
   void mfhi(mips_reg d) {
