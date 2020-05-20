@@ -15,6 +15,7 @@ namespace ps1e {
 
 class MMU;
 class Bus;
+class DeviceIO;
 
 
 enum class DmaDeviceNum : u32 {
@@ -49,14 +50,14 @@ union DMAChcr {
     u32 dir       : 1; // 1:从内存到设备
     u32 step      : 1; // 1:每次地址-4, 0:每次地址+4
     u32        _3 : 6; // 
-    u32 chopping  : 1; // 
+    u32 chopping  : 1; // 启用时间窗口 (dma/cpu交替运行)
     ChcrMode mode : 2; //
     u32        _4 : 5; // 
-    u32 dma_wsize : 3; // 
+    u32 dma_wsize : 3; // dma 时间窗口
     u32        _7 : 1; // 
-    u32 cpu_wsize : 3; // 
+    u32 cpu_wsize : 3; // cpu 时间窗口
     u32        _8 : 1; // 
-    u32 busy_enb  : 1; // 1: 忙碌, DMA 传输数据开始后置1
+    u32 start     : 1; // 1: 忙碌, DMA 传输数据开始后置1
     u32        _6 : 3; // 
     u32 trigger   : 1; // 1: 触发传输, 传输开始后置0
     u32        _5 : 3; // 
@@ -136,6 +137,9 @@ private:
   class RegBase : public DeviceIO {
   public:
     u32 base; // 目标内存基址
+    DMADev* parent;
+
+    RegBase(DMADev* p) : parent(p) {}
     void write(u32 value);
     u32 read();
   };
@@ -144,6 +148,9 @@ private:
   public:
     u32 blocks;    // stream 模式数据包数量
     u32 blocksize; // 一个数据包 u32 的数量
+    DMADev* parent;
+
+    RegBlock(DMADev* p) : parent(p) {}
     void write(u32 value);
     u32 read();
   };
@@ -176,18 +183,15 @@ protected:
   void transport();
 
   // 子类实现内存到设备传输
-  virtual void dma_ram2dev_block(psmem addr, u32 bytesize, u32 inc);
+  virtual void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc);
   // 子类实现设备到内存传输
-  virtual void dma_dev2ram_block(psmem addr, u32 bytesize, u32 inc);
+  virtual void dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc);
   // 子类实现 otc 传输
-  virtual void dma_order_list(psmem addr, u32 bytesize, u32 inc);
+  virtual void dma_order_list(psmem addr);
 
 public:
   DMADev(Bus& _bus, DeviceIOMapper dma_x_base);
   virtual ~DMADev() {};
-
-  // 子类重写, 对传输方向支持返回 true
-  virtual bool support(dma_chcr_dir dir) = 0;
 
   // 停止 DMA 传输
   void stop();
