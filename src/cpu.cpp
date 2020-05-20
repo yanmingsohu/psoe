@@ -34,11 +34,11 @@ const char* MipsCauseStr[] = {
 
 void printSR(Cop0SR sr) {
   printf("COP0\tIE =%x KUc=%x IEp=%x KUp=%x IEo=%x IEp=%x SX=%x KX=%x \
-            \n\tIM =%x NMI=%x SR =%x TS =%x BEV=%x PX=%x \
-            \n\tMX =%x RE =%x FR =%x RP =%x CU =%x\n",\
+            \n\tIM =%x ISC=%x SWC=%x TS =%x BEV=%x PX=%x \
+            \n\tMX =%x RE =%x FR =%x RP =%x CU =%x%x%x%x\n",\
                   sr.ie, sr.KUc, sr.IEp, sr.KUp, sr.IEo, sr.IEp, sr.sx, sr.kx,
-                  sr.im, sr.nmi, sr.sr, sr.ts, sr.bev, sr.px,
-                  sr.mx, sr.re, sr.fr, sr.rp, sr.cu);
+                  sr.im, sr.isc, sr.swc, sr.ts, sr.bev, sr.px,
+                  sr.mx, sr.re, sr.fr, sr.rp, sr.cu0, sr.cu1, sr.cu2, sr.cu3);
 }
 
 
