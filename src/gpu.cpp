@@ -20,7 +20,7 @@ GPU::GPU(Bus& bus) :
     DMADev(bus, DeviceIOMapper::dma_gpu_base), status{0}, screen{0}, display{0},
     gp0(*this), gp1(*this), cmd_respons(0), vram(1), ds(0), disp_hori{0},
     disp_veri{0}, text_win{0}, draw_offset{0}, draw_tp_lf{0}, draw_bm_rt{0},
-    status_change_count(0)
+    status_change_count(0), otc(bus, *this)
 {
   initOpenGL();
 
@@ -67,6 +67,11 @@ GPU::~GPU() {
 }
 
 
+void GPU::write_gp0(u32 d) {
+  gp0.write(d);
+}
+
+
 void GPU::gpu_thread() {
   u32 frames = 0;
   glfwMakeContextCurrent(glwindow);
@@ -96,9 +101,27 @@ void GPU::gpu_thread() {
 
     glfwSwapBuffers(glwindow);
     glfwPollEvents();
-    transport();
-
+    start_dma_transport();
     //debug("\r\t\t\t\t\t\t%d, %f\r", ++frames, glfwGetTime());
+  }
+}
+
+
+void GPU::start_dma_transport() {
+  switch (status.dma_md) {
+    case 0:
+    case 1:
+      return;
+
+    case 2:
+      //printf("start OTC dma\n");
+      otc.start();
+      break;
+
+    case 3:
+      //printf("start GPU dma\n");
+      transport();
+      break;
   }
 }
 
