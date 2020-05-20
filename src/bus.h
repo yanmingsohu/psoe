@@ -86,6 +86,7 @@ private:
   DMADpcr dma_dpcr;
   u32     irq_status;     // I_STAT
   u32     irq_mask;       // I_MASK
+  bool    use_d_cache;
 
   // irq_status/irq_mask 寄存器状态改变必须调用方法, 
   // 模拟硬件拉回引脚, 并把状态发送给 IrqReceiver.
@@ -118,6 +119,7 @@ public:
   u8 read8(psmem addr);
 
   void show_mem_console(psmem begin, u32 len = 0x20);
+  void set_used_dcache(bool use);
 
   // 类必须有 static DeviceIOMapper 类型的 Port 成员
   template<class DIO>
@@ -130,10 +132,19 @@ public:
 
   // TODO: IO端口对word的操作不足
   template<class T> void write(psmem addr, T v) {
+    if (use_d_cache) {
+      T* p = (T*) mmu.d_cache(addr);
+      if (p) {
+        *p = v;
+        return;
+      }
+    }
+
     switch (addr) {
       CASE_IO_MIRROR(0x1F80'10F0):
         dma_dpcr.v = v;
         set_dma_dev_status();
+        //debug("BUS::dma write status %x\n", v);
         return;
 
       CASE_IO_MIRROR(0x1F80'10F4):
@@ -171,6 +182,11 @@ public:
 
 
   template<class T> T read(psmem addr) {
+    if (use_d_cache) {
+      T* p = (T*) mmu.d_cache(addr);
+      if (p) return *p;
+    }
+
     switch (addr) {
       CASE_IO_MIRROR(0x1F80'10F0):
         return dma_dpcr.v;

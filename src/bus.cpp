@@ -4,8 +4,9 @@
 namespace ps1e {
 
 
-Bus::Bus(MMU& _mmu, IrqReceiver* _ir) 
-: mmu(_mmu), ir(_ir), dmadev{0}, dma_dpcr{0}, irq_status(0), irq_mask(0) 
+Bus::Bus(MMU& _mmu, IrqReceiver* _ir) : 
+    mmu(_mmu), ir(_ir), dmadev{0}, dma_dpcr{0}, 
+    irq_status(0), irq_mask(0), use_d_cache(false)
 {
   io = new DeviceIO*[io_map_size];
   io[0] = NULL;
@@ -25,8 +26,16 @@ void Bus::bind_irq_receiver(IrqReceiver* _ir) {
 }
 
 
+void Bus::set_used_dcache(bool use) {
+  use_d_cache = use;
+}
+
+
 void Bus::bind_io(DeviceIOMapper m, DeviceIO* i) {
   if (!i) std::runtime_error("DeviceIO parm null pointer");
+  if (io[static_cast<size_t>(m)] != &nullio) {
+    std::runtime_error("Device IO conflict");
+  }
   io[ static_cast<size_t>(m) ] = i;
 }
 
@@ -75,6 +84,8 @@ void Bus::update_irq_to_reciver() {
 
 
 void Bus::change_running_state(DMADev* dd) {
+  //debug("DMA mask (%d) %x %x %x\n", 
+  //  dd->number(), dd->mask(), dma_dpcr.v, dd->mask() & dma_dpcr.v);
   if ((dd->mask() & dma_dpcr.v) == 0) {
     dd->stop();
   } else {
