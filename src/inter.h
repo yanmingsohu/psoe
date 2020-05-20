@@ -8,7 +8,7 @@
 namespace ps1e {
 
 
-class InterpreterMips : public IrqReceiver {
+class R3000A : public IrqReceiver {
 private:
   Bus& bus;
   MipsReg reg;
@@ -23,7 +23,7 @@ public:
   // 仅用于统计调试, 无实际用途
   u32 exception_counter = 0;
 
-  InterpreterMips(Bus& _bus)  : 
+  R3000A(Bus& _bus)  : 
       bus(_bus), cop0({0}), pc(0), hi(0), lo(0), 
       slot_over_pc(0), on_slot_time(false)
   {
@@ -32,8 +32,8 @@ public:
 
   void reset(const u32 regVal = 0xE1E3'7E73) {
     pc = MMU::BOOT_ADDR;
-    cop0.sr.cu  = 0b0101;
-    cop0.sr.sr  = 0;
+    cop0.sr.cu0 = 1;
+    cop0.sr.cu2 = 1;
     cop0.sr.ie  = 1;
     cop0.sr.im  = 0xFF;
     cop0.sr.bev = 1;
@@ -101,20 +101,33 @@ public:
     cop0.dcic.v = COP0_DCIC_BK_CODE_MK;
   }
 
+  // 返回 pc 的当前值
+  u32 getpc() const {
+    return pc;
+  }
+
 private:
   void exception(ExeCodeTable e, bool from_instruction, CpuCauseInt i = CpuCauseInt::software) {
     ++exception_counter;
     cop0.cause.ip |= static_cast<u8>(i);
     if (!has_exception()) {
+      printf(YELLOW("SKIP exception (%X)%s PC=%x\n"), e, MipsCauseStr[static_cast<u32>(e)], pc);
       if (from_instruction) {
         pc += 4;
       }
       return;
     }
 
+    cop0.cause.ExcCode = static_cast<u32>(e);
+  }
+
+  void process_exception() {
+    if (!has_exception()) return;
+    printf(YELLOW("Got exception (%X)%s sr:%x [PC:0x%08x, 0x%08x]\n"), 
+      cop0.cause.ExcCode, MipsCauseStr[cop0.cause.ExcCode], cop0.sr.v, pc, bus.read32(pc));
+      
     cop0.sr.KUc = 0;
     cop0.cause.wp = 1;
-    cop0.cause.ExcCode = static_cast<u32>(e);
 
     if (on_slot_time) {
       cop0.cause.bd = 1;
@@ -123,12 +136,6 @@ private:
       cop0.cause.bd = 0;
       cop0.epc = pc;
     }
-  }
-
-  void process_exception() {
-    if (!has_exception()) return;
-    debug("Got exception (%X)%s sr:%x [PC:0x%08x, 0x%08x]\n", 
-      cop0.cause.ExcCode, MipsCauseStr[cop0.cause.ExcCode], cop0.sr.v, pc, bus.read32(pc));
 
     if (cop0.sr.bev) {
       // if tlb 0xBFC0'0100
@@ -377,6 +384,86 @@ public:
     pc += 4;
   }
 
+  void lwl(mips_reg t, mips_reg s, u32 i) {
+    u32 addr = reg.u[s] + i;
+    u32 v = bus.read32(addr & ~0b11);
+    switch (addr & 3) {
+      case 0:
+        reg.u[t] = (reg.u[t] & 0x00ff'ffff) | (v << 24);
+        break;
+      case 1:
+        reg.u[t] = (reg.u[t] & 0x0000'ffff) | (v << 16);
+        break;
+      case 2:
+        reg.u[t] = (reg.u[t] & 0x0000'00ff) | (v << 8);
+        break;
+      case 3:
+        reg.u[t] = v;
+        break;
+    }
+    pc += 4;
+  }
+
+  void lwr(mips_reg t, mips_reg s, u32 i) {
+    u32 addr = reg.u[s] + i;
+    u32 v = bus.read32(addr & ~0b11);
+    switch (addr & 3) {
+      case 0:
+        reg.u[t] = v;
+        break;
+      case 1:
+        reg.u[t] = (reg.u[t] & 0xff00'0000) | (v >> 8);
+        break;
+      case 2:
+        reg.u[t] = (reg.u[t] & 0xffff'0000) | (v >> 16);
+        break;
+      case 3:
+        reg.u[t] = (reg.u[t] & 0xffff'ff00) | (v >> 24);
+        break;
+    }
+    pc += 4;
+  }
+
+  void swl(mips_reg t, mips_reg s, u32 i) {
+    u32 addr = reg.u[s] + i;
+    u32 v = bus.read32(addr & ~0b11);
+    switch (addr & 3) {
+      case 0:
+        bus.write32(addr & ~0b11, (v & 0xffff'ff00) | (reg.u[t] >> 24));
+        break;
+      case 1:
+        bus.write32(addr & ~0b11, (v & 0xffff'0000) | (reg.u[t] >> 16));
+        break;
+      case 2:
+        bus.write32(addr & ~0b11, (v & 0xff00'0000) | (reg.u[t] >> 8));
+        break;
+      case 3:
+        bus.write32(addr & ~0b11, reg.u[t]);
+        break;
+    }
+    pc += 4;
+  }
+
+  void swr(mips_reg t, mips_reg s, u32 i) {
+    u32 addr = reg.u[s] + i;
+    u32 v = bus.read32(addr & ~0b11);
+    switch (addr & 3) {
+      case 0:
+        bus.write32(addr & ~0b11, reg.u[t]);
+        break;
+      case 1:
+        bus.write32(addr & ~0b11, (v & 0x0000'00ff) | (reg.u[t] << 8));
+        break;
+      case 2:
+        bus.write32(addr & ~0b11, (v & 0x0000'ffff) | (reg.u[t] << 16));
+        break;
+      case 3:
+        bus.write32(addr & ~0b11, (v & 0x00ff'ffff) | (reg.u[t] << 24));
+        break;
+    }
+    pc += 4;
+  }
+
   void beq(mips_reg t, mips_reg s, s32 i) {
     if (check_jump_break()) {
       return;
@@ -525,6 +612,11 @@ public:
         break;
       case COP0_DCIC_REG_INDEX:
         cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_DCIC_WRITE_MASK);
+        break;
+      case COP0_SR_REG_IDX:
+        cop0.r[d] = reg.u[t];
+        bus.set_used_dcache(cop0.sr.isc);
+        break;
       default:
         cop0.r[d] = reg.u[t];
         break;
@@ -532,8 +624,9 @@ public:
     pc += 4;
   }
 
+  // i 在指令解码时被限制到 5 位
   void sll(mips_reg d, mips_reg t, u32 i) {
-    reg.u[d] = reg.u[t] << (i & 0x1f);
+    reg.u[d] = reg.u[t] << i;
     pc += 4;
   }
 
@@ -543,7 +636,7 @@ public:
   }
 
   void sra(mips_reg d, mips_reg t, u32 i) {
-    reg.s[d] = reg.s[t] >> (i & 0x1f);
+    reg.s[d] = reg.s[t] >> i;
     pc += 4;
   }
 
@@ -553,7 +646,7 @@ public:
   }
 
   void srl(mips_reg d, mips_reg t, u32 i) {
-    reg.u[d] = reg.u[t] >> (i & 0x1f);
+    reg.u[d] = reg.u[t] >> i;
     pc += 4;
   }
 
@@ -642,7 +735,7 @@ private:
   u32 pc;
 
 public:
-  DisassemblyMips(InterpreterMips& im) : bus(im.bus), reg(im.reg), cpc(im.pc), pc(im.pc) {}
+  DisassemblyMips(R3000A& im) : bus(im.bus), reg(im.reg), cpc(im.pc), pc(im.pc) {}
 
   // 解析当前pc指向的指令
   void current() {
@@ -778,6 +871,22 @@ public:
 
   void lui(mips_reg t, u32 i) const {
     i2("LUi", t, i);
+  }
+
+  void lwl(mips_reg t, mips_reg s, u32 i) const {
+    ii("LWL", t, s, i);
+  }
+
+  void lwr(mips_reg t, mips_reg s, u32 i) const {
+    ii("LWR", t, s, i);
+  }
+
+  void swl(mips_reg t, mips_reg s, u32 i) const {
+    ii("SWL", t, s, i);
+  }
+
+  void swr(mips_reg t, mips_reg s, u32 i) const {
+    ii("SWR", t, s, i);
   }
 
   void beq(mips_reg t, mips_reg s, s32 i) const {
@@ -939,7 +1048,7 @@ private:
   void ji(char const* iname, mips_reg t, mips_reg s, s16 i) const {
     info(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x, addr[%x]\n",
       pc, bus.read32(pc), iname, rname(t), rname(s), i,
-      rname(t), reg.u[t], rname(s), reg.u[s], pc + (i << 2));
+      rname(t), reg.u[t], rname(s), reg.u[s], pc + (i << 2) +4);
   }
 
   void j2(char const* iname, mips_reg t, s16 i) const {

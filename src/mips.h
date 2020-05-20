@@ -238,6 +238,22 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
       r->lh(i.I.rt, i.I.rs, i.I.imm);
       break;
 
+    case 34:
+      r->lwl(i.I.rt, i.I.rs, i.I.immu);
+      break;
+
+    case 38:
+      r->lwr(i.I.rt, i.I.rs, i.I.immu);
+      break;
+
+    case 42:
+      r->swl(i.I.rt, i.I.rs, i.I.immu);
+      break;
+
+    case 46:
+      r->swr(i.I.rt, i.I.rs, i.I.immu);
+      break;
+
     case 37:
       // $t = u16[$s + i]
       r->lhu(i.I.rt, i.I.rs, i.I.imm);
