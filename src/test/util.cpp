@@ -92,7 +92,7 @@ static void __t_io_write(DeviceIO** io, u32 addr, u32 v) {
 static void __io(DeviceIO**io, u32 addr, u32 v) {
   __t_io_write(io, addr, v);
   eq<u32>(v, __t_io_read(io, addr), "io mirrors");
-  debug("Util Test IO: %x: %x\n", addr, v);
+  ps1e::debug("Util Test IO: %x: %x\n", addr, v);
 }
 
 
@@ -111,10 +111,10 @@ void test_io_mirrors() {
 class StaticVar {
 public:
   ~StaticVar() {
-    debug("static released\n");
+    ps1e::debug("static released\n");
   }
   StaticVar() {
-    debug("static init\n");
+    ps1e::debug("static init\n");
   }
 };
 

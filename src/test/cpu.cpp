@@ -28,7 +28,7 @@ static void test_reg() {
 
   tr0(1, KUc);
   tr0(7, kx);
-  tr0(19, nmi);
+  tr0(19, cm);
   tr0(25, re);
 }
 
@@ -38,7 +38,7 @@ public:
   MemJit mmjit;
   MMU mmu;
   Bus bus;
-  InterpreterMips t;
+  R3000A t;
   SerialPort sio;
   MipsReg& r;
   u32 memp = 0;

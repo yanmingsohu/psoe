@@ -64,7 +64,7 @@ u8* MMU::memPoint(u32 addr) {
 
     case 0x1F80'0000:
     case 0x9F80'0000:
-      if (addr & 0x000F'800) {
+      if (addr & 0x000F'F000) {
         warn("MMU: scratchpad out of bounds %x\n", addr);
         return 0;
       }
@@ -86,6 +86,14 @@ u8* MMU::memPoint(u32 addr) {
   }
   #endif
 
+  return 0;
+}
+
+
+u8* MMU::d_cache(psmem addr) {
+  if (addr < scratchpad.size()) {
+    return scratchpad.point(addr);
+  }
   return 0;
 }
 

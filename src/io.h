@@ -212,6 +212,7 @@ enum class DeviceIOMapper : size_t {
 const size_t io_map_size = static_cast<size_t>(DeviceIOMapper::__Length__);
 
 
+// 通常端口之间相差 1 个 T
 template<class T>
 DeviceIOMapper operator+(DeviceIOMapper a, T b) {
   T r = static_cast<T>(a) + b;
@@ -281,10 +282,10 @@ class DeviceIOLatch : public DeviceIO {
 protected:
   Data reg;
 public:
-  virtual void write(u32 value) {
+  virtual void write(u32 value) override {
     reg.write(value);
   }
-  virtual u32 read() { 
+  virtual u32 read() override { 
     return reg.read();
   }
 };
@@ -301,11 +302,11 @@ public:
   InnerDeviceIO(Parent& p) : parent(p) {}
   virtual ~InnerDeviceIO() {}
 
-  virtual void write(u32 value) {
+  virtual void write(u32 value) override {
     reg.write(value);
   }
 
-  virtual u32 read() { 
+  virtual u32 read() override { 
     return reg.read();
   }
 };

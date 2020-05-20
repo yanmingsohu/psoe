@@ -69,7 +69,7 @@ public:
   static const u32 RAM_SIZE  = 0x0020'0000;
   static const u32 BIOS_SIZE = 0x0008'0000;
   static const u32 BOOT_ADDR = 0xBFC0'0000;
-  static const u32 DCACHE_SZ = 0x0000'0400;
+  static const u32 DCACHE_SZ = 0x0000'1000;
 
 private:
   ExecMapper<RAM_SIZE>  ram;
@@ -94,6 +94,7 @@ public:
   // 返回内存指针, 地址必须在 ram/bios 范围内
   u8* memPoint(psmem virtual_addr);
   bool loadBios(char const* filename);
+  u8* d_cache(psmem addr);
 };
 
 }

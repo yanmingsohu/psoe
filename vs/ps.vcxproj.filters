@@ -62,6 +62,9 @@
     <ClInclude Include="..\src\spu.h">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\otc.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">
@@ -107,6 +110,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\spu.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\otc.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

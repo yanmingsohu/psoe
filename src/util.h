@@ -25,8 +25,12 @@ namespace ps1e {
 #define SAFE_MEM 
 #define NOT(x)        (!(x))
 #define RED(s)        "\x1b[31m" s "\033[0m"
+#define GREEN(s)      "\x1b[32m" s "\033[0m"
+#define YELLOW(s)     "\x1b[33m" s "\033[0m"
 #define BLUE(s)       "\x1b[34m" s "\033[0m"
 #define MAGENTA(s)    "\x1b[35m" s "\033[0m"
+#define CYAN(s)       "\x1b[36m" s "\033[0m"
+#define GRAY(s)       "\x1b[37m" s "\033[0m"
 #define SIGNEL_MASK32 0b1000'0000'0000'0000'0000'0000'0000'0000
 #define SIGNEL_MASK16 0b1000'0000'0000'0000
 #define SIGNEL_MASK8  0b1000'0000
