@@ -17,7 +17,7 @@ WIP
     * [ ] look like working
     * [ ] Working on Thread
   * [ ] GPU
-    * [ ] Display soming
+    * [x] Display soming
     * [ ] Working on Thread
     * [ ] Use AI to enhance textures ?!
   * [ ] GTE
