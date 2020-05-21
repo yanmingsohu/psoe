@@ -35,7 +35,7 @@ static void test_mips_inter() {
   Bus bus(mmu);
   GPU gpu(bus);
   SoundProcessing spu(bus);
-  //OrderingTables otc(bus, gpu);
+  OrderingTables otc(bus);
   SerialPort spi(bus);
   R3000A cpu(bus);
   bus.bind_irq_receiver(&cpu);

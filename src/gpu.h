@@ -255,19 +255,22 @@ private:
   std::list<IGpuReadData*> read_queue;
   GLDrawState ds;
   u32 status_change_count;
-  OrderingTables otc;
     
   // 这是gpu线程函数, 不要调用
   void gpu_thread();
   void initOpenGL();
-  void start_dma_transport();
+
+protected:
+  // 通常用于传输纹理, 很少用于命令
+  void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) override;
+  // 按照链表顺序加载绘制的命令
+  void dma_order_list(psmem addr) override;
 
 public:
   GPU(Bus& bus);
   ~GPU();
 
   void reset();
-  void write_gp0(u32 d);
 
   // 发送可绘制图形
   inline void send(IDrawShape* s) {

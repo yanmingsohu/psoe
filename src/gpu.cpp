@@ -20,7 +20,7 @@ GPU::GPU(Bus& bus) :
     DMADev(bus, DeviceIOMapper::dma_gpu_base), status{0}, screen{0}, display{0},
     gp0(*this), gp1(*this), cmd_respons(0), vram(1), ds(0), disp_hori{0},
     disp_veri{0}, text_win{0}, draw_offset{0}, draw_tp_lf{0}, draw_bm_rt{0},
-    status_change_count(0), otc(bus, *this)
+    status_change_count(0)
 {
   initOpenGL();
 
@@ -67,11 +67,6 @@ GPU::~GPU() {
 }
 
 
-void GPU::write_gp0(u32 d) {
-  gp0.write(d);
-}
-
-
 void GPU::gpu_thread() {
   u32 frames = 0;
   glfwMakeContextCurrent(glwindow);
@@ -101,27 +96,7 @@ void GPU::gpu_thread() {
 
     glfwSwapBuffers(glwindow);
     glfwPollEvents();
-    start_dma_transport();
     //debug("\r\t\t\t\t\t\t%d, %f\r", ++frames, glfwGetTime());
-  }
-}
-
-
-void GPU::start_dma_transport() {
-  switch (status.dma_md) {
-    case 0:
-    case 1:
-      return;
-
-    case 2:
-      //printf("start OTC dma\n");
-      otc.start();
-      break;
-
-    case 3:
-      //printf("start GPU dma\n");
-      transport();
-      break;
   }
 }
 
@@ -132,6 +107,36 @@ void GPU::reset() {
   status.r_cmd = 1; //TODO: 与状态同步
   status.r_cpu = 1;
   status.r = 1;
+}
+
+
+void GPU::dma_order_list(psmem addr) {
+  u32 header = bus.read32(addr);
+  
+  while ((header & OrderingTables::LINK_END) == OrderingTables::LINK_END) {
+    u32 next = header & 0x001f'fffc;
+    u32 size = header >> 24;
+
+    for (int i=0; i<size; ++i) {
+      addr += 4;
+      u32 cmd = bus.read32(addr);
+      gp0.write(cmd);
+    }
+
+    header = bus.read32(next);
+  }
+}
+
+
+void GPU::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
+  printf("COPY ram go GPU begin:%x %dbyte\n", addr, bytesize);
+  inc = inc *4;
+  for (int i = 0; i < bytesize; i += 4) {
+    u32 d = bus.read32(addr);
+    debug("CC %x %x\t", addr, d);
+    gp0.write(d);
+    addr += inc;
+  }
 }
 
 

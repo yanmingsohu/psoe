@@ -1,5 +1,4 @@
-﻿#include "gpu.h" 
-#include "test/test.h"
+﻿#include "gpu.h"
 
 namespace ps1e {
 
@@ -42,8 +41,6 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
 
     case 0x04:
       p.status.dma_md = 0b11 & c.parm;
-      ps1e_t::ext_stop = 1;
-      error("!!!!!!!!!!!!!!!!!!! gpu dma dir %x\n", c.v);
       break;
 
     case 0x05:

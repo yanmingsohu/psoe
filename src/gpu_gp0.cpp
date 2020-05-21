@@ -554,7 +554,7 @@ public:
     GLBufferData vbdata(vbo, vertices, sizeof(vertices));
     vbdata.uintAttr(0, 1, 2, 0);
     vbdata.uintAttr(1, 1, 2, 1);
-    text.init(w, h, buf);
+    text.init2px(w, h, buf);
     text.bind();
   }
 
@@ -576,6 +576,7 @@ public:
         break;
 
       default:
+        //每次写入两个像素的数据
         buf[step] = c;
         break;
     }

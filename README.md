@@ -67,6 +67,7 @@ WIP
 * [MIPS opcodes](https://opencores.org/projects/plasma/opcodes)
 * [x86 Assembler/Disassembler Online](https://defuse.ca/online-x86-assembler.htm#disassembly)
 * [x86 opcodes](http://www.mathemainzel.info/files/x86asmref.html)
-* [PSX documents](http://hitmen.c02.at/html/psx_docs.html)
+* [PSX document 1](http://hitmen.c02.at/html/psx_docs.html)
+* [PSX document 2](https://github.com/simias/psx-guide)
 * [PSX Test](https://github.com/simias/psx-hardware-tests)
 * [OpenGL Tutorial](http://www.opengl-tutorial.org/)
