@@ -211,6 +211,16 @@ void GLTexture::init(int w, int h, void* pixeldata) {
 }
 
 
+void GLTexture::init2px(int w, int h, void* pixeldata) {
+  glGenTextures(1, &text);
+  bind();
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 
+      w, h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5_REV, pixeldata);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+}
+
+
 void GLTexture::bind() {
   glBindTexture(GL_TEXTURE_2D, text);
 }
