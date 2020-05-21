@@ -47,7 +47,7 @@ enum class ChcrMode : u32 {
 union DMAChcr {
   u32 v;
   struct {
-    u32 dir       : 1; // 1:从内存到设备
+    u32 dir       : 1; // 0:从内存到设备, 1:设备到内存
     u32 step      : 1; // 1:每次地址-4, 0:每次地址+4
     u32        _3 : 6; // 
     u32 chopping  : 1; // 启用时间窗口 (dma/cpu交替运行)
@@ -124,11 +124,9 @@ union DMADpcr {
 };
 
 
-enum class dma_chcr_dir {
-  DEV_TO_RAM   = 0,
-  RAM_FROM_DEV = 0,
-  DEV_FROM_RAM = 1,
-  RAM_TO_DEV   = 1,
+enum class dma_chcr_dir : u32 {
+  DEV_TO_RAM = 0,  RAM_FROM_DEV = 0,
+  RAM_TO_DEV = 1,  DEV_FROM_RAM = 1,
 };
 
 
@@ -168,8 +166,6 @@ private:
 
   const DmaDeviceNum devnum;
   u32 _mask;
-  u32 priority;
-  bool running;
 
 protected:
   
@@ -177,6 +173,9 @@ protected:
   RegBase base_io;
   RegBlock blocks_io;
   RegCtrl ctrl_io;
+  //TODO: dma 设备进入休眠窗口
+  int idle;
+  bool is_transferring;
 
   // DMA 传输过程, 由设备调用该方法开始 DMA 传输,
   // 应该在单独的线程中执行
@@ -194,13 +193,13 @@ public:
   virtual ~DMADev() {};
 
   // 停止 DMA 传输
-  void stop();
-  // 使 DMA 启动传输, 因为传输线程独立, 并不保证立即运行
+  //void stop();
+
+  // 使 DMA 启动传输, 由cpu线程启动
   void start();
 
-  void set_priority(u32 p) {
-    priority = p;
-  }
+  // 可以启动 dma 传输返回 true
+  bool readyTransfer();
 
   inline u32 mask() {
     return _mask;

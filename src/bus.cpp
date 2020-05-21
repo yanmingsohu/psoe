@@ -50,11 +50,33 @@ bool Bus::set_dma_dev(DMADev* dd) {
 
 
 void Bus::set_dma_dev_status() {
-  for (int n = 0; n < DMA_LEN; ++n) {
-    DMADev* dd = dmadev[n];
-    if (!dd) continue;
-    dd->set_priority((dma_dpcr.v >> (n * 4)) & 0b0111);
-    change_running_state(dd);
+  DMADev * ready_start;
+  u32 ready_pri;
+  for (;;) {
+    ready_start = 0;
+    ready_pri = 0xff;
+
+    // 当优先级相同, 高通道号优先运行
+    for (int n = DMA_LEN-1; n >= 0; --n) {
+      DMADev* dd = dmadev[n];
+      if (!dd) continue;
+
+      if (check_running_state(dd)) {
+        u32 pri = (dma_dpcr.v >> (n * 4)) & 0b0111;
+        if ((!ready_start) || (pri < ready_pri)) {
+          ready_start = dd;
+          ready_pri = pri;
+          // 0 是最高优先级, 无需继续比较
+          if (pri == 0) break;
+        }
+      }
+    }
+
+    if (ready_start) {
+      ready_start->start();
+    } else {
+      break;
+    }
   }
 }
 
@@ -83,14 +105,10 @@ void Bus::update_irq_to_reciver() {
 }
 
 
-void Bus::change_running_state(DMADev* dd) {
+bool Bus::check_running_state(DMADev* dd) {
   //debug("DMA mask (%d) %x %x %x\n", 
   //  dd->number(), dd->mask(), dma_dpcr.v, dd->mask() & dma_dpcr.v);
-  if ((dd->mask() & dma_dpcr.v) == 0) {
-    dd->stop();
-  } else {
-    dd->start();
-  }
+  return ((dd->mask() & dma_dpcr.v) != 0) && dd->readyTransfer();
 }
 
 

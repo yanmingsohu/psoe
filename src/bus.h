@@ -127,8 +127,8 @@ public:
     bind_io(DIO::Port, device);
   }
   
-  // 检查状态, 满足条件则启动/停止DMA过程
-  void change_running_state(DMADev* dd);
+  // 检查状态, dma 设备可以启动返回 true
+  bool check_running_state(DMADev* dd);
 
   // TODO: IO端口对word的操作不足
   template<class T> void write(psmem addr, T v) {
