@@ -13,6 +13,9 @@ int main() {
   unsigned int e = 0xF0000000;
   char f = 0xff, g = 0x01;
   
+  int *ph = (int*) 4;
+  *ph = 0x44332211;
+  
   pf("a= ", a);
   pf("b= ", b);
   
@@ -35,6 +38,8 @@ int main() {
   
   pf("f+g = ", (byte)(f+g));
   pf("f-g = ", (byte)(f-g));
+  pf("byte = ", *((byte*)ph));
+  pf("u16 = ", *((unsigned short*)ph));
   
   end[3] = '*';
   print(end);

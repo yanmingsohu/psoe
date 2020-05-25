@@ -13,27 +13,27 @@ LOAD test-cpu.o
 .init
  *(.init)
 
-.text           0x0000000000000100      0x5f4
+.text           0x0000000000000100      0x644
                 0x0000000000000100                _ftext=.
  *(.text)
- .text          0x0000000000000100      0x5f4 test-cpu.o
-                0x000000000000063c                __main
-                0x00000000000003e4                print
-                0x0000000000000488                pnumi
-                0x000000000000065c                memset
+ .text          0x0000000000000100      0x644 test-cpu.o
+                0x000000000000068c                __main
+                0x0000000000000434                print
+                0x00000000000004d8                pnumi
+                0x00000000000006ac                memset
                 0x0000000000000100                main
-                0x0000000000000394                pf
+                0x00000000000003e4                pf
  *(.stub)
  *(.gnu.warning)
  *(.gnu.linkonce.t*)
  *(.mips16.fn.*)
  *(.mips16.call.*)
-                0x00000000000006f4                _etext=.
-                0x00000000000006f4                PROVIDE (etext, .)
+                0x0000000000000744                _etext=.
+                0x0000000000000744                PROVIDE (etext, .)
 
-.rodata         0x00000000000006f4       0xad
+.rodata         0x0000000000000744       0xbd
  *(.rodata)
- .rodata        0x00000000000006f4       0xad test-cpu.o
+ .rodata        0x0000000000000744       0xbd test-cpu.o
  *(.gnu.linkonce.r*)
 
 .rodata1
@@ -42,8 +42,8 @@ LOAD test-cpu.o
 .fini
  *(.fini)
 
-.data           0x00000000000007a1        0x0
-                0x00000000000007a1                _fdata=.
+.data           0x0000000000000801        0x0
+                0x0000000000000801                _fdata=.
  *(.data)
  *(.gnu.linkonce.d*)
 
@@ -55,7 +55,7 @@ LOAD test-cpu.o
 
 .dtors
  *(.dtors)
-                0x00000000000087b0                _gp=DEFINED(_gp)?_gp:(ALIGN(0x10)+0x8000)
+                0x0000000000008810                _gp=DEFINED(_gp)?_gp:(ALIGN(0x10)+0x8000)
 
 .got
  *(.got.plt)
@@ -69,28 +69,28 @@ LOAD test-cpu.o
 
 .lit4
  *(.lit4)
-                0x00000000000007a1                _edata=.
-                0x00000000000007a1                PROVIDE (edata, .)
-                0x00000000000007a1                __bss_start=.
-                0x00000000000007a1                _fbss=.
+                0x0000000000000801                _edata=.
+                0x0000000000000801                PROVIDE (edata, .)
+                0x0000000000000801                __bss_start=.
+                0x0000000000000801                _fbss=.
 
 .sbss
  *(.sbss)
  *(.scommon)
 
-.bss            0x00000000000007a1        0x0
+.bss            0x0000000000000801        0x0
  *(.dynbss)
  *(.bss)
  *(COMMON)
-                0x00000000000007a1                _end=.
-                0x00000000000007a1                PROVIDE (end, .)
+                0x0000000000000801                _end=.
+                0x0000000000000801                PROVIDE (end, .)
 
 .interp
  *(.interp)
 
-.reginfo        0x00000000000007a4       0x18
+.reginfo        0x0000000000000804       0x18
  *(.reginfo)
- .reginfo       0x00000000000007a4       0x18 test-cpu.o
+ .reginfo       0x0000000000000804       0x18 test-cpu.o
 
 .dynamic
  *(.dynamic)
@@ -236,5 +236,5 @@ LOAD test-cpu.o
  *(.gptab.sbss)
 OUTPUT(test-cpu.bin binary)
 
-.mdebug         0x00000000000007bc      0x3e8
- .mdebug        0x00000000000007bc      0x3e8 test-cpu.o
+.mdebug         0x000000000000081c      0x3e8
+ .mdebug        0x000000000000081c      0x3e8 test-cpu.o
