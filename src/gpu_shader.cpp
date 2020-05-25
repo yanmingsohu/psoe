@@ -45,12 +45,13 @@ float norm_y(uint n) {
   return -(float(n) / frame_height  * 2 - 1);
 }
 
-vec2 to_textcoord(uint coord, uint page) {
-  uint pagex = (page & 0x0Fu) * 64u;
-  uint pagey = (1u & (page >> 4)) * 256u;
-  uint x = (coord & 0x0FFu) + pagex;
-  uint y = ((coord >> 8) & 0x0FFu) + pagey;
-  return vec2(float(x)/frame_width, 1- float(y)/frame_height);
+vec2 to_textcoord(uint coord, uint page, uint textwin) { //TODO textwin!!
+  float pagex = float(0x0Fu & page) * 0x40;
+  float pagey = float(1u & (page >> 4)) * 0xff;
+  // TODO: 纹理页的大小来自纹理格式字段 64/128/256
+  float x = float(coord & 0x0FFu) / 0xff * 0x40; 
+  float y = float((coord >> 8) & 0x0FFu);
+  return vec2((x + pagex)/frame_width, 1- (y + pagey)/frame_height);
 }
 )shader"
 
@@ -114,13 +115,14 @@ layout (location = 1) in uint coord;
 uniform uint ps_color;
 uniform uint page;
 uniform uint clut;
+uniform uint textwin;
 out vec4 oColor;
 out vec2 oCoord;
 
 void main() {
   gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
   oColor = color_ps2gl(ps_color);
-  oCoord = to_textcoord(coord, page);
+  oCoord = to_textcoord(coord, page, textwin);
 }
 )shader";
 
@@ -169,16 +171,16 @@ static ShaderSrc shaded_polygon_texture_v = VertexShaderHeader R"shader(
 layout (location = 0) in uint pos;
 layout (location = 1) in uint ps_color;
 layout (location = 2) in uint coord;
-
 uniform uint page;
 uniform uint clut;
+uniform uint textwin;
 out vec4 oColor;
 out vec2 oCoord;
 
 void main() {
-  gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
   oColor = color_ps2gl(ps_color); 
-  oCoord = to_textcoord(coord, page);
+  oCoord = to_textcoord(coord, page, textwin);
+  gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
 }
 )shader";
 

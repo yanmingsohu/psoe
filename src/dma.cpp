@@ -18,8 +18,8 @@ DMADev::DMADev(Bus& _bus, DeviceIOMapper type0) :
 
 
 void DMADev::start() {
-  debug("DMA(%x) start M:%x T:%x S:%x\n", devnum,
-        ctrl_io.chcr.mode, ctrl_io.chcr.trigger, ctrl_io.chcr.start);
+  //debug("DMA(%x) start M:%x T:%x S:%x\n", devnum,
+  //      ctrl_io.chcr.mode, ctrl_io.chcr.trigger, ctrl_io.chcr.start);
 
   switch (ctrl_io.chcr.mode) {
     case ChcrMode::Manual:
@@ -119,7 +119,7 @@ void DMADev::dma_order_list(psmem addr) {
 
 
 void DMADev::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
-  throw std::runtime_error("not implement DMA RAM to Device"); //? gpu 实现? otc
+  throw std::runtime_error("not implement DMA RAM to Device"); 
 }
 
 
@@ -152,7 +152,7 @@ u32 DMADev::RegBlock::read() {
 
 
 void DMADev::RegCtrl::write(u32 v) {
-  debug("DMA(%x) ctrl write %x [old:%x]\n", parent->devnum, v, chcr.v);
+  //debug("DMA(%x) ctrl write %x [old:%x]\n", parent->devnum, v, chcr.v);
   if (chcr.v != v) {
     chcr.v = v;
     if (bus.check_running_state(parent)) {
@@ -163,7 +163,7 @@ void DMADev::RegCtrl::write(u32 v) {
 
 
 u32 DMADev::RegCtrl::read() {
-  debug("DMA(%x) ctrl read %x %d\n", parent->devnum, chcr.v, parent->is_transferring);
+  //debug("DMA(%x) ctrl read %x %d\n", parent->devnum, chcr.v, parent->is_transferring);
   return chcr.v;
 }
 

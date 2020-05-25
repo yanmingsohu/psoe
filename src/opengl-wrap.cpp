@@ -211,6 +211,8 @@ void GLTexture::init(int w, int h, void* pixeldata) {
 }
 
 
+// | 15 | 14 - - - 10 | 9 - - - 5 | 4 - - - 0 |
+// | S  |      B      |     G     |     R     |
 void GLTexture::init2px(int w, int h, void* pixeldata) {
   glGenTextures(1, &text);
   bind();

@@ -72,6 +72,7 @@ private:
   GLUniform color;
   GLUniform page;
   GLUniform clut;
+  GLUniform textwin;
 
 public:
   static const bool Texture = true;
@@ -80,9 +81,10 @@ public:
 
   MonoColorTextureMixShader(ShaderSrc frag) : PSShaderBase(vertex, frag) {
     use();
-    color = getUniform("ps_color");
-    page  = getUniform("page");
-    clut  = getUniform("clut");
+    color   = getUniform("ps_color");
+    page    = getUniform("page");
+    clut    = getUniform("clut");
+    textwin = getUniform("textwin");
   }
 
   template<class Vertices>
@@ -91,6 +93,7 @@ public:
     color.setUint(v.color);
     page.setUint(v.page);
     clut.setUint(v.clut);
+    textwin.setUint(gpu.text_win.v);
   }
 };
 
@@ -125,14 +128,16 @@ private:
   
   GLUniform page;
   GLUniform clut;
+  GLUniform textwin;
 
 public:
   static const bool Texture = true;
 
   ShadedColorTextureMixShader() : PSShaderBase(vertex, frag) {
     use();
-    page  = getUniform("page");
-    clut  = getUniform("clut");
+    page    = getUniform("page");
+    clut    = getUniform("clut");
+    textwin = getUniform("textwin");
   }
 
   template<class Vertices>
@@ -140,6 +145,7 @@ public:
     transparent.setFloat(_transparent);
     page.setUint(v.page);
     clut.setUint(v.clut);
+    textwin.setUint(gpu.text_win.v);
   }
 };
 
