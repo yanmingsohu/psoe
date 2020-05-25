@@ -25,7 +25,9 @@ void DMADev::start() {
     case ChcrMode::Manual:
       if (ctrl_io.chcr.trigger) {
         ctrl_io.chcr.trigger = 0;
+        ctrl_io.chcr.start = 1;
         transport();
+        ctrl_io.chcr.start = 0;
       }
       break;
 
@@ -128,7 +130,7 @@ void DMADev::dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) {
 
 void DMADev::RegBase::write(u32 v) {
   base = v & 0x00FF'FFFC;
-  debug("DMA(%x) base write %x\n", parent->devnum, v);
+  //debug("DMA(%x) base write %x\n", parent->devnum, v);
 }
 
 
@@ -140,7 +142,7 @@ u32 DMADev::RegBase::read() {
 void DMADev::RegBlock::write(u32 v) {
   blocks = (v & 0xffff'0000) >> 16;
   blocksize = v & 0x0'FFFF;
-  debug("DMA(%x) block write %x\n", parent->devnum, v);
+  //debug("DMA(%x) block write %x\n", parent->devnum, v);
 }
 
 
@@ -161,6 +163,7 @@ void DMADev::RegCtrl::write(u32 v) {
 
 
 u32 DMADev::RegCtrl::read() {
+  debug("DMA(%x) ctrl read %x %d\n", parent->devnum, chcr.v, parent->is_transferring);
   return chcr.v;
 }
 

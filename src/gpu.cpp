@@ -67,6 +67,23 @@ GPU::~GPU() {
 }
 
 
+void GPU::send(IDrawShape* s) {
+  std::lock_guard<std::mutex> guard(for_draw_queue);
+  draw_queue.push_back(s);
+}
+
+
+IDrawShape* GPU::pop_drawer() {
+  std::lock_guard<std::mutex> guard(for_draw_queue);
+  if (draw_queue.size() == 0) {
+    return 0;
+  }
+  IDrawShape *sp = draw_queue.front();
+  draw_queue.pop_front();
+  return sp;
+}
+
+
 void GPU::gpu_thread() {
   u32 frames = 0;
   glfwMakeContextCurrent(glwindow);
@@ -75,14 +92,14 @@ void GPU::gpu_thread() {
   while (!glfwWindowShouldClose(glwindow)) {
     vram.drawShape();
 
-    while (draw_queue.size()) {
-      IDrawShape *sp = draw_queue.front();
+    IDrawShape *sp = pop_drawer();
+    while (sp) {
       sp->draw(*this, vao);
-      draw_queue.pop_front();
       delete sp;
+      sp = pop_drawer();
     }
 
-    if (status.display) {
+    if (status.display == 0) {
       //ds.viewport(&screen);
       vram.drawScreen();
     }
@@ -111,29 +128,37 @@ void GPU::reset() {
 
 
 void GPU::dma_order_list(psmem addr) {
+  //warn("GPU ol [%x] x:%d y:%d\n", addr, draw_offset.offx(), draw_offset.offy());
   u32 header = bus.read32(addr);
   
-  while ((header & OrderingTables::LINK_END) == OrderingTables::LINK_END) {
+  while ((header & OrderingTables::LINK_END) != OrderingTables::LINK_END) {
     u32 next = header & 0x001f'fffc;
     u32 size = header >> 24;
+
+    //if (size) {
+      //printf("  H [%08x]  %08x\n", addr, header);
+    //}
 
     for (int i=0; i<size; ++i) {
       addr += 4;
       u32 cmd = bus.read32(addr);
       gp0.write(cmd);
+      //printf("     [%08x]  %08x\n", addr, cmd);
     }
-
-    header = bus.read32(next);
+    
+    addr = next;
+    header = bus.read32(addr);
   }
+  //debug("\nGPU ol end\n");
 }
 
 
 void GPU::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
-  printf("COPY ram go GPU begin:%x %dbyte\n", addr, bytesize);
+  //printf("COPY ram go GPU begin:%x %dbyte\n", addr, bytesize);
   inc = inc *4;
   for (int i = 0; i < bytesize; i += 4) {
     u32 d = bus.read32(addr);
-    debug("CC %x %x\t", addr, d);
+    //debug("CC %x %x\t", addr, d);
     gp0.write(d);
     addr += inc;
   }
@@ -194,7 +219,7 @@ VirtualFrameBuffer::~VirtualFrameBuffer() {
 void VirtualFrameBuffer::drawShape() {
   frame_buffer.bind();
   ds.clearDepth();
-  ds.setDepthTest(true);
+  ds.setDepthTest(false);
   ds.viewport(&gsize);
 }
 

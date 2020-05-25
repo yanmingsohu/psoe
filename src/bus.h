@@ -130,8 +130,12 @@ public:
   // 检查状态, dma 设备可以启动返回 true
   bool check_running_state(DMADev* dd);
 
+  void __on_write(psmem addr, u32 v);
+
   // TODO: IO端口对word的操作不足
   template<class T> void write(psmem addr, T v) {
+    __on_write(addr, v);
+
     if (use_d_cache) {
       T* p = (T*) mmu.d_cache(addr);
       if (p) {

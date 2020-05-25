@@ -159,7 +159,7 @@ private:
     Bus& bus;
     DMADev* parent;
 
-    RegCtrl(Bus& b, DMADev* p) : bus(b), parent(p) {}
+    RegCtrl(Bus& b, DMADev* p) : bus(b), parent(p), chcr{0} {}
     void write(u32 value);
     u32 read();
   };

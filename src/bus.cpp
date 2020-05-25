@@ -142,6 +142,23 @@ u8 Bus::read8(psmem addr) {
 }
 
 
+void Bus::__on_write(psmem addr, u32 v) {
+return;
+  addr = addr & 0x00ff'ffff;
+  /*if ((addr >= 0x0011f8a0) && (addr <= 0x0011f8b8)) {*/
+  if ((addr == 0x0011f8a8)) {
+    printf("!!!!!!!!!! p1 [%08x] %08x %08x \n", addr, v, read32(addr));
+    ps1e_t::ext_stop = 1;
+  } else if (addr == 0x0011f8b0) {
+    printf("!!!!!!!!!! p2 [%08x] %08x %08x\n", addr, v, read32(addr));
+    ps1e_t::ext_stop = 1;
+  } else if (addr == 0x0011f8b8) {
+    printf("!!!!!!!!!! p3 [%08x] %08x %08x\n", addr, v, read32(addr));
+    ps1e_t::ext_stop = 1;
+  }
+}
+
+
 void Bus::show_mem_console(psmem begin, u32 len) {
   printf("|----------|-");
   for (int i=0; i<0x10; ++i) {

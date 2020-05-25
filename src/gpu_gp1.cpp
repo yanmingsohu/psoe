@@ -44,8 +44,8 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
       break;
 
     case 0x05:
-      p.display.x = 0x11'1111'1111 & c.parm;
-      p.display.y = 0x1'1111'1111 & (c.parm >> 10);
+      p.display.x = 0x0011'1111'1111 & c.parm;
+      p.display.y = 0x0001'1111'1111 & (c.parm >> 10);
       p.dirtyAttr();
       break;
 
@@ -56,8 +56,8 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
       break;
 
     case 0x07:
-      p.disp_veri.x = 0x11'1111'1111 & c.parm;
-      p.disp_veri.y = 0x11'1111'1111 & (c.parm >> 10);
+      p.disp_veri.x = 0x0011'1111'1111 & c.parm;
+      p.disp_veri.y = 0x0011'1111'1111 & (c.parm >> 10);
       p.dirtyAttr();
       break;
 

@@ -94,11 +94,18 @@ public:
     exception(ExeCodeTable::DBW, false);
   }
   
-  // 当 cpu 执行到 addr 时中断
-  void set_int_exc_point(u32 addr) {
-    cop0.bpc = 0xFFFFFFFF;
-    cop0.bpcm = addr;
+  // 当 cpu 执行到指定地址时中断
+  void set_int_exc_point(u32 addr, u32 mask) {
+    cop0.bpc = addr;
+    cop0.bpcm = mask;
     cop0.dcic.v = COP0_DCIC_BK_CODE_MK;
+  }
+
+  // 读取数据总线时发生中断
+  void set_data_rw_point(u32 addr, u32 mask) {
+    cop0.bda = addr;
+    cop0.bdam = mask;
+    cop0.dcic.v = COP0_DCIC_BK_DATA_MK;
   }
 
   // 返回 pc 的当前值
@@ -349,7 +356,7 @@ public:
     if (check_data_read_break(addr)) {
       return;
     }
-    reg.s[t] = bus.read16(addr);
+    reg.s[t] = (s16) bus.read16(addr);
     pc += 4;
   }
 
@@ -1061,7 +1068,7 @@ private:
   }
 
   void m1(char const* iname, mips_reg s) const {
-    debug(DBG_HD "%s\t\t\t \x1b[1;30m# $%s=%x\n",
+    debug(DBG_HD "$%s\t\t\t\t \x1b[1;30m# $%s=%x\n",
       pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
   }
 

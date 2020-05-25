@@ -26,7 +26,7 @@ const char* MipsCauseStr[] = {
   /*  7 */ "Bus error on Data load/store",
   /*  8 */ "Syscall",
   /*  9 */ "Breakpoint",
-  /* 10 */ "Reserved instruction",
+  /* 10 */ "Unknow instruction",
   /* 11 */ "Coprocessor unusable",
   /* 12 */ "Arithmetic overflow",
 };

@@ -29,14 +29,18 @@ OrderingTables::OrderingTables(Bus& b) :
 
 
 void OrderingTables::dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) {
-  inc *= 4;
+  const int len = (bytesize >>2) - 1;
+  const int step = inc * 4;
+  debug("OTC start %x %x %x\n", addr, bytesize, step);
 
-  for (int i = 0; i < bytesize - 4; i += 4) {
-    psmem next_addr = (addr + inc) & 0x1f'fffc;
+  for (int i = 0; i < len; ++i) {
+    psmem next_addr = (addr + step) & 0x1f'fffc;
     bus.write32(addr, next_addr);
     addr = next_addr;
+    //debug("OTC block %d %x ", i, addr);
   }
   bus.write32(addr, LINK_END);
+  debug("--OTCOVER--\n");
 }
 
 

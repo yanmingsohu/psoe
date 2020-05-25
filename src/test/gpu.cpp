@@ -263,9 +263,30 @@ static void gclear(Bus& bus, int x, int y, int w, int h) {
 }
 
 
+static void bios_code(GPU& gpu, Bus& bus) {
+  // 这是 bios 绘制 logo 一帧的代码
+  u32 list[] = {
+    // 白色背景
+    0x02b4b4b4, 0x00000000, 0x01e00280, 
+    // 阴影四点多边形, 8word
+    0x380000b2, 0x00f000c0, 0x00008cb2, 0x00700140, 
+    0x00008cb2, 0x01700140, 0x000000b2, 0x00f001c0, 
+    // 阴影三点多边形
+    0x300000b2, 0x01080198, 0x00008cb2, 0xba1bbaab, 0x00008cb2, 0x0164baab,
+    // 阴影三点多边形
+    0x300000b2, 0x00d80377, 0x00008cb2, 0xb9eb03d3, 0x00008cb2, 0x013403d3,
+  };
+  const int len = sizeof(list) / sizeof(u32);
+  for (int i=0; i<len; ++i) {
+    bus.write32(gp0, list[i]);
+    printf("  %x\n", i);
+  }
+}
+
+
 void test_gpu(GPU& gpu, Bus& bus) {
   gpu_basic();
-  bus.write32(gp1, 0x0300'0001); // open display
+  bus.write32(gp1, 0x0200'0001); // open display
   
   bus.write32(gp0, Color(0x20, 0xff,0,0).v);
   bus.write32(gp0, pos(80, 10).v);
@@ -273,6 +294,10 @@ void test_gpu(GPU& gpu, Bus& bus) {
   bus.write32(gp0, pos(120, 80).v);
   
   draw_offset(bus, 0, 0);
+  
+  //bios_code(gpu, bus);
+  //return;
+
   draw_l1(bus);
   draw_l1(bus, 0x42, 5);
   draw_lm1(bus);

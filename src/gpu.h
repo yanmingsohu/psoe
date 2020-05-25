@@ -1,6 +1,8 @@
 #pragma once
 
 #include <list>
+#include <mutex>
+
 
 #include "util.h"
 #include "dma.h"
@@ -251,6 +253,7 @@ private:
 
   VirtualFrameBuffer vram;
   std::list<IDrawShape*> draw_queue;
+  std::mutex for_draw_queue;
   // 从插入的对象中读取数据, 只要对象存在必须至少能读取一次
   std::list<IGpuReadData*> read_queue;
   GLDrawState ds;
@@ -273,9 +276,9 @@ public:
   void reset();
 
   // 发送可绘制图形
-  inline void send(IDrawShape* s) {
-    draw_queue.push_back(s);
-  }
+  void send(IDrawShape* s);
+  // 弹出待绘制图形对象, 没有返回 NULL
+  IDrawShape* pop_drawer();
 
   virtual DmaDeviceNum number() {
     return DmaDeviceNum::gpu;

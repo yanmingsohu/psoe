@@ -20,7 +20,7 @@ vec4 color_ps2gl(uint pscolor) {
 }
 
 float get_x(uint ps_pos) {
-  uint t = (0xFFFFu & ps_pos);
+  uint t = (0xFFFFu & ps_pos); 
   uint s = t & 0x400u;
   int a  = int(t) & 0x3FF;
   if (s != 0u) a = ~(a) + 1;
@@ -29,7 +29,7 @@ float get_x(uint ps_pos) {
 }
 
 float get_y(uint ps_pos) {
-  uint t = (0xFFFFu & (ps_pos>>16u));
+  uint t = (0xFFFFu & (ps_pos>>16u)); 
   uint s = t & 0x400u;
   int a  = int(t) & 0x1FF;
   if (s != 0u) a = ~(a) + 1;

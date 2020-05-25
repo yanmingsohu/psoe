@@ -416,6 +416,7 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
     case 51: // lwc3 not use
     case 59: // swc3 not use
     default:
+      error("Unknow MIPS OP: %x\n", i.R.op);
       return false;
   }
   return true;

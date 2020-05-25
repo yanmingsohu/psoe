@@ -127,6 +127,7 @@ public:
   }
 
   bool write(const u32 c) {
+    //printf("x %d y %d \n", c&X_MASK, ((c & Y_MASK) >> 16));
     vertices[step] = c;
     return ++step < (ElementCount *2);
   }
@@ -533,8 +534,8 @@ private:
     vertices[6] = vertices[0] + (XY_MASK & offset);
    
     vertices[1] = 0x0000'0000;
-    vertices[3] = 0x0001'0000;
-    vertices[5] = 0x0000'0001;
+    vertices[3] = 0x0000'0001;
+    vertices[5] = 0x0001'0000;
     vertices[7] = 0x0001'0001;
   }
 
@@ -718,11 +719,11 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       break;
 
     case 0x28: mirror_case(0x29):
-      shape = new Polygon<PolygonVertices<4>, drawQuads>(1);
+      shape = new Polygon<PolygonVertices<4>, drawTriStrip>(1);
       break;
 
     case 0x2A: mirror_case(0x2B):
-      shape = new Polygon<PolygonVertices<4>, drawQuads>(0.5);
+      shape = new Polygon<PolygonVertices<4>, drawTriStrip>(0.5);
       break;
 
     case 0x24:
@@ -747,22 +748,22 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     case 0x2C:
       shape = new Polygon<PolyTextureVertices<4>, 
-                  drawTriangles, MonoColorTextureMixShader>(1);
+                  drawTriStrip, MonoColorTextureMixShader>(1);
       break;
 
     case 0x2D:
       shape = new Polygon<PolyTextureVertices<4>, 
-                  drawTriangles, TextureOnlyShader>(1);
+                  drawTriStrip, TextureOnlyShader>(1);
       break;
 
     case 0x2E:
       shape = new Polygon<PolyTextureVertices<4>, 
-                  drawTriangles, MonoColorTextureMixShader>(0.5);
+                  drawTriStrip, MonoColorTextureMixShader>(0.5);
       break;
 
     case 0x2F:
       shape = new Polygon<PolyTextureVertices<4>, 
-                  drawTriangles, TextureOnlyShader>(0.5);
+                  drawTriStrip, TextureOnlyShader>(0.5);
       break;
 
     case 0x30: mirror_case(0x31):
@@ -777,12 +778,12 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     case 0x38: mirror_case(0x39):
       shape = new Polygon<ShadedPolyVertices<4>, 
-                  drawQuads, ShadedColorShader>(1);
+                  drawTriStrip, ShadedColorShader>(1);
       break;
 
     case 0x3A: mirror_case(0x3B):
       shape = new Polygon<ShadedPolyVertices<4>, 
-                  drawQuads, ShadedColorShader>(0.5);
+                  drawTriStrip, ShadedColorShader>(0.5);
       break;
 
     case 0x34: mirror_case(0x35):
@@ -797,12 +798,12 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     case 0x3C: mirror_case(0x3D):
       shape = new Polygon<ShadedPolyWithTextureVertices<4>,
-                  drawQuads, ShadedColorTextureMixShader>(1);
+                  drawTriStrip, ShadedColorTextureMixShader>(1);
       break;
 
     case 0x3E: mirror_case(0x3F):
       shape = new Polygon<ShadedPolyWithTextureVertices<4>,
-                  drawQuads, ShadedColorTextureMixShader>(0.5);
+                  drawTriStrip, ShadedColorTextureMixShader>(0.5);
       break;
 
     case 0x40:

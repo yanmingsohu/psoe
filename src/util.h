@@ -6,6 +6,10 @@
 #include <list>
 #include <unordered_set>
 
+namespace ps1e_t {
+  extern int ext_stop;
+}
+
 namespace ps1e {
 
 #if defined(_WIN32) || defined(_WIN64) || \
