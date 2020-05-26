@@ -12,10 +12,14 @@ uniform int offx;
 uniform int offy;
 uniform float transparent;
 
-vec4 color_ps2gl(uint pscolor) {
-  float r = ((pscolor      & 0xFFu) / 255.0f);
-  float g = ((pscolor>> 8) & 0xFFu) / 255.0f;
-  float b = ((pscolor>>16) & 0xFFu) / 255.0f;
+// 对于无纹理的图形，FFh的8位RGB值最亮。但是，对于纹理混合，
+// 80h的8位值最亮（值81h..FFh“比亮更亮”）
+// 使纹理的亮度比原始存储在内存中的亮度高两倍；
+// max -- 无纹理的时候:255.0f, 有纹理的时候:80.0f
+vec4 color_ps2gl(uint pscolor, float max) {
+  float r = ((pscolor      & 0xFFu) / max);
+  float g = ((pscolor>> 8) & 0xFFu) / max;
+  float b = ((pscolor>>16) & 0xFFu) / max;
   return vec4(r, g, b, transparent);
 }
 
@@ -45,11 +49,12 @@ float norm_y(uint n) {
   return -(float(n) / frame_height  * 2 - 1);
 }
 
-vec2 to_textcoord(uint coord, uint page, uint textwin) { //TODO textwin!!
+// TODO: Textwin Texcoord = (Texcoord AND (NOT (Mask*8))) OR ((Offset AND Mask)*8)
+vec2 to_textcoord(uint coord, uint page, uint textwin) {
   float pagex = float(0x0Fu & page) * 0x40;
-  float pagey = float(1u & (page >> 4)) * 0xff;
+  float pagey = float(1u & (page >> 4)) * 0x100;
   // TODO: 纹理页的大小来自纹理格式字段 64/128/256
-  float x = float(coord & 0x0FFu) / 0xff * 0x40; 
+  float x = float(coord & 0x0FFu) / 0xff * 0x39; 
   float y = float((coord >> 8) & 0x0FFu);
   return vec2((x + pagex)/frame_width, 1- (y + pagey)/frame_height);
 }
@@ -59,26 +64,74 @@ vec2 to_textcoord(uint coord, uint page, uint textwin) { //TODO textwin!!
 #define TextureFragShaderHeader  GSGL_VERSION R"shader(
 uniform uint page;
 uniform uint clut;
+uniform float transparent;
+uniform uint frame_width;
+uniform uint frame_height;
 
 vec4 mix_color(vec4 b, vec4 f) {
-  switch (int(page >> 5) & 0x03) {
+  vec4 r;
+  /*switch (int(page >> 5) & 0x03) {
     default:
-    case 0: return b * 0.5 + f * 0.5;
-    case 1: return b + f;
-    case 3: return b - f;
-    case 4: return b + f * 0.25;
+    case 0: r = b * 0.5 + f * 0.5;
+      break;
+    case 1: r = b + f;
+      break;
+    case 2: r = b - f;
+      break;
+    case 3: r = b + f * 0.25;
+      break;
+  }*/
+  if (b.rgb == 0) {
+    r = f;
+  } else {
+    r = b * f;
   }
+  r.a = transparent;
+  return r;
+}
+
+float color_gradient(int c) {
+  float a = float(c & 0x10);
+  float b = float(c & 0x0F);
+  return (a * b) / 0xff;
+}
+
+vec4 text_pscolor_rgb(int red16) {
+  float r = color_gradient(red16);
+  float g = color_gradient(red16 >> 5);
+  float b = color_gradient(red16 >> 10);
+  float a = ((red16 >> 15) & 1)==1 ? 0.5 : 1.0;
+  return vec4(r, g, b, a);
+}
+
+vec4 texture_red16(sampler2D text, vec2 coord) {
+  int red = int(texture(text, coord).r * 0xffffu);
+  return text_pscolor_rgb(red);
 }
 
 vec4 texture_mode(sampler2D text, vec2 coord) {
   switch (int(page >> 7) & 0x03) {
     case 0: // 4bit TODO!
+      int fx     = int(coord.x * frame_width);
+      coord.x    = float(fx & 0xFFFC) / frame_width;
+
+      int word   = int(texture(text, coord).r * 0xffff);
+      int bit    = (fx & 0x03) << 2;
+      int index  = (word >> bit) & 0xF;
+
+      uint clut_x = ((clut & 0x3fu) << 4) + uint(index);
+      // y: 写入指令与 clut 指令有 1 像素偏移?
+      uint clut_y = ((clut >> 6) & 0x1ffu) + 1u;
+      vec2 coord_index = vec2(float(clut_x)/frame_width, 1-float(clut_y)/frame_height);
+      return texture_red16(text, coord_index);
+      //return vec4(float(word)/0xffff, 0, float(bit)/16.0, 1);
       
     case 1: // 8bit TODO!
+      return vec4(1, 0, 1, 1);
 
     default:
     case 2: // 16bit
-      return texture(text, coord);
+      return texture_red16(text, coord);
   }
 }
 )shader"
@@ -92,7 +145,7 @@ out vec4 oColor;
 
 void main() {
   gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
-  oColor = color_ps2gl(ps_color);
+  oColor = color_ps2gl(ps_color, 255.0f);
 }
 )shader";
 
@@ -121,7 +174,7 @@ out vec2 oCoord;
 
 void main() {
   gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
-  oColor = color_ps2gl(ps_color);
+  oColor = color_ps2gl(ps_color, 80.0f);
   oCoord = to_textcoord(coord, page, textwin);
 }
 )shader";
@@ -161,7 +214,7 @@ out vec4 oColor;
 
 void main() {
   gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
-  oColor = color_ps2gl(ps_color);
+  oColor = color_ps2gl(ps_color, 255.0f);
 }
 )shader";
 
@@ -178,7 +231,7 @@ out vec4 oColor;
 out vec2 oCoord;
 
 void main() {
-  oColor = color_ps2gl(ps_color); 
+  oColor = color_ps2gl(ps_color, 80.0h); 
   oCoord = to_textcoord(coord, page, textwin);
   gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
 }
@@ -195,7 +248,7 @@ void main() {
   uint x = 0x03F0u & pos;
   uint y = 0x01FFu & (pos >> 16);
   gl_Position = vec4(norm_x(x), norm_y(y), 0, 1);
-  oColor = color_ps2gl(ps_color);
+  oColor = color_ps2gl(ps_color, 255.0f);
 }
 )shader";
 

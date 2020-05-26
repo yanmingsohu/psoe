@@ -204,7 +204,7 @@ void GLTexture::init(GLFrameBuffer& fb, void* pixeldata) {
 void GLTexture::init(int w, int h, void* pixeldata) {
   glGenTextures(1, &text);
   bind();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 
       w, h, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, pixeldata);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -216,10 +216,15 @@ void GLTexture::init(int w, int h, void* pixeldata) {
 void GLTexture::init2px(int w, int h, void* pixeldata) {
   glGenTextures(1, &text);
   bind();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 
-      w, h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, pixeldata);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 
+      w, h, 0, GL_RED, GL_UNSIGNED_SHORT, pixeldata);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+}
+
+
+void GLDrawState::readPsinnerPixel(int x, int y, int w, int h, u32* data) {
+  glReadPixels(x, y, w, h, GL_RED, GL_UNSIGNED_SHORT, data);
 }
 
 
@@ -403,9 +408,30 @@ void GLDrawState::setMultismple(const bool t, int hint) {
 void GLDrawState::setBlend(const bool t) {
   if (t) {
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   } else {
     glDisable(GL_BLEND);
+  }
+}
+
+
+void GLDrawState::setSemiMode(u8 mode) {
+  switch (mode) {
+    case 0: // B/2+F/2
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glBlendEquation(GL_FUNC_ADD);
+      break;
+    case 1: // B+F
+      glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+      glBlendEquation(GL_FUNC_ADD);
+      break;
+    case 2: // B-F
+      glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+      glBlendEquation(GL_FUNC_SUBTRACT);
+      break;
+    case 3: // B+F/4
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glBlendEquation(GL_FUNC_ADD);
+      break;
   }
 }
 

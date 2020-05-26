@@ -32,10 +32,16 @@ public:
     if (update_flag != flag) {
       x.setInt(gpu.draw_offset.offx());
       y.setInt(gpu.draw_offset.offy());
-      fw.setUint(gpu.frame.width);
-      fh.setUint(gpu.frame.height);
+      fw.setUint(gpu.frame.width -1);
+      fh.setUint(gpu.frame.height -1);
       update_flag = flag;
     }
+  }
+
+  void printClut(u32 clut) {
+    u32 x = ((clut & 0x3fu) << 4);
+    u32 y = (clut >> 6) & 0x1ffu;
+    printf("Texture clut [%d x %d]\n", x, y);
   }
 };
 
@@ -94,6 +100,7 @@ public:
     page.setUint(v.page);
     clut.setUint(v.clut);
     textwin.setUint(gpu.text_win.v);
+    //printClut(v.clut);
   }
 };
 

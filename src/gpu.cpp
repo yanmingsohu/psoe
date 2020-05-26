@@ -68,13 +68,19 @@ GPU::~GPU() {
 
 
 void GPU::send(IDrawShape* s) {
-  std::lock_guard<std::mutex> guard(for_draw_queue);
+  std::lock_guard<std::recursive_mutex> guard(for_draw_queue);
   draw_queue.push_back(s);
 }
 
 
+void GPU::add(IGpuReadData* r) {
+  std::lock_guard<std::recursive_mutex> guard(for_read_queue);
+  read_queue.push_back(r);
+}
+
+
 IDrawShape* GPU::pop_drawer() {
-  std::lock_guard<std::mutex> guard(for_draw_queue);
+  std::lock_guard<std::recursive_mutex> guard(for_draw_queue);
   if (draw_queue.size() == 0) {
     return 0;
   }
@@ -91,6 +97,7 @@ void GPU::gpu_thread() {
 
   while (!glfwWindowShouldClose(glwindow)) {
     vram.drawShape();
+    ds.setSemiMode(status.abr);
 
     IDrawShape *sp = pop_drawer();
     while (sp) {
@@ -100,7 +107,7 @@ void GPU::gpu_thread() {
     }
 
     if (status.display == 0) {
-      //ds.viewport(&screen);
+      ds.viewport(&screen);
       vram.drawScreen();
     }
 
@@ -130,20 +137,20 @@ void GPU::reset() {
 void GPU::dma_order_list(psmem addr) {
   //warn("GPU ol [%x] x:%d y:%d\n", addr, draw_offset.offx(), draw_offset.offy());
   u32 header = bus.read32(addr);
+  std::lock_guard<std::recursive_mutex> guard(for_draw_queue);
   
   while ((header & OrderingTables::LINK_END) != OrderingTables::LINK_END) {
     u32 next = header & 0x001f'fffc;
     u32 size = header >> 24;
+    //if (size) printf("  H [%08x]  %08x\n", addr, header);
 
-    //if (size) {
-      //printf("  H [%08x]  %08x\n", addr, header);
-    //}
-
-    for (int i=0; i<size; ++i) {
-      addr += 4;
-      u32 cmd = bus.read32(addr);
-      gp0.write(cmd);
-      //printf("     [%08x]  %08x\n", addr, cmd);
+    {
+      for (int i=0; i<size; ++i) {
+        addr += 4;
+        u32 cmd = bus.read32(addr);
+        gp0.write(cmd);
+        //printf("     [%08x]  %08x\n", addr, cmd);
+      }
     }
     
     addr = next;
@@ -154,6 +161,7 @@ void GPU::dma_order_list(psmem addr) {
 
 
 void GPU::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
+  std::lock_guard<std::recursive_mutex> guard(for_draw_queue);
   //printf("COPY ram go GPU begin:%x %dbyte\n", addr, bytesize);
   inc = inc *4;
   for (int i = 0; i < bytesize; i += 4) {
@@ -221,6 +229,7 @@ void VirtualFrameBuffer::drawShape() {
   ds.clearDepth();
   ds.setDepthTest(false);
   ds.viewport(&gsize);
+  ds.setBlend(true);
 }
 
 
@@ -231,6 +240,7 @@ void VirtualFrameBuffer::drawScreen() {
   gl_scope(vao);
   gl_scope(virtual_screen);
   ds.setDepthTest(false);
+  ds.setBlend(false);
   vao.drawTriangles(6);
 }
 

@@ -2,6 +2,8 @@
 #include "gpu_shader.h"
 #include <functional>
 #include <stdexcept>
+#include <condition_variable>
+#include <mutex>
 
 namespace ps1e {
 
@@ -15,14 +17,17 @@ private:
   VerticesBase(VerticesBase&);
 
 protected:
-  static const u32 X_MASK  = 0x0000'03FF;
-  static const u32 Y_MASK  = 0x01FF'0000;
-  static const u32 XY_MASK = X_MASK | Y_MASK;
 
   int step;
   const int element;
 
 public:
+  static const u32 X_MASK  = 0x0000'03FF;
+  static const u32 Y_MASK  = 0x01FF'0000;
+  static const u32 XY_MASK = X_MASK | Y_MASK;
+  // gl 在绝对位置上绘制像素, 所以 width+height 需要减去这个数
+  static const u32 XY_SUB  = 0x0001'0001;
+
   VerticesBase(int ele, int st = 0) : step(st), element(ele) {}
   virtual ~VerticesBase() {}
 
@@ -573,6 +578,7 @@ public:
         h = (c & Y_MASK) >> 16;
         buf_length = (w * h) >> 1;
         buf = new u32[buf_length];
+        printf("%x %x-----------------------------\n", c, c-XY_SUB);
         update_vertices(c);
         break;
 
@@ -623,6 +629,105 @@ public:
 };
 
 
+// 该数据读取器首先进入锁定状态, 任何尝试读取的线程都会被锁定
+// 直到另一个线程解锁(数据).
+//template<class Data>
+class ReadVram : public IGpuReadData {
+private:
+  std::mutex m;
+  std::condition_variable cv;
+
+  const int len;
+  u32* data;
+  int p = 0;
+  bool lock = true;
+
+public:
+  //TODO: 传输受“掩码”设置影响。
+  ReadVram(int w, int h) : len(((w * h) >> 1) + ((w * h) & 1)) {
+    data = new u32[len];
+  }
+
+  ~ReadVram() {
+    delete[] data;
+  }
+
+  u32 read() {
+    if (lock) {
+      std::unique_lock<std::mutex> lk(m);
+      cv.wait(lk);
+    }
+    //printf("Cpu read vram %d[%d]:%x\n", p, len, data[p]);
+    return data[p++];
+  }
+
+  bool has() {
+    return p < len;
+  }
+
+  u32* getDataPoint() {
+    return data;
+  }
+
+  void unlock() {
+    std::unique_lock<std::mutex> lk(m);
+    lock = false;
+    cv.notify_all();
+  }
+};
+
+
+class CopyVramToCpu : public IDrawShape {
+private:
+  GPU& gpu;
+  ReadVram* reader = 0;
+  int state = 0;
+  int x, y;
+  int w, h;
+
+  void installReader() {
+    reader = new ReadVram(w, h);
+    gpu.add(reader);
+    //printf("install vram reader w_%d h_%d | %d %d\n", w, h, x, y);
+    //ps1e_t::ext_stop = 1;
+  }
+
+  void dataReady() {
+    gpu.useTexture().bind();
+    GLDrawState::readPsinnerPixel(x, 512-y-2, w, h, reader->getDataPoint());
+    reader->unlock();
+  }
+
+public:
+  CopyVramToCpu(GPU& g) : gpu(g) {}
+
+  bool write(const u32 c) {
+    switch (state++) {
+      case 0:
+        return true;
+
+      case 1:
+        x = c & VerticesBase::X_MASK;
+        y = (c & VerticesBase::Y_MASK) >> 16;
+        return true;
+
+      case 2:
+        w = c & VerticesBase::X_MASK;
+        h = (c & VerticesBase::Y_MASK) >> 16;
+        installReader();
+        // no break
+      default:
+        return false;
+    }
+  }
+
+  void draw(GPU& gpu, GLVertexArrays& vao) {
+    gl_scope(vao);
+    dataReady();
+  }
+};
+
+
 void drawTriangles(GLVertexArrays& vao, int elementCount) {
   vao.drawTriangles(elementCount);
 }
@@ -656,11 +761,11 @@ void drawPoints(GLVertexArrays& vao, int elementCount) {
 bool GPU::GP0::parseCommand(const GpuCommand c) {
   switch (c.cmd) {
     case 0x00:
-      debug("Gpu Nop?\n");
+      //debug("Gpu Nop?\n");
       return false;
 
     case 0x01:
-      debug("Clear Cache\n");
+      //debug("Clear Cache\n");
       return false;
 
     case 0x02:
@@ -669,6 +774,10 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     case 0xA0:
       shape = new Polygon<FillTexture, drawTriStrip, CopyTextureShader>(1);
+      break;
+
+    case 0xC0:
+      shape = new CopyVramToCpu(p);
       break;
 
     case 0x1F:
@@ -955,9 +1064,11 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
 
 u32 GPU::GP0::read() {
+  std::lock_guard<std::recursive_mutex> guard(p.for_read_queue);
   if (p.read_queue.size()) {
     IGpuReadData* data_que = p.read_queue.front();
     last_read = data_que->read();
+
     if (!data_que->has()) {
       delete data_que;
       p.read_queue.pop_front();
@@ -974,6 +1085,7 @@ void GPU::GP0::write(u32 v) {
       if (!parseCommand(v)) {
         break;
       }
+      //printf("command gpu %08x\n", v); ps1e_t::ext_stop = 1;
       stage = ShapeDataStage::read_data;
       // do not break
 

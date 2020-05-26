@@ -253,9 +253,10 @@ private:
 
   VirtualFrameBuffer vram;
   std::list<IDrawShape*> draw_queue;
-  std::mutex for_draw_queue;
+  std::recursive_mutex for_draw_queue;
   // 从插入的对象中读取数据, 只要对象存在必须至少能读取一次
   std::list<IGpuReadData*> read_queue;
+  std::recursive_mutex for_read_queue;
   GLDrawState ds;
   u32 status_change_count;
     
@@ -277,8 +278,12 @@ public:
 
   // 发送可绘制图形
   void send(IDrawShape* s);
+
   // 弹出待绘制图形对象, 没有返回 NULL
   IDrawShape* pop_drawer();
+
+  // 将一个数据读取器插入队列, 稍后由总线读出.
+  void add(IGpuReadData* r);
 
   virtual DmaDeviceNum number() {
     return DmaDeviceNum::gpu;
@@ -296,15 +301,12 @@ public:
     return &screen;
   }
 
-  inline void add(IGpuReadData* r) {
-    read_queue.push_back(r);
-  }
-
   inline GPU& dirtyAttr() {
     status_change_count++;
     return *this;
   }
 
+  // 返回 ps 显存纹理对象, 通常用于将 ps 显存绑定到当前纹理
   inline GLTexture& useTexture() {
     return vram.useTexture();
   }

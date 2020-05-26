@@ -217,7 +217,11 @@ public:
   void setDepthTest(const bool);
   void setMultismple(const bool, int hint = 4);
   void setBlend(const bool);
+  void setSemiMode(u8 mode);
   void initGlad();
+  
+  // 读取 gl 显存到缓冲区, 缓冲区是 32bit RGBA 格式, 长度 w*h
+  static void readPsinnerPixel(int x, int y, int w, int h, u32* data);
 };
 
 

@@ -65,7 +65,7 @@ void DMADev::transport() {
   const s32 bytesize = blocks_io.blocksize << 2;
   const s32 block_inc = chcr.step ? -bytesize : bytesize;
   u32& ramaddr = base_io.base;
-  info("DMA(%d) transport mode[%d] %dx%d\n", devnum, chcr.mode, bytesize, blocks_io.blocks);
+  //info("DMA(%d) transport mode[%d] %dx%d\n", devnum, chcr.mode, bytesize, blocks_io.blocks);
 
   // DOing soming...
   switch (chcr.mode) {
