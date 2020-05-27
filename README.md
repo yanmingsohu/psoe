@@ -12,12 +12,14 @@ WIP
   * [ ] CPU
     * [ ] Interpreter
       * [x] looks like working
+      * [x] boot bios
     * [ ] asmjit
   * [ ] DMA
     * [ ] look like working
     * [ ] Working on Thread
   * [ ] GPU
     * [x] Display soming
+    * [x] Display Bios Logo
     * [ ] Working on Thread
     * [ ] Use AI to enhance textures ?!
   * [ ] GTE
