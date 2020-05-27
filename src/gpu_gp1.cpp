@@ -23,18 +23,22 @@ public:
 
 void GPU::GP1::parseCommand(const GpuCommand c) {
   switch (c.cmd & 0b0011'1111) {
+    // 重置GPU
     case 0x00:
       p.dirtyAttr().reset();
       break;
 
+    // 复位命令缓冲器
     case 0x01:
       p.dirtyAttr().gp0.reset_fifo();
       break;
 
+    // 确认GPU中断（IRQ1）
     case 0x02:
       p.status.irq_on = 0;
       break;
 
+    // 显示使能
     case 0x03:
       p.status.display = 0x01 & c.parm;
       break;
@@ -43,24 +47,28 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
       p.status.dma_md = 0b11 & c.parm;
       break;
 
+    // 显示区域的开始（在VRAM中）
     case 0x05:
       p.display.x = 0x0011'1111'1111 & c.parm;
       p.display.y = 0x0001'1111'1111 & (c.parm >> 10);
       p.dirtyAttr();
       break;
 
+    // 水平显示范围（在屏幕上）
     case 0x06:
       p.disp_hori.x = 0x1111'1111'1111 & c.parm;
       p.disp_hori.y = 0x1111'1111'1111 & (c.parm >> 12);
       p.dirtyAttr();
       break;
 
+    // 垂直显示范围（在屏幕上)
     case 0x07:
       p.disp_veri.x = 0x0011'1111'1111 & c.parm;
       p.disp_veri.y = 0x0011'1111'1111 & (c.parm >> 10);
       p.dirtyAttr();
       break;
 
+    // 显示模式
     case 0x08:
       p.status.width0     = 0b11 & c.parm;
       p.status.height     = 0b1  & (c.parm >> 2);
@@ -77,6 +85,7 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
       p.dirtyAttr();
       break;
 
+    // 获取GPU信息
     case 0x10: 
     case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: 
     case 0x16: case 0x17: case 0x18: case 0x19: case 0x1A: 
