@@ -24,6 +24,7 @@
     <ClInclude Include="..\src\bus.h" />
     <ClInclude Include="..\src\cpu.h" />
     <ClInclude Include="..\src\gpu_shader.h" />
+    <ClInclude Include="..\src\gte.h" />
     <ClInclude Include="..\src\inter.h" />
     <ClInclude Include="..\src\dma.h" />
     <ClInclude Include="..\src\gpu.h" />
@@ -46,6 +47,7 @@
     <ClCompile Include="..\src\gpu_gp0.cpp" />
     <ClCompile Include="..\src\gpu_gp1.cpp" />
     <ClCompile Include="..\src\gpu_shader.cpp" />
+    <ClCompile Include="..\src\gte.cpp" />
     <ClCompile Include="..\src\mem.cpp" />
     <ClCompile Include="..\src\mips.cpp" />
     <ClCompile Include="..\src\opengl-wrap.cpp" />

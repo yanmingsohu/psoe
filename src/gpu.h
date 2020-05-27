@@ -202,11 +202,11 @@ public:
   void drawShape();
   void drawScreen();
   GpuDataRange& size();
-  GLTexture& useTexture();
+  GLTexture* useTexture();
 };
 
 
-class GPU : public DMADev {
+class GPU : public DMADev, public NonCopy {
 private:
   class GP0 : public DeviceIO {
     GPU &p;
@@ -310,7 +310,7 @@ public:
   }
 
   // 返回 ps 显存纹理对象, 通常用于将 ps 显存绑定到当前纹理
-  inline GLTexture& useTexture() {
+  inline GLTexture* useTexture() {
     return vram.useTexture();
   }
 

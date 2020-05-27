@@ -175,8 +175,8 @@ public:
   void write_ctrl(u32 index, u32 data);
   u32 read_ctrl(u32 index);
 
-friend class GteIrgb;
-template<int, GteReg63Error> friend class GteIR;
+friend struct GteIrgb;
+template<int, GteReg63Error> friend struct GteIR;
 };
 
 

@@ -144,7 +144,7 @@ public:
   // 默认为 CLAMP_TO_EDGE 模式
   void setTexWrap(TexWrap mode);
   // 复制纹理到 dst 中
-  void copyTo(GLTexture& dst, int srcX, int srcY, int dstX, int dstY, int srcW, int srcH);
+  void copyTo(GLTexture* dst, int srcX, int srcY, int dstX, int dstY, int srcW, int srcH);
 };
 
 

@@ -269,8 +269,8 @@ GpuDataRange& VirtualFrameBuffer::size() {
 }
 
 
-GLTexture& VirtualFrameBuffer::useTexture() {
-  return virtual_screen;
+GLTexture* VirtualFrameBuffer::useTexture() {
+  return &virtual_screen;
 }
 
 

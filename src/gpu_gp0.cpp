@@ -669,10 +669,10 @@ public:
     auto prog = gpu.useProgram<Shader>();
     prog->setShaderUni(vertices, gpu, transparent);
 
-    if (Shader::Texture) gpu.useTexture().bind();
+    if (Shader::Texture) gpu.useTexture()->bind();
     if (Vertices::DisableDrawScopeLimit) gpu.enableDrawScope(false);
     Draw(vao, vertices.elementCount());
-    if (Shader::Texture) gpu.useTexture().unbind();
+    if (Shader::Texture) gpu.useTexture()->unbind();
   }
 };
 
@@ -741,7 +741,7 @@ private:
   }
 
   void dataReady() {
-    gpu.useTexture().bind();
+    gpu.useTexture()->bind();
     const int reverse_y = VirtualFrameBuffer::Height-1 -y;
     GLDrawState::readPsinnerPixel(x, reverse_y, w, h, reader->getDataPoint());
     reader->unlock();
@@ -809,8 +809,8 @@ public:
   void draw(GPU& gpu, GLVertexArrays& vao) {
     gl_scope(vao);
     gpu.enableDrawScope(false);
-    GLTexture& t = gpu.useTexture();
-    t.copyTo(t, srcX, srcY, dstX, dstY, w, h);
+    GLTexture* t = gpu.useTexture();
+    t->copyTo(t, srcX, srcY, dstX, dstY, w, h);
   }
 };
 

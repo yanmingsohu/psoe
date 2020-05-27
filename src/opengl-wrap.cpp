@@ -280,9 +280,9 @@ void GLTexture::setTexWrap(TexWrap mode) {
 }
 
 
-void GLTexture::copyTo(GLTexture& dst, int srcX, int srcY, int dstX, int dstY, int srcW, int srcH) {
-  glCopyImageSubData(text,     GL_TEXTURE_2D, 0, srcX, srcY, 0,
-                     dst.text, GL_TEXTURE_2D, 0, dstX, dstY, 0, 
+void GLTexture::copyTo(GLTexture* dst, int srcX, int srcY, int dstX, int dstY, int srcW, int srcH) {
+  glCopyImageSubData(text,      GL_TEXTURE_2D, 0, srcX, srcY, 0,
+                     dst->text, GL_TEXTURE_2D, 0, dstX, dstY, 0, 
                      srcW, srcH, 1);
 }
 
