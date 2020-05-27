@@ -144,6 +144,13 @@ public:
 class GLTexture {
 private:
   GLHANDLE text;
+
+public:
+  enum TexWrap {
+    REPEAT,
+    CLAMP_TO_EDGE,
+    MIRRORED_REPEAT,
+  };
   
 public:
   GLTexture();
@@ -155,6 +162,10 @@ public:
   void init2px(int w, int h, void* pixeldata);
   void bind();
   void unbind();
+  // 默认为 CLAMP_TO_EDGE 模式
+  void setTexWrap(TexWrap mode);
+  // 复制纹理到 dst 中
+  void copyTo(GLTexture& dst, int srcX, int srcY, int dstX, int dstY, int srcW, int srcH);
 };
 
 
@@ -219,6 +230,8 @@ public:
   void setBlend(const bool);
   void setSemiMode(u8 mode);
   void initGlad();
+  void setScissor(int x, int y, int w, int h);
+  void setScissorEnable(bool enable);
   
   // 读取 gl 显存到缓冲区, 缓冲区是 32bit RGBA 格式, 长度 w*h
   static void readPsinnerPixel(int x, int y, int w, int h, u32* data);

@@ -8,6 +8,29 @@
 namespace ps1e {
 
 
+static void showglError() {
+  const int e = glGetError();
+  if (e) {
+    switch (e) {
+      case GL_INVALID_OPERATION:
+        error("GL_INVALID_OPERATION");
+        break;
+      case GL_INVALID_ENUM:
+        error("GL_INVALID_ENUM");
+        break;
+      case GL_INVALID_VALUE:
+        error("GL_INVALID_VALUE");
+        break;
+      default:
+        error("GL [unknow]");
+    }
+    error(" ERR %x \n", e);
+  } else {
+    debug("GL no error\n");
+  }
+}
+
+
 OpenGLScope::OpenGLScope() {
   if(gladLoadGL()) {
     throw std::runtime_error("I did load GL with no context!\n");
@@ -208,6 +231,8 @@ void GLTexture::init(int w, int h, void* pixeldata) {
       w, h, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, pixeldata);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 
@@ -216,10 +241,12 @@ void GLTexture::init(int w, int h, void* pixeldata) {
 void GLTexture::init2px(int w, int h, void* pixeldata) {
   glGenTextures(1, &text);
   bind();
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, 
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 
       w, h, 0, GL_RED, GL_UNSIGNED_SHORT, pixeldata);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 
@@ -235,6 +262,35 @@ void GLTexture::bind() {
 
 void GLTexture::unbind() {
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
+void GLTexture::setTexWrap(TexWrap mode) {
+  int glmode;
+  switch (mode) {
+    case TexWrap::REPEAT:
+      glmode = GL_REPEAT;
+      break;
+    case TexWrap::CLAMP_TO_EDGE:
+      glmode = GL_CLAMP_TO_EDGE;
+      break;
+    case TexWrap::MIRRORED_REPEAT:
+      glmode = GL_MIRRORED_REPEAT;
+      break;
+    default:
+      throw std::runtime_error("Invaild texture wrap mode");
+  }
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glmode);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glmode);
+}
+
+
+void GLTexture::copyTo(GLTexture& dst, int srcX, int srcY, int dstX, int dstY, int srcW, int srcH) {
+  glCopyImageSubData(text,     GL_TEXTURE_2D, 0, srcX, srcY, 0,
+                     dst.text, GL_TEXTURE_2D, 0, dstX, dstY, 0, 
+                     srcW, srcH, 1);
+  printf("%d %d %d %d %d %d >\n", srcX, srcY, dstX, dstY, srcW, srcH);
+  showglError();
 }
 
 
@@ -446,6 +502,20 @@ void GLDrawState::initGlad() {
     throw std::runtime_error("Cannot init OpenGLAD");
   }
   info("PS1 GPU used OpenGL %d.%d\n", GLVersion.major, GLVersion.minor);
+}
+
+
+void GLDrawState::setScissor(int x, int y, int w, int h) {
+  glScissor(x, y, w, h);
+}
+
+
+void setScissorEnable(bool enable) {
+  if (enable) {
+    glEnable(GL_SCISSOR_TEST);
+  } else {
+    glDisable(GL_SCISSOR_TEST);
+  }
 }
 
 
