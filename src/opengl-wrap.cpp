@@ -508,7 +508,7 @@ void GLDrawState::setScissor(int x, int y, int w, int h) {
 }
 
 
-void setScissorEnable(bool enable) {
+void GLDrawState::setScissorEnable(bool enable) {
   if (enable) {
     glEnable(GL_SCISSOR_TEST);
   } else {

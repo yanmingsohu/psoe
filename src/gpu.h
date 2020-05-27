@@ -264,6 +264,9 @@ private:
   void gpu_thread();
   void initOpenGL();
 
+  // 在修改 draw_tp_lf/draw_bm_rt 后应用绘制范围
+  void updateDrawScope();
+
 protected:
   // 通常用于传输纹理, 很少用于命令
   void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) override;
@@ -310,6 +313,9 @@ public:
   inline GLTexture& useTexture() {
     return vram.useTexture();
   }
+
+  // 启用/禁用绘制区域限制, 默认限制总是启用的, 
+  void enableDrawScope(bool enableLimit);
 };
 
 }

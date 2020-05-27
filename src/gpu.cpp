@@ -101,11 +101,13 @@ void GPU::gpu_thread() {
 
     IDrawShape *sp = pop_drawer();
     while (sp) {
+      enableDrawScope(true);
       sp->draw(*this, vao);
       delete sp;
       sp = pop_drawer();
     }
-
+    
+    enableDrawScope(false);
     if (status.display == 0) {
       ds.viewport(&screen);
       vram.drawScreen();
@@ -170,6 +172,23 @@ void GPU::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
     gp0.write(d);
     addr += inc;
   }
+}
+
+
+//TODO: test
+void GPU::updateDrawScope() {
+  u32 x = draw_tp_lf.x;
+  u32 y = draw_tp_lf.y;
+  u32 w = x + draw_bm_rt.x;
+  u32 h = y + draw_bm_rt.y;
+  ds.setScissor(x, y, w, h);
+  printf("draw scope: %d,%d %d,%d", x, y, w, h);
+}
+
+
+//TODO: test
+void GPU::enableDrawScope(bool enable) {
+  ds.setScissorEnable(enable);
 }
 
 

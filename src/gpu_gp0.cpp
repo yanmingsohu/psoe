@@ -41,6 +41,7 @@ protected:
   const int element;
 
 public:
+  static const bool DisableDrawScopeLimit = false;
 
   VerticesBase(int ele, int st = 0) : step(st), element(ele) {}
   virtual ~VerticesBase() {}
@@ -217,6 +218,8 @@ public:
 
 class MultipleVertices {
 public:
+  static const bool DisableDrawScopeLimit = false;
+
   const u32 END = 0x50005000;
   const int InitBufSize = 0x10;
 
@@ -534,6 +537,8 @@ private:
   }
 
 public:
+  static const bool DisableDrawScopeLimit = true;
+
   bool write(const u32 c) {
     switch (step) {
       case 0:
@@ -576,6 +581,7 @@ public:
   }
 
   void draw(GPU& gpu, GLVertexArrays& vao) {
+    gpu.enableDrawScope(false);
     text.init2px(w, h, buf);
     text.bind();
     text.copyTo(gpu.useTexture(), 0, 0, x, y, w, h);
@@ -606,6 +612,24 @@ public:
         break;
     }
     return ++step < buf_length;
+  }
+};
+
+
+class DoNothingBeforAfterDraw {
+public:
+  void beforeDraw(GPU* gpu, GLVertexArrays* vao) {}
+  void afterDraw(GPU* gpu, GLVertexArrays* vao) {}
+};
+
+
+class DisableDrawScopeLimit {
+public:
+  void beforeDraw(GPU* gpu, GLVertexArrays* vao) {
+    gpu->enableDrawScope(false);
+  }
+  void afterDraw(GPU* gpu, GLVertexArrays* vao) {
+    gpu->enableDrawScope(true);
   }
 };
 
@@ -641,6 +665,7 @@ public:
     prog->setShaderUni(vertices, gpu, transparent);
 
     if (Shader::Texture) gpu.useTexture().bind();
+    if (Vertices::DisableDrawScopeLimit) gpu.enableDrawScope(false);
     Draw(vao, vertices.elementCount());
     if (Shader::Texture) gpu.useTexture().unbind();
   }
@@ -742,6 +767,7 @@ public:
 
   void draw(GPU& gpu, GLVertexArrays& vao) {
     gl_scope(vao);
+    gpu.enableDrawScope(false);
     dataReady();
   }
 };
