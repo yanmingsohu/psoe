@@ -61,27 +61,7 @@ template<class T, class Func> void _gl_scope(T& obj, Func func) {
 }
 
 
-class GLShape {
-private:
-  int ref;
-public:
-  GLShape(int);
-  virtual ~GLShape();
-  void end();
-  void flush();
-  void addPoint(int x, int y);
-};
-
-
-class GLPolygon : public GLShape {
-private:
-  GLPolygon();
-
-friend class GLVertexArrays;
-};
-
-
-class GLVertexArrays {
+class GLVertexArrays : public NonCopy {
 private:
   GLHANDLE vao;
 public:
@@ -99,11 +79,10 @@ public:
   void drawQuads(u32);
   void drawLineStrip(u32);
   void drawPoints(u32);
-  GLPolygon beginPolygon();
 };
 
 
-class GLVerticesBuffer {
+class GLVerticesBuffer : public NonCopy {
 private:
   GLHANDLE vbo;
 public:
@@ -115,7 +94,7 @@ public:
 };
 
 
-class GLFrameBuffer {
+class GLFrameBuffer : public NonCopy {
 private:
   GLHANDLE fbo;
   int w, h;
@@ -131,7 +110,7 @@ public:
 };
 
 
-class GLBufferData {
+class GLBufferData : public NonCopy {
 private:
   GLVerticesBuffer& vbo;
 public:
@@ -141,7 +120,7 @@ public:
 };
 
 
-class GLTexture {
+class GLTexture : public NonCopy {
 private:
   GLHANDLE text;
 
@@ -169,7 +148,7 @@ public:
 };
 
 
-class GLRenderBuffer {
+class GLRenderBuffer : public NonCopy {
 private:
   GLHANDLE rb;
 public:
@@ -197,7 +176,7 @@ friend class OpenGLShader;
 };
 
 
-class OpenGLShader {
+class OpenGLShader : public NonCopy {
 private:
   GLHANDLE program;
   GLHANDLE createShader(ShaderSrc src, u32 shader_flag);

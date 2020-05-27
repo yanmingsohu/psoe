@@ -165,6 +165,16 @@ public:
 };
 
 
+class NonCopy {
+private:
+  NonCopy(const NonCopy &) = delete;
+  NonCopy &operator=(const NonCopy&) = delete;
+public:
+  NonCopy() {}
+  virtual ~NonCopy() {}
+};
+
+
 template<class F> FuncLocal<F> createFuncLocal(F f) {
   return FuncLocal<F> (f);
 }

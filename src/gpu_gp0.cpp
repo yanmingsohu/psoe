@@ -31,6 +31,13 @@ template<class T> static T get_buffer_len(T w, T h) {
 }
 
 
+// ps_coord 是 YyyyXxxx 格式
+template<class T> static void get_xy32(u32 ps_coord, T& x, T& y) {
+  x = ps_coord & X_MASK;
+  y = (ps_coord & Y_MASK) >> 16;
+}
+
+
 class VerticesBase {
 private:
   VerticesBase(VerticesBase&);
@@ -375,6 +382,8 @@ public:
 
       case 2:
         update_vertices(c);
+        // 如果高度或宽度为 0 会引起显示异常
+        fix_width_height_offset();
         break;
     }
 
@@ -592,16 +601,12 @@ public:
       case -3:
         break;
 
-      case -2: {
-        u32 coord = c & offset_limit_x10;;
-        x = coord & X_MASK;
-        y = (coord & Y_MASK) >> 16;
-        }
+      case -2: 
+        get_xy32(c & offset_limit_x10, x, y);
         break;
 
       case -1:
-        w = (c & X_MASK);
-        h = (c & Y_MASK) >> 16;
+        get_xy32(c, w, h);
         buf_length = get_buffer_len(w, h);
         buf = new u32[buf_length];
         break;
@@ -751,13 +756,11 @@ public:
         return true;
 
       case 1:
-        x = c & X_MASK;
-        y = (c & Y_MASK) >> 16;
+        get_xy32(c, x, y);
         return true;
 
       case 2:
-        w = c & X_MASK;
-        h = (c & Y_MASK) >> 16;
+        get_xy32(c, w, h);
         installReader();
         // no break
       default:
@@ -769,6 +772,45 @@ public:
     gl_scope(vao);
     gpu.enableDrawScope(false);
     dataReady();
+  }
+};
+
+
+class CopyVramToVram : public IDrawShape {
+private:
+  int step;
+  u32 srcX, srcY;
+  u32 dstX, dstY;
+  u32 w, h;
+
+public:
+  bool write(const u32 c) {
+    switch (step++) {
+      case 0:
+        return true;
+
+      case 1:
+        get_xy32(c, srcX, srcY);
+        return true;
+
+      case 2:
+        get_xy32(c, dstX, dstY);
+        return true;
+
+      case 3:
+        get_xy32(c, w, h);
+        // no break
+
+      default:
+        return false;
+    }
+  }
+
+  void draw(GPU& gpu, GLVertexArrays& vao) {
+    gl_scope(vao);
+    gpu.enableDrawScope(false);
+    GLTexture& t = gpu.useTexture();
+    t.copyTo(t, srcX, srcY, dstX, dstY, w, h);
   }
 };
 
@@ -831,9 +873,10 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       shape = new CopyVramToCpu(p);
       break;
 
-    // TODO: 复制显存 glBlitFramebuffer
+    // 复制显存
     case 0x80:
-      return false;
+      shape = new CopyVramToVram();
+      break;
 
     // 中断请求
     case 0x1F:

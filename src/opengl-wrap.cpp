@@ -78,11 +78,6 @@ void GLVertexArrays::setColor(u32 ps_color) {
 }
 
 
-GLPolygon GLVertexArrays::beginPolygon() {
-  return GLPolygon();
-}
-
-
 void GLVertexArrays::drawTriangles(u32 indices_count) {
   glDrawArrays(GL_TRIANGLES, 0, indices_count);
 }
@@ -516,36 +511,5 @@ void GLDrawState::setScissorEnable(bool enable) {
   }
 }
 
-
-GLShape::GLShape(int T) : ref(1) {
-  glBegin(T);
-}
-  
-
-GLShape::~GLShape() {
-  end();
-}
-
-
-void GLShape::end() {
-  if (ref > 0) {
-    glEnd();
-  }
-  --ref;
-}
-
-
-void GLShape::flush() {
-  end();
-  glFlush();
-}
-
-
-void GLShape::addPoint(int x, int y) {
-  glVertex2i(x, y);
-}
-
-
-GLPolygon::GLPolygon() : GLShape(GL_POLYGON) {}
 
 }
