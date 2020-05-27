@@ -38,7 +38,7 @@ float get_y(uint ps_pos) {
   int a  = int(t) & 0x1FF;
   if (s != 0u) a = ~(a) + 1;
   int y = a + offy;
-  return -(float(y) / frame_height  * 2 - 1);
+  return (float(y) / frame_height  * 2 - 1);
 }
 
 float norm_x(uint n) { 
@@ -46,7 +46,7 @@ float norm_x(uint n) {
 }
 
 float norm_y(uint n) {
-  return -(float(n) / frame_height  * 2 - 1);
+  return (float(n) / frame_height  * 2 - 1);
 }
 
 // TODO: Textwin Texcoord = (Texcoord AND (NOT (Mask*8))) OR ((Offset AND Mask)*8)
@@ -56,7 +56,7 @@ vec2 to_textcoord(uint coord, uint page, uint textwin) {
   // TODO: 纹理页的大小来自纹理格式字段 64/128/256
   float x = float(coord & 0x0FFu) / 0xff * 0x39; 
   float y = float((coord >> 8) & 0x0FFu);
-  return vec2((x + pagex)/frame_width, 1- (y + pagey)/frame_height);
+  return vec2((x + pagex)/frame_width, (y + pagey)/frame_height);
 }
 )shader"
 
@@ -120,8 +120,7 @@ vec4 texture_mode(sampler2D text, vec2 coord) {
       int index  = (word >> bit) & 0xF;
 
       uint clut_x = ((clut & 0x3fu) << 4) + uint(index);
-      // y: 写入指令与 clut 指令有 1 像素偏移?
-      uint clut_y = ((clut >> 6) & 0x1ffu) + 1u;
+      uint clut_y = ((clut >> 6) & 0x1ffu);
       vec2 coord_index = vec2(float(clut_x)/frame_width, 1-float(clut_y)/frame_height);
       return texture_red16(text, coord_index);
       //return vec4(float(word)/0xffff, 0, float(bit)/16.0, 1);
@@ -245,7 +244,7 @@ uniform uint ps_color;
 out vec4 oColor;
 
 void main() {
-  uint x = 0x03F0u & pos;
+  uint x = 0x03FFu & pos;
   uint y = 0x01FFu & (pos >> 16);
   gl_Position = vec4(norm_x(x), norm_y(y), 0, 1);
   oColor = color_ps2gl(ps_color, 255.0f);
@@ -260,7 +259,7 @@ layout (location = 1) in uint coord;
 out vec2 TexCoord;
 
 void main() {
-  uint x = 0x03F0u & pos;
+  uint x = 0x03FFu & pos;
   uint y = 0x01FFu & (pos >> 16);
   gl_Position = vec4(norm_x(x), norm_y(y), 0, 1);
 
@@ -278,7 +277,7 @@ layout (location = 1) in vec2 coord;
 out vec2 TexCoord;
 
 void main() {
-  gl_Position = vec4(pos.x, pos.y, 0, 1.0);
+  gl_Position = vec4(pos.x, -pos.y, 0, 1.0);
   TexCoord = coord;
 }
 )shader";
