@@ -27,6 +27,8 @@ public:
   static const u32 XY_MASK = X_MASK | Y_MASK;
   // gl 在绝对位置上绘制像素, 所以 width+height 需要减去这个数
   static const u32 XY_SUB  = 0x0001'0001;
+  static const u32 X_SUB   = 0x0000'0001;
+  static const u32 Y_SUB   = 0x0001'0000;
 
   VerticesBase(int ele, int st = 0) : step(st), element(ele) {}
   virtual ~VerticesBase() {}
@@ -504,6 +506,11 @@ public:
 
 
 class FillVertices : public SquareVertices<0> {
+private:
+  void align() {
+
+  }
+
 public:
   bool write(const u32 c) {
     switch (step) {
@@ -760,30 +767,41 @@ void drawPoints(GLVertexArrays& vao, int elementCount) {
 
 bool GPU::GP0::parseCommand(const GpuCommand c) {
   switch (c.cmd) {
+    // GPU NOP
     case 0x00:
       //debug("Gpu Nop?\n");
       return false;
 
+    // 清除缓存
     case 0x01:
       //debug("Clear Cache\n");
       return false;
 
+    // 在VRAM中填充矩形
     case 0x02:
       shape = new Polygon<FillVertices, drawTriStrip, FillRectShader>(1);
       break;
 
+    // 写显存
     case 0xA0:
       shape = new Polygon<FillTexture, drawTriStrip, CopyTextureShader>(1);
       break;
 
+    // 读显存
     case 0xC0:
       shape = new CopyVramToCpu(p);
       break;
 
+    // TODO: 复制显存
+    case 0x80:
+      return false;
+
+    // 中断请求
     case 0x1F:
       p.status.irq_on = 1;
       return false;
 
+    // 绘图模式设置 Texpage
     case 0xE1:
       p.status.v = SET_BIT(p.status.v, 0b11'1111'1111, c.parm);
       p.status.text_off = (c.parm >> 11) & 1;
@@ -793,263 +811,324 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       p.dirtyAttr();
       return false;
 
+    // 纹理窗口设置
     case 0xE2:
       p.text_win.v = c.parm;
       p.dirtyAttr();
       return false;
 
+    // 设置绘图区域左上角（X1，Y1）
     case 0xE3: 
       p.draw_tp_lf.v = c.parm;
       p.dirtyAttr();
       return false;
 
+    // 设置绘图区域右下角（X2，Y2）绝对位置
     case 0xE4: 
       p.draw_bm_rt.v = c.parm;
       p.dirtyAttr();
       return false;
 
+    // 设置绘图偏移（X，Y）
     case 0xE5:
       p.draw_offset.v = c.parm;
       p.dirtyAttr();
       return false;
 
+    // 屏蔽位设置
     case 0xE6:
       p.status.mask = c.parm & 1;
       p.status.enb_msk = (c.parm >> 1) & 1;
       p.dirtyAttr();
       return false;
       
+    // 单色三点多边形，不透明
     case 0x20: mirror_case(0x21):
       shape = new Polygon<PolygonVertices<3>, drawTriangles>(1);
       break;
 
+    // 单色三点多边形，半透明
     case 0x22: mirror_case(0x23):
       shape = new Polygon<PolygonVertices<3>, drawTriangles>(0.5);
       break;
-
+       
+    // 单色四点多边形，不透明
     case 0x28: mirror_case(0x29):
       shape = new Polygon<PolygonVertices<4>, drawTriStrip>(1);
       break;
 
+    // 单色四点多边形，半透明
     case 0x2A: mirror_case(0x2B):
       shape = new Polygon<PolygonVertices<4>, drawTriStrip>(0.5);
       break;
 
+    // 带纹理的三点多边形，不透明，混合纹理
     case 0x24:
       shape = new Polygon<PolyTextureVertices<3>, 
                   drawTriangles, MonoColorTextureMixShader>(1);
       break;
 
+    // 带纹理的三点多边形，不透明，原始纹理
     case 0x25:
       shape = new Polygon<PolyTextureVertices<3>, 
                   drawTriangles, TextureOnlyShader>(1);
       break;
 
+    // 带纹理的三点多边形，半透明，混合纹理
     case 0x26:
       shape = new Polygon<PolyTextureVertices<3>, 
                   drawTriangles, MonoColorTextureMixShader>(0.5);
       break;
 
+    // 带纹理的三点多边形，半透明，原始纹理
     case 0x27:
       shape = new Polygon<PolyTextureVertices<3>, 
                   drawTriangles, TextureOnlyShader>(0.5);
       break;
 
+    // 带纹理的四点多边形，不透明，混合纹理
     case 0x2C:
       shape = new Polygon<PolyTextureVertices<4>, 
                   drawTriStrip, MonoColorTextureMixShader>(1);
       break;
 
+    // 带纹理的四点多边形，不透明，原始纹理
     case 0x2D:
       shape = new Polygon<PolyTextureVertices<4>, 
                   drawTriStrip, TextureOnlyShader>(1);
       break;
 
+    // 带纹理的四点多边形，半透明，混合纹理
     case 0x2E:
       shape = new Polygon<PolyTextureVertices<4>, 
                   drawTriStrip, MonoColorTextureMixShader>(0.5);
       break;
 
+    // 带纹理的四点多边形，半透明，原始纹理
     case 0x2F:
       shape = new Polygon<PolyTextureVertices<4>, 
                   drawTriStrip, TextureOnlyShader>(0.5);
       break;
 
+    // 阴影三点多边形，不透明
     case 0x30: mirror_case(0x31):
       shape = new Polygon<ShadedPolyVertices<3>, 
                   drawTriangles, ShadedColorShader>(1);
       break;
 
+    // 阴影三点多边形，半透明
     case 0x32: mirror_case(0x33):
       shape = new Polygon<ShadedPolyVertices<3>, 
                   drawTriangles, ShadedColorShader>(0.5);
       break;
 
+    // 阴影四点多边形，不透明
     case 0x38: mirror_case(0x39):
       shape = new Polygon<ShadedPolyVertices<4>, 
                   drawTriStrip, ShadedColorShader>(1);
       break;
 
+    // 阴影四点多边形，半透明
     case 0x3A: mirror_case(0x3B):
       shape = new Polygon<ShadedPolyVertices<4>, 
                   drawTriStrip, ShadedColorShader>(0.5);
       break;
 
+    // 带阴影的纹理三点多边形，不透明，纹理混合
     case 0x34: mirror_case(0x35):
       shape = new Polygon<ShadedPolyWithTextureVertices<3>,
                   drawTriangles, ShadedColorTextureMixShader>(1);
       break;
 
+    // 带阴影的纹理三点多边形，半透明，纹理混合
     case 0x36: mirror_case(0x37):
       shape = new Polygon<ShadedPolyWithTextureVertices<3>,
                   drawTriangles, ShadedColorTextureMixShader>(0.5);
       break;
 
+    // 带阴影的纹理四点多边形，不透明，纹理混合
     case 0x3C: mirror_case(0x3D):
       shape = new Polygon<ShadedPolyWithTextureVertices<4>,
                   drawTriStrip, ShadedColorTextureMixShader>(1);
       break;
 
+    // 着色纹理四点多边形，半透明，纹理混合
     case 0x3E: mirror_case(0x3F):
       shape = new Polygon<ShadedPolyWithTextureVertices<4>,
                   drawTriStrip, ShadedColorTextureMixShader>(0.5);
       break;
 
+    // 单色线，不透明
     case 0x40:
       shape = new Polygon<MonoLineFixVertices, drawLines, MonoColorShader>(1);
       break;
 
+    // 单色线，半透明
     case 0x42:
       shape = new Polygon<MonoLineFixVertices, drawLines, MonoColorShader>(0.5);
       break;
 
+    // 单色多线，不透明
     case 0x48:
       shape = new Polygon<MonoLineMulVertices, drawLines, MonoColorShader>(1);
       break;
 
+    // 单色多线，半透明
     case 0x4A:
       shape = new Polygon<MonoLineMulVertices, drawLines, MonoColorShader>(0.5);
       break;
 
+    // 阴影线，不透明
     case 0x50: 
       shape = new Polygon<ShadedPolyVertices<2>, drawLines, ShadedColorShader>(1);
       break;
 
+    // 阴影线，半透明
     case 0x52: 
       shape = new Polygon<ShadedPolyVertices<2>, drawLines, ShadedColorShader>(0.5);
       break;
 
+    // 阴影多段线，不透明
     case 0x58:
       shape = new Polygon<ShadedLineMulVertices, drawLines, ShadedColorShader>(1);
       break;
 
+    // 阴影多段线，半透明
+    case 0x5A:
+      shape = new Polygon<ShadedLineMulVertices, drawLines, ShadedColorShader>(0.5);
+      break;
+
+    // 单色矩形（可变大小）（不透明）
     case 0x60:
       shape = new Polygon<SquareVertices<0>, drawTriStrip, MonoColorShader>(1);
       break;
 
+    // 单色矩形（可变大小）（半透明）
     case 0x62:
       shape = new Polygon<SquareVertices<0>, drawTriStrip, MonoColorShader>(0.5);
       break;
 
+    // 单色矩形（1x1）（点）（不透明）
     case 0x68:
       shape = new Polygon<PointVertices, drawPoints, MonoColorShader>(1);
       break;
 
+    // 单色矩形（1x1）（点）（半透明）
     case 0x6A:
       shape = new Polygon<PointVertices, drawPoints, MonoColorShader>(0.5);
       break;
 
+    // 单色矩形（8x8）（不透明）
     case 0x70:
       shape = new Polygon<SquareVertices<7>, drawTriStrip, MonoColorShader>(1);
       break;
 
+    // 单色矩形（8x8）（半透明）
     case 0x72:
       shape = new Polygon<SquareVertices<7>, drawTriStrip, MonoColorShader>(0.5);
       break;
 
+    // 单色矩形（ 16x16）（不透明）
     case 0x78:
       shape = new Polygon<SquareVertices<15>, drawTriStrip, MonoColorShader>(1);
       break;
 
+    // 单色矩形（16x16）（半透明）
     case 0x7A:
       shape = new Polygon<SquareVertices<15>, drawTriStrip, MonoColorShader>(0.5);
       break;
 
+    // 纹理矩形，可变大小，不透明，纹理混合
     case 0x64:
       shape = new Polygon<SquareWithTextureVertices<0>,
                   drawTriStrip, MonoColorTextureMixShader>(1);
       break;
 
+    // 纹理矩形，可变大小，不透明，原始纹理
     case 0x65:
       shape = new Polygon<SquareWithTextureVertices<0>,
                   drawTriStrip, TextureOnlyShader>(1);
       break;
 
+    // 纹理矩形，可变大小，半透明，纹理混合
     case 0x66:
       shape = new Polygon<SquareWithTextureVertices<0>,
                   drawTriStrip, MonoColorTextureMixShader>(0.5);
       break;
 
+    // 纹理矩形，可变大小，半透明，原始纹理
     case 0x67:
       shape = new Polygon<SquareWithTextureVertices<0>,
                   drawTriStrip, TextureOnlyShader>(0.5);
       break;
 
+    // 纹理矩形，1x1（无意义?），不透明，纹理混合
     case 0x6C:
       shape = new Polygon<PointTextVertices,
                   drawPoints, MonoColorTextureMixShader>(1);
       break;
 
+    // 纹理矩形，1x1（无意义），不透明，原始纹理
     case 0x6D:
       shape = new Polygon<PointTextVertices,
                   drawPoints, TextureOnlyShader>(1);
       break;
 
+    // 纹理矩形，1x1（无意义），半透明，纹理混合
     case 0x6E:
       shape = new Polygon<PointTextVertices,
                   drawPoints, MonoColorTextureMixShader>(0.5);
       break;
 
+    // 纹理矩形，1x1（无意义），半透明，原始纹理
     case 0x6F:
       shape = new Polygon<PointTextVertices,
                   drawPoints, TextureOnlyShader>(0.5);
       break;
 
+    // 纹理矩形，8x8，不透明，混合纹理
     case 0x74:
       shape = new Polygon<SquareWithTextureVertices<7>,
                   drawTriStrip, MonoColorTextureMixShader>(1);
       break;
 
+    // 纹理矩形，8x8，不透明，原始纹理
     case 0x75:
       shape = new Polygon<SquareWithTextureVertices<7>,
                   drawTriStrip, TextureOnlyShader>(1);
       break;
 
+    // 带纹理的矩形，8x8，半透明，纹理混合
     case 0x76:
       shape = new Polygon<SquareWithTextureVertices<7>,
                   drawTriStrip, MonoColorTextureMixShader>(0.5);
       break;
 
+    // 带纹理的矩形，8x8，半透明，原始纹理
     case 0x77:
       shape = new Polygon<SquareWithTextureVertices<7>,
                   drawTriStrip, TextureOnlyShader>(0.5);
       break;
 
+    // 带纹理的矩形，16x16，不透明，带纹理混合
     case 0x7C:
       shape = new Polygon<SquareWithTextureVertices<15>,
                   drawTriStrip, MonoColorTextureMixShader>(1);
       break;
 
+    // 带纹理的矩形，16x16，不透明, 原始纹理
     case 0x7D:
       shape = new Polygon<SquareWithTextureVertices<15>,
                   drawTriStrip, TextureOnlyShader>(1);
       break;
 
+    // 带纹理的矩形，16x16，半透明，混合纹理
     case 0x7E:
       shape = new Polygon<SquareWithTextureVertices<15>,
                   drawTriStrip, MonoColorTextureMixShader>(0.5);
       break;
 
+    // 带纹理的矩形，16x16，半透明，原始纹理
     case 0x7F:
       shape = new Polygon<SquareWithTextureVertices<15>,
                   drawTriStrip, TextureOnlyShader>(0.5);
