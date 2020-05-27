@@ -7,9 +7,28 @@
 
 namespace ps1e {
 
+static const u32 X_MASK  = 0x0000'03FF;
+static const u32 Y_MASK  = 0x01FF'0000;
+static const u32 XY_MASK = X_MASK | Y_MASK;
+// gl 在绝对位置上绘制像素, 所以 width+height 需要减去这个数
+static const u32 XY_SUB  = 0x0001'0001;
+static const u32 X_SUB   = 0x0000'0001;
+static const u32 Y_SUB   = 0x0001'0000;
+// x 总是在 16 字节上对齐
+static const u32 offset_limit_x10 = 0x01FF'03F0;
+
+
 // 实际上 mirror_case 的定义与对应的 case 在渲染上有出入
 // 可以用恶魔城进行测试, 进一步确定渲染方式.
 #define mirror_case(x)  case x
+
+
+// w*h 表示 16bit 像素的数量, 返回的长度表示 32bit 缓冲区长度
+// 如果像素位奇数, 则缓冲区长度会多出一个 16bit
+template<class T> static T get_buffer_len(T w, T h) {
+  int l = w * h;
+  return (l >> 1) + (l & 1);
+}
 
 
 class VerticesBase {
@@ -22,13 +41,6 @@ protected:
   const int element;
 
 public:
-  static const u32 X_MASK  = 0x0000'03FF;
-  static const u32 Y_MASK  = 0x01FF'0000;
-  static const u32 XY_MASK = X_MASK | Y_MASK;
-  // gl 在绝对位置上绘制像素, 所以 width+height 需要减去这个数
-  static const u32 XY_SUB  = 0x0001'0001;
-  static const u32 X_SUB   = 0x0000'0001;
-  static const u32 Y_SUB   = 0x0001'0000;
 
   VerticesBase(int ele, int st = 0) : step(st), element(ele) {}
   virtual ~VerticesBase() {}
@@ -323,10 +335,18 @@ protected:
   static const int ElementCount = 4;
   u32 vertices[ElementCount];
 
+  // 用偏移量(H/W) 设置矩形四个顶点
   void update_vertices(u32 offset) {
     vertices[1] = vertices[0] + (X_MASK  & offset);
     vertices[2] = vertices[0] + (Y_MASK  & offset);
     vertices[3] = vertices[0] + (XY_MASK & offset);
+  }
+
+  // 修正顶点位置为绝对坐标
+  void fix_width_height_offset() {
+    vertices[1] -= X_SUB;
+    vertices[2] -= Y_SUB;
+    vertices[3] -= XY_SUB;
   }
 
 public:
@@ -507,8 +527,10 @@ public:
 
 class FillVertices : public SquareVertices<0> {
 private:
-  void align() {
-
+  void align_x10() {
+    vertices[1] &= offset_limit_x10;
+    vertices[2] &= offset_limit_x10;
+    vertices[3] &= offset_limit_x10;
   }
 
 public:
@@ -524,6 +546,8 @@ public:
 
       case 2:
         update_vertices(c);
+        align_x10();
+        fix_width_height_offset();
         break;
     }
     return ++step < 3;
@@ -531,29 +555,17 @@ public:
 };
 
 
-class FillTexture : public ShadedPolyVertices<4> {
+class FillTexture : public IDrawShape {
 private:
-  u32 coord;
-  int buf_length;
   u32* buf;
+  int buf_length;
   GLTexture text;
-  int w, h;
-
-  void update_vertices(u32 offset) {
-    vertices[0] = coord;
-    vertices[2] = vertices[0] + (X_MASK  & offset);
-    vertices[4] = vertices[0] + (Y_MASK  & offset);
-    vertices[6] = vertices[0] + (XY_MASK & offset);
-   
-    vertices[1] = 0x0000'0000;
-    vertices[3] = 0x0000'0001;
-    vertices[5] = 0x0001'0000;
-    vertices[7] = 0x0001'0001;
-  }
+  u32 w, h;
+  u32 x, y;
+  int step;
 
 public:
-  FillTexture() : ShadedPolyVertices(), buf(0) {
-    step = -3;
+  FillTexture() : step(-3), buf(0) {
   }
 
   ~FillTexture() {
@@ -562,13 +574,11 @@ public:
       buf = 0;
     }
   }
-  
-  void setAttr(GLVerticesBuffer& vbo) {
-    GLBufferData vbdata(vbo, vertices, sizeof(vertices));
-    vbdata.uintAttr(0, 1, 2, 0);
-    vbdata.uintAttr(1, 1, 2, 1);
+
+  void draw(GPU& gpu, GLVertexArrays& vao) {
     text.init2px(w, h, buf);
     text.bind();
+    text.copyTo(gpu.useTexture(), 0, 0, x, y, w, h);
   }
 
   bool write(const u32 c) {
@@ -576,17 +586,18 @@ public:
       case -3:
         break;
 
-      case -2:
-        coord = c;
+      case -2: {
+        u32 coord = c & offset_limit_x10;;
+        x = coord & X_MASK;
+        y = (coord & Y_MASK) >> 16;
+        }
         break;
 
       case -1:
         w = (c & X_MASK);
         h = (c & Y_MASK) >> 16;
-        buf_length = (w * h) >> 1;
+        buf_length = get_buffer_len(w, h);
         buf = new u32[buf_length];
-        printf("%x %x-----------------------------\n", c, c-XY_SUB);
-        update_vertices(c);
         break;
 
       default:
@@ -651,7 +662,7 @@ private:
 
 public:
   //TODO: 传输受“掩码”设置影响。
-  ReadVram(int w, int h) : len(((w * h) >> 1) + ((w * h) & 1)) {
+  ReadVram(int w, int h) : len(get_buffer_len(w, h)) {
     data = new u32[len];
   }
 
@@ -701,7 +712,8 @@ private:
 
   void dataReady() {
     gpu.useTexture().bind();
-    GLDrawState::readPsinnerPixel(x, 512-y-2, w, h, reader->getDataPoint());
+    const int reverse_y = VirtualFrameBuffer::Height-1 -y;
+    GLDrawState::readPsinnerPixel(x, reverse_y, w, h, reader->getDataPoint());
     reader->unlock();
   }
 
@@ -714,13 +726,13 @@ public:
         return true;
 
       case 1:
-        x = c & VerticesBase::X_MASK;
-        y = (c & VerticesBase::Y_MASK) >> 16;
+        x = c & X_MASK;
+        y = (c & Y_MASK) >> 16;
         return true;
 
       case 2:
-        w = c & VerticesBase::X_MASK;
-        h = (c & VerticesBase::Y_MASK) >> 16;
+        w = c & X_MASK;
+        h = (c & Y_MASK) >> 16;
         installReader();
         // no break
       default:
@@ -765,6 +777,7 @@ void drawPoints(GLVertexArrays& vao, int elementCount) {
 }
  
 
+ //TODO: 启用绘制范围
 bool GPU::GP0::parseCommand(const GpuCommand c) {
   switch (c.cmd) {
     // GPU NOP
@@ -784,7 +797,7 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     // 写显存
     case 0xA0:
-      shape = new Polygon<FillTexture, drawTriStrip, CopyTextureShader>(1);
+      shape = new FillTexture();
       break;
 
     // 读显存
@@ -792,7 +805,7 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       shape = new CopyVramToCpu(p);
       break;
 
-    // TODO: 复制显存
+    // TODO: 复制显存 glBlitFramebuffer
     case 0x80:
       return false;
 
@@ -820,12 +833,14 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
     // 设置绘图区域左上角（X1，Y1）
     case 0xE3: 
       p.draw_tp_lf.v = c.parm;
+      p.updateDrawScope();
       p.dirtyAttr();
       return false;
 
     // 设置绘图区域右下角（X2，Y2）绝对位置
     case 0xE4: 
       p.draw_bm_rt.v = c.parm;
+      p.updateDrawScope();
       p.dirtyAttr();
       return false;
 
