@@ -193,45 +193,6 @@ enum class ExeCodeTable {
 };
 
 
-typedef u32 GteDataRegisterType;
-
-union Gte {
-  GteDataRegisterType d[32];
-  struct {
-    // r0-r1 Vector 0 (X,Y,Z)
-    GteDataRegisterType vxy0, vz0; 
-    // r2-r3 Vector 1 (X,Y,Z)
-    GteDataRegisterType vxy1, vz1; 
-    // r4-r5 Vector 2 (X,Y,Z)
-    GteDataRegisterType vxy2, vz2; 
-    // r6 4xU8 Color/code value
-    GteDataRegisterType rgbc;      
-    // r7 Average Z value (for Ordering Table)
-    GteDataRegisterType otz;       
-    // r8 16bit Accumulator (Interpolate)
-    GteDataRegisterType ir0;
-    // r9-r11 16bit Accumulator (Vector)
-    GteDataRegisterType ir1, ir2, ir3;
-    // r12-r15 Screen XY-coordinate FIFO  (3 stages)
-    GteDataRegisterType sxy0, sxy1, sxy2, sxyp;
-    // r16-r19 Screen Z-coordinate FIFO   (4 stages)
-    GteDataRegisterType sz0, sz1, sz2, sz3;
-    // r20-r22 Color CRGB-code/color FIFO (3 stages)
-    GteDataRegisterType rgb0, rgb1, rgb2;
-    // Prohibited
-    GteDataRegisterType _res1;
-    // r24 32bit Maths Accumulators (Value)
-    GteDataRegisterType mac0;
-    // r25-27 32bit Maths Accumulators (Vector)
-    GteDataRegisterType mac1, mac2, mac3;
-    // r28-r29 Convert RGB Color (48bit vs 15bit)
-    GteDataRegisterType irgb, orgb;
-    // r30-r31 Count Leading-Zeroes/Ones (sign bits)
-    GteDataRegisterType lzcs, lzcr;
-  };
-};
-
-
 void printSR(Cop0SR sr);
 void printMipsReg(MipsReg&);
 

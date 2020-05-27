@@ -342,18 +342,24 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
           }
           break;
         case 2: 
+          // cop0 没有这个操作
           //r->cfc0(i.R.rt, i.R.rd);
+          error("Cop0 cfc\n");
           return false;
         case 6: 
+          // cop0 没有这个操作
           //r->ctc0(i.R.rt, i.R.rd);
+          error("Cop0 ctc\n");
           return false;
         case 8: 
           switch (i.R.rt) {
             case 0:
               //r->bc0f(i.I.imm)
+              error("Cop0 bcf\n");
               return false;
             case 1:
               //r->bc0t(i.I.imm)
+              error("Cop0 bct\n");
               return false;
           }
           return false;
@@ -363,35 +369,43 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
       break;
 
     case 48: // lwc0
+      // cop0[$t] = [$s + imm];
       //r->lwc0(i.I.rt, i.I.rs, i.I.imm);
       return false;
     case 56: // swc0
+      // [$s + imm] = cop0[$t];
       //r->swc0(i.I.rt, i.I.rs, i.I.imm);
       return false;//TODO: remove
 
     case 18: // cop2 GTE like op 16
       switch (i.R.rs) {
         case 0:
+          // $t = cop2[$d];
           //r->mfc2(i.R.rt, i.R.rd);
           return false;
         case 4:
+          // cop2[$d] = $t;
           //r->mtc2(i.R.rt, i.R.rd);
           return false;
         case 16:
           //r->imm25(i.i & ((1<<25)-1));
           return false;
         case 2: 
+          // control: $t = cop2[$rd]
           //r->cfc2(i.R.rt, i.R.rd);
           return false;
         case 6: 
+          // control: cop2[$rd] = $t
           //r->ctc2(i.R.rt, i.R.rd);
           return false;
         case 8: 
           switch (i.R.rt) {
             case 0:
+              // jump if false
               //r->bc2f(i.I.imm)
               return false;
             case 1:
+              // jump if true
               //r->bc2t(i.I.imm)
               return false;
           }
@@ -402,9 +416,12 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
       return false;
 
     case 50: // lwc2 GTE
+      // cop0[$t] = [$s + imm];
       //r->lwc2(i.I.rt, i.I.rs, i.I.imm);
+      return false;
 
     case 58: // swc2 GTE
+      // [$s + imm] = cop0[$t];
       //r->swc2(i.I.rt, i.I.rs, i.I.imm);
       return false;//TODO: remove
     
