@@ -70,17 +70,6 @@ uniform uint frame_height;
 
 vec4 mix_color(vec4 b, vec4 f) {
   vec4 r;
-  /*switch (int(page >> 5) & 0x03) {
-    default:
-    case 0: r = b * 0.5 + f * 0.5;
-      break;
-    case 1: r = b + f;
-      break;
-    case 2: r = b - f;
-      break;
-    case 3: r = b + f * 0.25;
-      break;
-  }*/
   if (b.rgb == 0) {
     r = f;
   } else {
@@ -109,24 +98,31 @@ vec4 texture_red16(sampler2D text, vec2 coord) {
   return text_pscolor_rgb(red);
 }
 
+uint get_clut_index(sampler2D text, vec2 coord, uint mask, int rol) {
+  uint rm   = (~mask) & 0xFFFFu;
+  uint fx   = uint(coord.x * frame_width);
+  coord.x   = float(fx & mask) / frame_width;
+  uint bit  = (fx & rm) << rol;
+  uint word = uint(texture(text, coord).r * 0xffff);
+  //TODO: bit 顺序正确性需要测试
+  return (word >> bit);
+}
+
+vec2 get_clut_coord(uint clut_index) {
+  uint clut_x = ((clut & 0x3fu) << 4) + uint(clut_index);
+  uint clut_y = ((clut >> 6) & 0x1ffu);
+  return vec2(float(clut_x)/frame_width, float(clut_y)/frame_height);
+}
+
 vec4 texture_mode(sampler2D text, vec2 coord) {
   switch (int(page >> 7) & 0x03) {
-    case 0: // 4bit TODO!
-      int fx     = int(coord.x * frame_width);
-      coord.x    = float(fx & 0xFFFC) / frame_width;
-
-      int word   = int(texture(text, coord).r * 0xffff);
-      int bit    = (fx & 0x03) << 2;
-      int index  = (word >> bit) & 0xF;
-
-      uint clut_x = ((clut & 0x3fu) << 4) + uint(index);
-      uint clut_y = ((clut >> 6) & 0x1ffu);
-      vec2 coord_index = vec2(float(clut_x)/frame_width, 1-float(clut_y)/frame_height);
-      return texture_red16(text, coord_index);
-      //return vec4(float(word)/0xffff, 0, float(bit)/16.0, 1);
+    case 0: // 4bit
+      uint index4 = get_clut_index(text, coord, 0xFFFCu, 2) & 0xFu;
+      return texture_red16(text, get_clut_coord(index4));
       
-    case 1: // 8bit TODO!
-      return vec4(1, 0, 1, 1);
+    case 1: // 8bit
+      uint index8 = get_clut_index(text, coord, 0xFFFEu, 3) & 0xFFu;
+      return texture_red16(text, get_clut_coord(index8));
 
     default:
     case 2: // 16bit
