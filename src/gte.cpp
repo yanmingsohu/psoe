@@ -26,16 +26,6 @@ GteMac::GteMac(GTE& g, GteReg63Error p) : r(g), positive(p) {
 }
 
 
-u32 GteMac::read() {
-  return (s32) v;
-}
-
-
-void GteMac::write(u32 d) {
-  v = (s32)d;
-}
-
-
 GteIR::GteIR(GTE& _r, int bit, GteReg63Error e) : r(_r), Lbit(bit), IRE(e) {
 }
 
@@ -138,16 +128,6 @@ GteZFifo::GteZFifo(GTE& _r) : r(_r) {
 }
 
 
-u32 GteZFifo::read() {
-  return (s16) v;
-}
-
-
-void GteZFifo::write(u32 d) {
-  push(s16(d));
-}
-
-
 void GteZFifo::push(float d) {
   r.sz0.v = r.sz1.v;
   r.sz1.v = r.sz2.v;
@@ -156,12 +136,37 @@ void GteZFifo::push(float d) {
 }
 
 
-GteRgbFifo::GteRgbFifo(GTE& _r) : r(_r) {
+void GteRgb::write(u32 d) {
+  v = d;
 }
 
 
-u32 GteRgbFifo::read() {
+u32 GteRgb::read() {
   return v;
+}
+
+
+u32 GteRgb::r() {
+  return v & 0xff;
+}
+
+
+u32 GteRgb::g() {
+  return (v >> 8) & 0xff;
+}
+
+
+u32 GteRgb::b() {
+  return (v >> 16) & 0xff;
+}
+
+
+u32 GteRgb::code() {
+  return (v >> 24) & 0xff;
+}
+
+
+GteRgbFifo::GteRgbFifo(GTE& _r) : r(_r) {
 }
 
 
@@ -451,7 +456,7 @@ void GTE::write_color_fifo() {
   u32 r = mac1.read() >> 4;
   u32 g = mac2.read() >> 4;
   u32 b = mac3.read() >> 4;
-  u32 c = rgbc.v;
+  u32 code = rgbc.code();
 
   if (r > 0xff) {
     r = 0xff;
@@ -465,7 +470,7 @@ void GTE::write_color_fifo() {
     b = 0xff;
     flag.set(GteReg63Error::B);
   }
-  rgb2.write(r | (g << 8) | (b << 16) | (c << 24));
+  rgb2.write(r | (g << 8) | (b << 16) | (code << 24));
 }
 
 
@@ -516,7 +521,36 @@ void GTE::write_xy_fifo(float x, float y) {
 }
 
 
-float GTE::overflow_h() {
+void GTE::write_ir_mac123(GteCommand c, float m1, float m2, float m3) {
+  if (c.sf) {
+    m1 /= 0x1000;
+    m2 /= 0x1000;
+    m3 /= 0x1000;
+  }
+  write_mac(mac1, m1);
+  write_mac(mac2, m2);
+  write_mac(mac3, m3);
+  write_ir(ir1, m1, c.lm);
+  write_ir(ir2, m2, c.lm);
+  write_ir(ir3, m3, c.lm);
+}
+
+
+void GTE::write_ir_mac123(GteCommand c, GteVec3 v) {
+  write_ir_mac123(c, v.x, v.y, v.z);
+}
+
+
+void GTE::init_reserved_mm(GteMatrix& mm) {
+  mm = {
+     -0x60,   0x60, static_cast<float>(ir0.v),
+    rt.r13, rt.r13, rt.r13,
+    rt.r12, rt.r12, rt.r12,
+  };
+}
+
+
+float GTE::overflow_div1() {
   float r = (( (H.v * 0x20000 / sz3.v) +1) /2);
   if (r > 0x1FFFF) {
     r = 0x1FFFF;
@@ -539,25 +573,12 @@ void GTE::RTPT(GteCommand c) {
 
 
 void GTE::PerspectiveTransform(GteCommand c, GteVectorXY& xy, GteVectorZ& z) {
-  float m1 = (trX.v * 0x1000)+(rt.r11 * xy.fx)+(rt.r12 * xy.fy)+(rt.r13 * z.v);
-  float m2 = (trY.v * 0x1000)+(rt.r21 * xy.fx)+(rt.r22 * xy.fy)+(rt.r23 * z.v);
-  float m3 = (trZ.v * 0x1000)+(rt.r31 * xy.fx)+(rt.r32 * xy.fy)+(rt.r33 * z.v);
-  if (c.sf) {
-    m1 /= 0x1000;
-    m2 /= 0x1000;
-    m3 /= 0x1000;
-    write_z_fifo(m3);
-  } else {
-    write_z_fifo(m3 / 0x1000);
-  }
-  write_mac(mac1, m1);
-  write_mac(mac2, m2);
-  write_mac(mac3, m3);
-  write_ir(ir1, m1, c.lm);
-  write_ir(ir2, m2, c.lm);
-  write_ir(ir3, m3, c.lm);
+  GteVec3 m = mulMatrix(rt, GteVec3(xy, z));
+  m.add((trX.v * 0x1000), (trY.v * 0x1000), (trZ.v * 0x1000));
+  write_ir_mac123(c, m);
+  write_z_fifo(m.z / 0x1000);
 
-  float h = overflow_h();
+  float h = overflow_div1();
   float x = (h * ir1.v + offx.v);
   float y = (h * ir2.v + offy.v);
   write_xy_fifo(x, y);
@@ -574,20 +595,248 @@ void GTE::NCLIP(GteCommand c) {
 }
 
 
-void GTE::OP(GteCommand c) {}
-void GTE::DPCS(GteCommand c) {}
-void GTE::INTPL(GteCommand c) {}
-void GTE::MVMVA(GteCommand c) {}
-void GTE::NCDS(GteCommand c) {}
-void GTE::CDP(GteCommand c) {}
-void GTE::NCDT(GteCommand c) {}
-void GTE::NCCS(GteCommand c) {}
-void GTE::CC(GteCommand c) {}
-void GTE::NCS(GteCommand c) {}
-void GTE::NCT(GteCommand c) {}
-void GTE::SQR(GteCommand c) {}
-void GTE::DCPL(GteCommand c) {}
-void GTE::DPCT(GteCommand c) {}
+void GTE::OP(GteCommand c) {
+  float m1 = ir3.v * rt.r22 - ir2.v * rt.r33;
+  float m2 = ir1.v * rt.r33 - ir3.v * rt.r11;
+  float m3 = ir2.v * rt.r11 - ir1.v * rt.r22;
+  write_ir_mac123(c, m1, m2, m3);
+}
+
+
+void GTE::MVMVA(GteCommand c) {
+  float t1, t2, t3;
+  GteVec3 v;
+  GteMatrix mx;
+
+  switch (static_cast<MVMVA_Trans_Vec>(c.mv_tv)) {
+    case MVMVA_Trans_Vec::tr:
+      t1 = trX.v;
+      t2 = trY.v;
+      t3 = trZ.v;
+      break;
+    case MVMVA_Trans_Vec::bk:
+      t1 = rbk.v;
+      t2 = gbk.v;
+      t3 = bbk.v;
+      break;
+    case MVMVA_Trans_Vec::fc:
+      t1 = rfc.v;
+      t2 = gfc.v;
+      t3 = bfc.v;
+      break;
+    default:
+      t1 = t2 = t3 = 0;
+      break;
+  }
+
+  switch (static_cast<MVMVA_Mul_Vec>(c.mv_mv)) {
+    case MVMVA_Mul_Vec::v0:
+      v = GteVec3(vxy0, vz0);
+      break;
+    case MVMVA_Mul_Vec::v1:
+      v = GteVec3(vxy1, vz1);
+      break;
+    case MVMVA_Mul_Vec::v2:
+      v = GteVec3(vxy2, vz2);
+      break;
+    case MVMVA_Mul_Vec::ir:
+      v = GteVec3(ir1.v, ir2.v, ir3.v);
+      break;
+  }
+
+  switch (static_cast<MVMVA_Mul_Mx>(c.mv_mm)) {
+    case MVMVA_Mul_Mx::color:
+      mx = lcm;
+      break;
+    case MVMVA_Mul_Mx::light:
+      mx = llm;
+      break;
+    case MVMVA_Mul_Mx::rotation:
+      mx = rt;
+      break;
+    case MVMVA_Mul_Mx::reserved:
+      init_reserved_mm(mx);
+      break;
+  }
+
+  write_ir_mac123(c, mulMatrix(mx, v));
+}
+
+
+GteVec3 GTE::mulMatrix(GteMatrix& mm, GteVec3 v) {
+  GteVec3 r;
+  r.x = (mm.r11 * v.x)+(mm.r12 * v.y)+(mm.r13 * v.z);
+  r.y = (mm.r21 * v.x)+(mm.r22 * v.y)+(mm.r23 * v.z);
+  r.z = (mm.r31 * v.x)+(mm.r32 * v.y)+(mm.r33 * v.z);
+  return r;
+}
+
+
+void GTE::normalColor(GteCommand c, GteVec3 v) {
+  GteVec3 m = mulMatrix(llm, v);
+  write_ir_mac123(c, m.x, m.y, m.z);
+  m = mulMatrix(lcm, GteVec3(ir1.v, ir2.v, ir3.v));
+  m.add(rbk.v, gbk.v, bbk.v);
+  write_ir_mac123(c, m.x, m.y, m.z);
+}
+
+
+void GTE::NCS(GteCommand c) {
+  normalColor(c, GteVec3(vxy0, vz0));
+  write_color_fifo();
+}
+
+
+void GTE::NCT(GteCommand c) {
+  normalColor(c, GteVec3(vxy0, vz0));
+  write_color_fifo();
+  normalColor(c, GteVec3(vxy1, vz1));
+  write_color_fifo();
+  normalColor(c, GteVec3(vxy2, vz2));
+  write_color_fifo();
+}
+
+
+void GTE::normalColorDepth(GteCommand c) {
+  float m1 = (rgbc.r() * ir1.v)+(ir0.v * (rfc.v - rgbc.r() * ir1.v));
+  float m2 = (rgbc.g() * ir2.v)+(ir0.v * (gfc.v - rgbc.g() * ir2.v));
+  float m3 = (rgbc.b() * ir3.v)+(ir0.v * (bfc.v - rgbc.b() * ir3.v));
+  write_ir_mac123(c, m1, m2, m3);
+}
+
+
+void GTE::NCDS(GteCommand c) {
+  normalColor(c, GteVec3(vxy0, vz0));
+  normalColorDepth(c);
+  write_color_fifo();
+}
+
+
+void GTE::NCDT(GteCommand c) {
+  normalColor(c, GteVec3(vxy0, vz0));
+  normalColorDepth(c);
+  write_color_fifo();
+
+  normalColor(c, GteVec3(vxy1, vz1));
+  normalColorDepth(c);
+  write_color_fifo();
+
+  normalColor(c, GteVec3(vxy2, vz2));
+  normalColorDepth(c);
+  write_color_fifo();
+}
+
+
+void GTE::normalColorColor(GteCommand c) {
+  float m1 = rgbc.r() * ir1.v;
+  float m2 = rgbc.g() * ir2.v;
+  float m3 = rgbc.b() * ir3.v;
+  write_ir_mac123(c, m1, m2, m3);
+}
+
+
+void GTE::NCCS(GteCommand c) {
+  normalColor(c, GteVec3(vxy0, vz0));
+  normalColorColor(c);
+  write_color_fifo();
+}
+
+
+void GTE::NCCT(GteCommand c) {
+  normalColor(c, GteVec3(vxy0, vz0));
+  normalColorColor(c);
+  write_color_fifo();
+
+  normalColor(c, GteVec3(vxy1, vz1));
+  normalColorColor(c);
+  write_color_fifo();
+
+  normalColor(c, GteVec3(vxy2, vz2));
+  normalColorColor(c);
+  write_color_fifo();
+}
+
+
+void GTE::SQR(GteCommand c) {
+  float m1 = ir1.v * ir1.v;
+  float m2 = ir2.v * ir2.v;
+  float m3 = ir3.v * ir3.v;
+  write_ir_mac123(c, m1, m2, m3);
+}
+
+
+void GTE::CC(GteCommand c) {
+  GteVec3 m = mulMatrix(lcm, GteVec3(ir1.v, ir2.v, ir3.v));
+  m.add(rbk.v, gbk.v, bbk.v);
+  write_ir_mac123(c, m.x, m.y, m.z);
+  normalColorColor(c);
+  write_color_fifo();
+}
+
+
+void GTE::CDP(GteCommand c) {
+  GteVec3 m = mulMatrix(lcm, GteVec3(ir1.v, ir2.v, ir3.v));
+  m.add(rbk.v, gbk.v, bbk.v);
+  write_ir_mac123(c, m.x, m.y, m.z);
+  normalColorDepth(c);
+  write_color_fifo();
+}
+
+
+void GTE::DCPL(GteCommand c) {
+  normalColorDepth(c);
+  write_color_fifo();
+}
+
+
+void GTE::dptchCueColor(GteCommand cmd, GteRgb& cc) {
+  float m1 = cc.r() + ir0.v * (rfc.v - cc.r());
+  float m2 = cc.g() + ir0.v * (gfc.v - cc.g());
+  float m3 = cc.b() + ir0.v * (bfc.v - cc.b());
+  write_ir_mac123(cmd, m1, m2, m3);
+}
+
+
+void GTE::DPCT(GteCommand c) {
+  dptchCueColor(c, rgb0);
+  write_color_fifo();
+  dptchCueColor(c, rgb1);
+  write_color_fifo();
+  dptchCueColor(c, rgb2);
+  write_color_fifo();
+}
+
+
+void GTE::DPCS(GteCommand c) {
+  dptchCueColor(c, rgb0);
+  write_color_fifo();
+}
+
+
+void GTE::INTPL(GteCommand c) {
+  float m1 = ir1.v + ir0.v * (rfc.v - ir1.v);
+  float m2 = ir2.v + ir0.v * (gfc.v - ir2.v);
+  float m3 = ir3.v + ir0.v * (bfc.v - ir3.v);
+  write_color_fifo();
+}
+
+
+void GTE::GPF(GteCommand c) {
+  float m1 = ir0.v * ir1.v;
+  float m2 = ir0.v * ir2.v;
+  float m3 = ir0.v * ir3.v;
+  write_ir_mac123(c, m1, m2, m3);
+  write_color_fifo();
+}
+
+
+void GTE::GPL(GteCommand c) {
+  float m1 = mac1.v + ir0.v * ir1.v;
+  float m2 = mac2.v + ir0.v * ir2.v;
+  float m3 = mac3.v + ir0.v * ir3.v;
+  write_ir_mac123(c, m1, m2, m3);
+  write_color_fifo();
+}
 
 
 void GTE::AVSZ3(GteCommand c) {
@@ -602,11 +851,6 @@ void GTE::AVSZ4(GteCommand c) {
   write_mac0(m);
   write_otz(mac0.v);
 }
-
-
-void GTE::GPF(GteCommand c) {}
-void GTE::GPL(GteCommand c) {}
-void GTE::NCCT(GteCommand c) {}
 
 
 }

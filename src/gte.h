@@ -93,6 +93,21 @@ struct GteFlag {
 };
 
 
+// 没有副作用的原生寄存器
+template<class Save, class Convert>
+struct GteSrcReg {
+  Save v;
+
+  virtual ~GteSrcReg() {}
+  virtual u32 read() { 
+    return static_cast<Convert>(v); 
+  }
+  virtual void write(u32 d) { 
+    v = static_cast<Convert>(d); 
+  }
+};
+
+
 struct GteVectorXY {
   float fx, fy;
 
@@ -101,29 +116,33 @@ struct GteVectorXY {
 };
 
 
-struct GteVectorZ {
-  float v;
-
-  void write(u32 z) { v = (s16) z; }
-  u32 read() { return (s16) v; }
+struct GteVectorZ : public GteSrcReg<float, s16> {
 };
 
 
+//cop2r6  - RGBC  rw|CODE |B    |G    |R    | Color/code
+//cop2r20 - RGB0  rw|CD0  |B0   |G0   |R0   | Characteristic color fifo.
+//cop2r21 - RGB1  rw|CD1  |B1   |G1   |R1   |
+//cop2r22 - RGB2  rw|CD2  |B2   |G2   |R2   |
+//cop2r23 - (RES1)  |                       | Prohibited
 struct GteRgb {
   u32 v;
 
-  void write(u32 r) { v = r; }
-  u32 read() { return v; }
+  virtual ~GteRgb() {}
+  void write(u32 r);
+  u32 read();
+  u32 r();
+  u32 g();
+  u32 b();
+  u32 code();
+  u32 cd() { return code(); };
 };
 
 
-struct GteRgbFifo {
-  u32 v;
+struct GteRgbFifo : public GteRgb {
   GTE& r;
-
   GteRgbFifo(GTE&);
   void write(u32);
-  u32 read();
 };
 
 
@@ -166,25 +185,11 @@ struct GteOrgb {
 };
 
 
-// 没有副作用的原生寄存器
-template<class Save, class Real>
-struct GteSrcReg {
-  Save v;
-
-  u32 read() { return (Real) v; }
-  void write(u32 d) { v = (Real) d; }
-};
-
-
-struct GteMac {
-  double v;
+struct GteMac : public GteSrcReg<double, s32> {
   GTE& r;
   const GteReg63Error positive;
 
   GteMac(GTE&, GteReg63Error);
-  virtual ~GteMac() {}
-  u32 read();
-  void write(u32 d);
 };
 
 
@@ -203,13 +208,10 @@ struct GteSxyFifo {
 };
 
 
-struct GteZFifo {
+struct GteZFifo : public GteSrcReg<float, s16> {
   GTE& r;
-  float v;
 
   GteZFifo(GTE&);
-  u32 read();
-  void write(u32 v);
   void push(float);
 };
 
@@ -267,6 +269,22 @@ struct GteLeadingZeroes {
 
 
 struct GteOTZ : public GteSrcReg<float, u16>  {
+};
+
+
+struct GteFarColor : public GteSrcReg<float, u32> {
+};
+
+
+struct GteVec3 {
+  float x, y, z;
+
+  GteVec3(GteVectorXY& xy, GteVectorZ z) : x(xy.fx), y(xy.fy), z(z.v) {}
+  GteVec3(float a, float b, float c) : x(a), y(b), z(c) {}
+  GteVec3() {}
+  void add(float a, float b, float c) {
+    x += a; y += b; z += c;
+  }
 };
 
 
@@ -394,6 +412,7 @@ private:
 
   void write_ir(GteIR& ir, s32 d, u32 lm);
   void write_ir0(s32 d, u32 lm = 0);
+  // 只设置溢出标志, 不改变溢出数据
   void write_mac(GteMac& mac, float d);
   void write_mac0(float d);
   // 从 mac123 读取, 并写入 fifo
@@ -401,8 +420,22 @@ private:
   void write_z_fifo(float d);
   void write_otz(float d);
   void write_xy_fifo(float x, float y);
+  // 总是写入 mac123/ir123 并且在 c.sf 的时候 ir=mX/0x1000
+  void write_ir_mac123(GteCommand c, float m1, float m2, float m3);
+  void write_ir_mac123(GteCommand c, GteVec3 v);
+
   // (( (H*20000h/SZ3) +1)/2)
-  float overflow_h();
+  float overflow_div1();
+  void normalColor(GteCommand c, GteVec3 v);
+  void normalColorDepth(GteCommand c);
+  void normalColorColor(GteCommand c);
+  void dptchCueColor(GteCommand c, GteRgb&);
+
+  // 计算矩阵和向量的乘积
+  GteVec3 mulMatrix(GteMatrix& mm, GteVec3 v);
+  
+  // 初始化一个奇怪的矩阵
+  void init_reserved_mm(GteMatrix&);
 
 friend struct GteLeadingZeroes;
 friend struct GteIR;
