@@ -307,7 +307,7 @@ void GteLeadingZeroes::write(u32 d) {
 #define GTE_READ_CASE(i, r, _)    case i: return r.read();
 
 
-u32 GTE::read_data(const u32 i) {
+u32 GTE::read_data(const u8 i) {
   switch (i) {
     GTE_DATA_REG_LIST(GTE_READ_CASE, 0)
     default:
@@ -317,7 +317,7 @@ u32 GTE::read_data(const u32 i) {
 }
 
 
-void GTE::write_data(const u32 i, const u32 d) {
+void GTE::write_data(const u8 i, const u32 d) {
   switch (i) {
     GTE_DATA_REG_LIST(GTE_WRITE_CASE, d)
     default:
@@ -326,7 +326,7 @@ void GTE::write_data(const u32 i, const u32 d) {
 }
 
 
-u32 GTE::read_ctrl(const u32 i) {
+u32 GTE::read_ctrl(const u8 i) {
   switch (i) {
     GTE_CTRL_REG_LIST(GTE_READ_CASE, 0)
     default:
@@ -336,7 +336,7 @@ u32 GTE::read_ctrl(const u32 i) {
 }
 
 
-void GTE::write_ctrl(const u32 i, const u32 d) {
+void GTE::write_ctrl(const u8 i, const u32 d) {
   switch (i) {
     GTE_CTRL_REG_LIST(GTE_WRITE_CASE, d)
     default:
@@ -386,6 +386,11 @@ bool GTE::execute(const GteCommand c) {
 }
 
 
+u32 GTE::read_flag() {
+  return flag.v;
+}
+
+
 void GTE::write_ir(GteIR& ir, s32 v, u32 lm) {
   if (lm) {
     if (v < 0) {
@@ -420,7 +425,7 @@ void GTE::write_ir0(s32 v, u32) {
 }
 
 
-void GTE::write_mac(GteMac& mac, double d) {
+void GTE::write_mac(GteMac& mac, float d) {
   if (d > GteOF43) {
     flag.set(mac.positive);
   }
@@ -431,7 +436,7 @@ void GTE::write_mac(GteMac& mac, double d) {
 }
 
 
-void GTE::write_mac0(double d) {
+void GTE::write_mac0(float d) {
   if (d > GteOF31) {
     flag.set(mac0.positive);
   }
@@ -534,10 +539,9 @@ void GTE::RTPT(GteCommand c) {
 
 
 void GTE::PerspectiveTransform(GteCommand c, GteVectorXY& xy, GteVectorZ& z) {
-  double tr = (trX.v * 0x1000);
-  double m1 = tr +(rt.r11 * xy.fx)+(rt.r12 * xy.fy)+(rt.r13 * z.v);
-  double m2 = tr +(rt.r21 * xy.fx)+(rt.r22 * xy.fy)+(rt.r23 * z.v);
-  double m3 = tr +(rt.r31 * xy.fx)+(rt.r32 * xy.fy)+(rt.r33 * z.v);
+  float m1 = (trX.v * 0x1000)+(rt.r11 * xy.fx)+(rt.r12 * xy.fy)+(rt.r13 * z.v);
+  float m2 = (trY.v * 0x1000)+(rt.r21 * xy.fx)+(rt.r22 * xy.fy)+(rt.r23 * z.v);
+  float m3 = (trZ.v * 0x1000)+(rt.r31 * xy.fx)+(rt.r32 * xy.fy)+(rt.r33 * z.v);
   if (c.sf) {
     m1 /= 0x1000;
     m2 /= 0x1000;
@@ -554,13 +558,55 @@ void GTE::PerspectiveTransform(GteCommand c, GteVectorXY& xy, GteVectorZ& z) {
   write_ir(ir3, m3, c.lm);
 
   float h = overflow_h();
-  float x = (h * ir1.v + offx.v) / 0x10000;
-  float y = (h * ir2.v + offy.v) / 0x10000;
+  float x = (h * ir1.v + offx.v);
+  float y = (h * ir2.v + offy.v);
   write_xy_fifo(x, y);
 
   write_mac0(h * dqa.v + dqb.v);
-  write_ir0(mac0.v / 0x1000);
+  write_ir0(mac0.v);
 }
+
+
+void GTE::NCLIP(GteCommand c) {
+  float m = (sxy0.fx * sxy1.fy)+(sxy1.fx * sxy2.fy)+(sxy2.fx * sxy0.fy)
+           -(sxy0.fx * sxy2.fy)-(sxy1.fx * sxy0.fy)-(sxy2.fx * sxy1.fy);
+  write_mac0(m);
+}
+
+
+void GTE::OP(GteCommand c) {}
+void GTE::DPCS(GteCommand c) {}
+void GTE::INTPL(GteCommand c) {}
+void GTE::MVMVA(GteCommand c) {}
+void GTE::NCDS(GteCommand c) {}
+void GTE::CDP(GteCommand c) {}
+void GTE::NCDT(GteCommand c) {}
+void GTE::NCCS(GteCommand c) {}
+void GTE::CC(GteCommand c) {}
+void GTE::NCS(GteCommand c) {}
+void GTE::NCT(GteCommand c) {}
+void GTE::SQR(GteCommand c) {}
+void GTE::DCPL(GteCommand c) {}
+void GTE::DPCT(GteCommand c) {}
+
+
+void GTE::AVSZ3(GteCommand c) {
+  float m = zsf3.v * (sz1.v + sz2.v + sz3.v);
+  write_mac0(m);
+  write_otz(mac0.v);
+}
+
+
+void GTE::AVSZ4(GteCommand c) {
+  float m = zsf3.v * (sz0.v + sz1.v + sz2.v + sz3.v);
+  write_mac0(m);
+  write_otz(mac0.v);
+}
+
+
+void GTE::GPF(GteCommand c) {}
+void GTE::GPL(GteCommand c) {}
+void GTE::NCCT(GteCommand c) {}
 
 
 }
