@@ -805,6 +805,7 @@ private:
   const MipsReg& reg;
   const u32& cpc;
   u32 pc;
+  u32 debug_pc = 0;
 
 public:
   DisassemblyMips(R3000A& im) : bus(im.bus), reg(im.reg), cpc(im.pc), pc(im.pc) {}
@@ -819,6 +820,14 @@ public:
   void decode(int offset) {
     pc = cpc + (offset << 2);
     mips_decode(bus.read32(pc), this);
+  }
+
+  void setInterruptPC(u32 dpc) {
+    debug_pc = dpc;
+  }
+
+  bool isDebugInterrupt() {
+    return debug_pc == cpc;
   }
 
   void nop() const {

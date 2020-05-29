@@ -272,6 +272,7 @@ protected:
   void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) override;
   // 按照链表顺序加载绘制的命令
   void dma_order_list(psmem addr) override;
+  void dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) override;
 
 public:
   GPU(Bus& bus);

@@ -226,7 +226,7 @@ out vec4 oColor;
 out vec2 oCoord;
 
 void main() {
-  oColor = color_ps2gl(ps_color, 80.0h); 
+  oColor = color_ps2gl(ps_color, 80.0f); 
   oCoord = to_textcoord(coord, page, textwin);
   gl_Position = vec4(get_x(pos), get_y(pos), 0, 1.0);
 }

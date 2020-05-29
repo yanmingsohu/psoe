@@ -165,12 +165,26 @@ void GPU::dma_order_list(psmem addr) {
 void GPU::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
   std::lock_guard<std::recursive_mutex> guard(for_draw_queue);
   //printf("COPY ram go GPU begin:%x %dbyte\n", addr, bytesize);
-  inc = inc *4;
-  for (int i = 0; i < bytesize; i += 4) {
+  const int step = inc << 2;
+  const int len = bytesize >> 2;
+
+  for (int i = 0; i < len; ++i) {
     u32 d = bus.read32(addr);
     //debug("CC %x %x\t", addr, d);
     gp0.write(d);
-    addr += inc;
+    addr += step;
+  }
+}
+
+
+void GPU::dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) {
+  std::lock_guard<std::recursive_mutex> guard(for_read_queue);
+  const int step = inc << 2;
+  const int len = bytesize >> 2;
+
+  for (int i = 0; i < len; ++i) {
+    bus.write32(addr, gp0.read());
+    addr += step;
   }
 }
 

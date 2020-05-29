@@ -45,11 +45,23 @@ static void test_mips_inter() {
 }
 
 
+static bool inputHexVal(const char* msg, u32& d) {
+  printf(msg);
+  if (scanf("%x", &d)) {
+    return true;
+  } else {
+    printf("\rFail Value\n");
+    while (getchar() != '\n');
+    return false;
+  }
+}
+
+
 void debug(R3000A& cpu, Bus& bus) {
   DisassemblyMips disa(cpu);
   int ext_count = 0;
   int show_code = 10;
-  int counter = 0;
+  u32 counter = 0;
   u32 address = 0;
   //t.set_int_exc_point(0xbfc00404);
   //cpu.set_data_rw_point(0x0011'f854, 0x00ff'ffff);
@@ -67,17 +79,23 @@ void debug(R3000A& cpu, Bus& bus) {
     --show_code;
     ++counter;
 
-    if (cpu.exception_counter || ext_stop) {
+    if (cpu.exception_counter) {
+      info("Exception<%d> %d\n", ext_count, counter);
+      ext_count += cpu.exception_counter;
+      cpu.exception_counter = 0;
+      // 打印前后 5 条指令
+      for (int i=-5; i<0; ++i) disa.decode(i);
+      show_code = 5;
+    }
+
+    if (ext_stop || disa.isDebugInterrupt()) {
       if (show_code < 0) {
         for (int i = 30; i > 0; --i) {
           disa.decode(-i);
         }
       }
-
-      ext_count += cpu.exception_counter;
-      cpu.exception_counter = 0;
         
-      info("Exception %d, %d >>", ext_count, counter);
+      info("CPU <%d> %d >>", ext_count, counter);
       int ch = _getch();
       printf("\r                                     \r");
 
@@ -105,12 +123,16 @@ void debug(R3000A& cpu, Bus& bus) {
           break;
 
         case 'a':
-          printf("Address HEX:");
-          if (scanf("%x", &address)) {
+          if (inputHexVal("Address HEX:", address)) {
             bus.show_mem_console(address, 0x60);
+          }
+          break;
+
+        case 'd':
+          if (inputHexVal("Stop Address Hex:", address)) {
+            disa.setInterruptPC(address);
           } else {
-            printf("\rFail Address Value\n");
-            while (getchar() != '\n');
+            disa.setInterruptPC(0);
           }
           break;
 
