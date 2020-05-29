@@ -356,13 +356,14 @@ private:
 public:
   GTE();
 
-  void write_data(const u32 index, const u32 data);
-  u32 read_data(const u32 index);
+  void write_data(const u8 reg_index, const u32 data);
+  u32 read_data(const u8 reg_index);
 
-  void write_ctrl(const u32 index, const u32 data);
-  u32 read_ctrl(const u32 index);
+  void write_ctrl(const u8 reg_index, const u32 data);
+  u32 read_ctrl(const u8 reg_index);
 
   bool execute(const GteCommand c);
+  u32 read_flag();
 
 private:
   void RTPS(GteCommand);
@@ -393,8 +394,8 @@ private:
 
   void write_ir(GteIR& ir, s32 d, u32 lm);
   void write_ir0(s32 d, u32 lm = 0);
-  void write_mac(GteMac& mac, double d);
-  void write_mac0(double d);
+  void write_mac(GteMac& mac, float d);
+  void write_mac0(float d);
   // 从 mac123 读取, 并写入 fifo
   void write_color_fifo();
   void write_z_fifo(float d);

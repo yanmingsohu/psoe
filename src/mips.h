@@ -7,6 +7,8 @@ namespace ps1e {
 
 typedef u32 mips_instruction;
 typedef u8  mips_reg;
+typedef u8  gte_dr;
+typedef u8  gte_cr;
 
 
 #pragma pack(1)
@@ -46,14 +48,14 @@ union instruction_st {
 // 如果指令解析出错返回 false
 //
 template<class InstructionReceiver>
-bool mips_decode(mips_instruction op, InstructionReceiver* r) {
-  instruction_st i(op);
-
-  if (op == 0) {
+bool mips_decode(const instruction_st i, InstructionReceiver* r) {
+  //instruction_st i(op);
+  if (i.i == 0) {
     r->nop();
     return true;
   }
 
+  // [default:] 返回 false, 除此之外应该 break.
   switch (i.R.op) {
     case 0:
       switch (i.R.ft) {
@@ -168,8 +170,7 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
           r->brk(i.J.jt >> 6);
           break;
 
-        default:
-          return false;
+        default: return false;
       }
       break;
 
@@ -308,8 +309,7 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
           r->bltzal(i.I.rs, i.I.imm);
           break;
 
-        default:
-          return false;
+        default: return false;
       }
       break;
 
@@ -333,14 +333,21 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
           // cop0[$d] = $t;
           r->mtc0(i.R.rt, i.R.rd);
           break;
+
         case 16:
           switch (i.R.ft) {
-            case 16:
+            case 0x10:
               // cop0.exl = 0; pc = epc; 
               r->rfe();
               break;
+            //case 0x1: TLBR
+            //case 0x2: TLBWI
+            //case 0x6: TLBWR
+            //case 0x8: TLBP
+            default: return false;
           }
           break;
+
         case 2: 
           // cop0 没有这个操作
           //r->cfc0(i.R.rt, i.R.rd);
@@ -351,6 +358,7 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
           //r->ctc0(i.R.rt, i.R.rd);
           error("Cop0 ctc\n");
           return false;
+
         case 8: 
           switch (i.R.rt) {
             case 0:
@@ -361,18 +369,19 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
               //r->bc0t(i.I.imm)
               error("Cop0 bct\n");
               return false;
+            default: return false;
           }
-          return false;
-        default:
-          return false;
+          break;
+
+        default: return false;
       }
       break;
 
-    case 48: // lwc0
+    case 48: // lwc0 !!!
       // cop0[$t] = [$s + imm];
       //r->lwc0(i.I.rt, i.I.rs, i.I.imm);
       return false;
-    case 56: // swc0
+    case 56: // swc0 !!!
       // [$s + imm] = cop0[$t];
       //r->swc0(i.I.rt, i.I.rs, i.I.imm);
       return false;//TODO: remove
@@ -381,49 +390,53 @@ bool mips_decode(mips_instruction op, InstructionReceiver* r) {
       switch (i.R.rs) {
         case 0:
           // $t = cop2[$d];
-          //r->mfc2(i.R.rt, i.R.rd);
-          return false;
+          r->mfc2(i.R.rt, i.R.rd);
+          break;
         case 4:
           // cop2[$d] = $t;
-          //r->mtc2(i.R.rt, i.R.rd);
-          return false;
-        case 16:
-          //r->imm25(i.i & ((1<<25)-1));
-          return false;
+          r->mtc2(i.R.rt, i.R.rd);
+          break;
         case 2: 
           // control: $t = cop2[$rd]
-          //r->cfc2(i.R.rt, i.R.rd);
-          return false;
+          r->cfc2(i.R.rt, i.R.rd);
+          break;
         case 6: 
           // control: cop2[$rd] = $t
-          //r->ctc2(i.R.rt, i.R.rd);
-          return false;
+          r->ctc2(i.R.rt, i.R.rd);
+          break;
+
         case 8: 
           switch (i.R.rt) {
             case 0:
-              // jump if false
-              //r->bc2f(i.I.imm)
-              return false;
+              // jump if flag false
+              r->bc2f(i.I.imm);
+              break;
             case 1:
-              // jump if true
-              //r->bc2t(i.I.imm)
-              return false;
+              // jump if flag true
+              r->bc2t(i.I.imm);
+              break;
+            default: return false;
+          }
+          break;
+
+        default: 
+          if (i.R.rs & 0x10) {
+            r->cmd2(i.i & 0x03FF'FFFF);
+            break;
           }
           return false;
-        default:
-          return false;
       }
-      return false;
+      break;
 
-    case 50: // lwc2 GTE
+    case 50: 
       // cop0[$t] = [$s + imm];
-      //r->lwc2(i.I.rt, i.I.rs, i.I.imm);
-      return false;
+      r->lwc2(i.I.rt, i.I.rs, i.I.imm);
+      break;
 
-    case 58: // swc2 GTE
+    case 58: 
       // [$s + imm] = cop0[$t];
-      //r->swc2(i.I.rt, i.I.rs, i.I.imm);
-      return false;//TODO: remove
+      r->swc2(i.I.rt, i.I.rs, i.I.imm); 
+      break;
     
     case 17: // cop1 not use
     case 49: // lwc1 not use

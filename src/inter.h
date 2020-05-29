@@ -4,6 +4,7 @@
 #include "mips.h"
 #include "mem.h"
 #include "bus.h"
+#include "gte.h"
 
 namespace ps1e {
 
@@ -13,6 +14,7 @@ private:
   Bus& bus;
   MipsReg reg;
   Cop0Reg cop0;
+  GTE gte;
   u32 pc;
   u32 hi;
   u32 lo;
@@ -607,30 +609,6 @@ public:
     pc += 4;
   }
 
-  void mfc0(mips_reg t, mips_reg d) {
-    reg.u[t] = cop0.r[d];
-    pc += 4;
-  }
-
-  void mtc0(mips_reg t, mips_reg d) {
-    switch (d) {
-      case COP0_CAUSE_REG_IDX:
-        cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_CAUSE_RW_MASK);
-        break;
-      case COP0_DCIC_REG_INDEX:
-        cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_DCIC_WRITE_MASK);
-        break;
-      case COP0_SR_REG_IDX:
-        cop0.r[d] = reg.u[t];
-        bus.set_used_dcache(cop0.sr.isc);
-        break;
-      default:
-        cop0.r[d] = reg.u[t];
-        break;
-    }
-    pc += 4;
-  }
-
   // i 在指令解码时被限制到 5 位
   void sll(mips_reg d, mips_reg t, u32 i) {
     reg.u[d] = reg.u[t] << i;
@@ -673,6 +651,93 @@ public:
   void rfe() {
     u32 sr = (COP0_SR_RFE_SHIFT_MASK & cop0.sr.v) >> 2;
     cop0.sr.v = (COP0_SR_RFE_RESERVED_MASK & cop0.sr.v) | sr;
+  }
+
+  void mfc0(mips_reg t, mips_reg d) {
+    reg.u[t] = cop0.r[d];
+    pc += 4;
+  }
+
+  void mtc0(mips_reg t, mips_reg d) {
+    switch (d) {
+      case COP0_CAUSE_REG_IDX:
+        cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_CAUSE_RW_MASK);
+        break;
+      case COP0_DCIC_REG_INDEX:
+        cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_DCIC_WRITE_MASK);
+        break;
+      case COP0_SR_REG_IDX:
+        cop0.r[d] = reg.u[t];
+        bus.set_used_dcache(cop0.sr.isc);
+        break;
+      default:
+        cop0.r[d] = reg.u[t];
+        break;
+    }
+    pc += 4;
+  }
+
+  void mfc2(mips_reg t, gte_dr d) {
+    reg.u[t] = gte.read_data(d);
+    pc += 4;
+  }
+
+  void mtc2(mips_reg t, gte_dr d) {
+    gte.write_data(d, reg.u[t]);
+    pc += 4;
+  }
+
+  void cfc2(mips_reg t, gte_cr d) {
+    reg.u[t] = gte.read_ctrl(d);
+    pc += 4;
+  }
+
+  void ctc2(mips_reg t, gte_cr d) {
+    gte.write_ctrl(d, reg.u[t]);
+    pc += 4;
+  }
+
+  void bc2f(u32 imm) {
+    if (!gte.read_flag()) {
+      j(imm);
+    }
+  }
+
+  void bc2t(u32 imm) {
+    if (gte.read_flag()) {
+      j(imm);
+    }
+  }
+
+  void lwc2(gte_dr t, mips_reg s, u32 i) {
+    u32 addr = reg.u[s] + i;
+    if (addr & 0b11) {
+      exception(ExeCodeTable::ADEL, true);
+      return;
+    }
+    if (check_data_read_break(addr)) {
+      return;
+    }
+    gte.write_data(t, bus.read32(addr));
+    pc += 4;
+  }
+
+  void swc2(gte_dr t, mips_reg s, u32 i) {
+    u32 addr = reg.u[s] + i;
+    if (addr & 0b11) {
+      exception(ExeCodeTable::ADEL, true);
+      return;
+    }
+    if (check_data_read_break(addr)) {
+      return;
+    }
+    bus.write32(addr, gte.read_data(t));
+    pc += 4;
+  }
+
+  void cmd2(u32 op) {
+    pc += 4;
+    gte.execute(op);
   }
  
 private:
@@ -1004,8 +1069,58 @@ public:
     nn("Rfe");
   }
 
+  void mfc2(mips_reg t, gte_dr d) {
+    gm("MFC2", t, '<', d);
+  }
+
+  void mtc2(mips_reg t, gte_dr d) {
+    gm("MTC2", t, '>', d);
+  }
+
+  void cfc2(mips_reg t, gte_cr d) {
+    gm("CFC2", t, '<', d + 32);
+  }
+
+  void ctc2(mips_reg t, gte_cr d) {
+    gm("CTC2", t, '>', d + 32);
+  }
+
+  void bc2f(u32 i) {
+    jj("BC2F", i);
+  }
+
+  void bc2t(u32 imm) {
+    jj("BC2T", imm);
+  }
+
+  void lwc2(gte_dr t, mips_reg s, u32 i) {
+    gw("LWC2", t, s, i);
+  }
+
+  void swc2(gte_dr t, mips_reg s, u32 i) {
+    gw("SWC2", t, s, i);
+  }
+
+  void cmd2(u32 op) {
+    gc("CMD2", op);
+  }
+
 private:
 #define DBG_HD "%08x | %08x \x1b[35m%6s \033[0m"
+
+  void gm(char const* iname, mips_reg t, char dir, gte_dr d) const {
+    warn(DBG_HD "H/L, $%s %c $cop2.r%02d \t\t \x1b[1;30m# $%s=%x, \n", 
+      pc, bus.read32(pc), iname, rname(t), dir, d, rname(t), reg.u[t]);
+  }
+
+  void gw(char const* iname, gte_dr t, mips_reg s, u32 i) const {
+    warn(DBG_HD "H/L, $cop2.r%02d, $%s, %08x \t\t \x1b[1;30m# $%s=%x, [<<2]=%08x \n", 
+      pc, bus.read32(pc), iname, t, rname(s), i, rname(s), reg.u[s], i<<2);
+  }
+
+  void gc(char const* iname, u32 op) {
+    warn(DBG_HD "%08x [1;30m\n", pc, bus.read32(pc), iname, op);
+  }
 
   void rx(char const* iname, mips_reg s, mips_reg t) const {
     debug(DBG_HD "H/L, $%s, $%s \t\t \x1b[1;30m# $%s=%x, $%s=%x\n", 
