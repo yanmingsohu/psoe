@@ -68,6 +68,7 @@ public:
   GLVertexArrays();
   ~GLVertexArrays();
   void init();
+  void release();
   void bind();
   void unbind();
   void setColor(u32 ps_color);
@@ -89,6 +90,7 @@ public:
   GLVerticesBuffer();
   ~GLVerticesBuffer();
   void init(GLVertexArrays&);
+  void release();
   void bind();
   void unbind();
 };
@@ -102,6 +104,7 @@ public:
   GLFrameBuffer();
   ~GLFrameBuffer();
   void init(int width, int height);
+  void release();
   void bind();
   void unbind();
   int width() { return w; }
@@ -139,6 +142,7 @@ public:
   void init(int w, int h, void* pixeldata);
   // pixeldata 应使用 GL_UNSIGNED_SHORT_5_6_5 格式, 这是 ps 的纹理格式
   void init2px(int w, int h, void* pixeldata);
+  void release();
   void bind();
   void unbind();
   // 默认为 CLAMP_TO_EDGE 模式
@@ -214,6 +218,15 @@ public:
   
   // 读取 gl 显存到缓冲区, 缓冲区是 32bit RGBA 格式, 长度 w*h
   static void readPsinnerPixel(int x, int y, int w, int h, u32* data);
+};
+
+
+class LocalEvents {
+public:
+
+  LocalEvents();
+  // 用来处理系统(窗口)消息, 必须在主线程调用
+  void systemEvents();
 };
 
 

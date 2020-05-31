@@ -3,7 +3,6 @@
 #include <list>
 #include <mutex>
 
-
 #include "util.h"
 #include "dma.h"
 #include "bus.h"
@@ -198,7 +197,9 @@ private:
 public:
   VirtualFrameBuffer(int _multiple =1);
   ~VirtualFrameBuffer();
-  void init();
+  void init(GpuDataRange& screen);
+  // 设置显示范围和屏幕分辨率
+  void setSize(GpuDataRange& screen, GpuDataRange& scope);
   void drawShape();
   void drawScreen();
   GpuDataRange& size();

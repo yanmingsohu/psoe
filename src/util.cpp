@@ -10,6 +10,7 @@
 
 #if defined(LINUX) || defined(MACOS)
 #include <sys/mman.h>
+#include <sys/types.h>
 #include <unistd.h>
 #elif defined(WIN_NT)
 #include <windows.h>
@@ -256,6 +257,15 @@ void print_code(const char* src) {
   } else {
     printf(MAGENTA("%4d |")" \n", line);
   }
+}
+
+
+size_t this_thread_id() {
+#if defined(LINUX) || defined(MACOS)
+  return gettid();
+#elif defined(WIN_NT)
+  return GetCurrentThreadId();
+#endif
 }
 
 

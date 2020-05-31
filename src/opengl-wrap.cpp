@@ -47,16 +47,23 @@ OpenGLScope::~OpenGLScope() {
 
 
 void GLVertexArrays::init() {
+  release();
   glGenVertexArrays(1, &vao);
 }
 
+void GLVertexArrays::release() {
+  if (vao) {
+    glDeleteVertexArrays(1, &vao);
+    vao = 0;
+  }
+}
 
 GLVertexArrays::GLVertexArrays() : vao(0) {
 }
 
 
 GLVertexArrays::~GLVertexArrays() {
-  if (vao) glDeleteVertexArrays(1, &vao);
+  release();
 }
 
 
@@ -119,12 +126,21 @@ GLVerticesBuffer::GLVerticesBuffer() : vbo(0) {
 
 void GLVerticesBuffer::init(GLVertexArrays& vao) {
   vao.bind();
+  release();
   glGenBuffers(1, &vbo);
 }
 
 
+void GLVerticesBuffer::release() {
+  if (vbo) {
+    glDeleteBuffers(1, &vbo);
+    vbo = 0;
+  }
+}
+
+
 GLVerticesBuffer::~GLVerticesBuffer() {
-  if (vbo) glDeleteBuffers(1, &vbo);
+  release();
 }
 
 
@@ -143,14 +159,23 @@ GLFrameBuffer::GLFrameBuffer() : fbo(0), w(0), h(0) {
 
 
 GLFrameBuffer::~GLFrameBuffer() {
-  glDeleteFramebuffers(1, &fbo);
+  release();
 }
 
 
 void GLFrameBuffer::init(int width, int height) {
+  release();
   glGenFramebuffers(1, &fbo);
   w = width;
   h = height;
+}
+
+
+void GLFrameBuffer::release() {
+  if (fbo) {
+    glDeleteFramebuffers(1, &fbo);
+    fbo = 0;
+  }
 }
 
 
@@ -207,7 +232,7 @@ GLTexture::GLTexture() : text(0) {
 
 
 GLTexture::~GLTexture() {
-  if (text) glDeleteTextures(1, &text);
+  release();
 }
 
 
@@ -220,6 +245,7 @@ void GLTexture::init(GLFrameBuffer& fb, void* pixeldata) {
 
 
 void GLTexture::init(int w, int h, void* pixeldata) {
+  release();
   glGenTextures(1, &text);
   bind();
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 
@@ -234,6 +260,7 @@ void GLTexture::init(int w, int h, void* pixeldata) {
 // | 15 | 14 - - - 10 | 9 - - - 5 | 4 - - - 0 |
 // | S  |      B      |     G     |     R     |
 void GLTexture::init2px(int w, int h, void* pixeldata) {
+  release();
   glGenTextures(1, &text);
   bind();
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 
@@ -244,6 +271,13 @@ void GLTexture::init2px(int w, int h, void* pixeldata) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
+
+void GLTexture::release() {
+  if (text) {
+    glDeleteTextures(1, &text);
+    text = 0;
+  }
+}
 
 void GLDrawState::readPsinnerPixel(int x, int y, int w, int h, u32* data) {
   glReadPixels(x, y, w, h, GL_RED, GL_UNSIGNED_SHORT, data);
@@ -509,6 +543,16 @@ void GLDrawState::setScissorEnable(bool enable) {
   } else {
     glDisable(GL_SCISSOR_TEST);
   }
+}
+
+
+void LocalEvents::systemEvents() {
+  glfwPollEvents();
+}
+
+
+LocalEvents::LocalEvents() {
+  info("System Event Thread ID:%x\n", this_thread_id());
 }
 
 

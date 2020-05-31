@@ -7,7 +7,7 @@ WIP
 
 * [ ] Run a game
 * [ ] Run bios
-* [ ] Run soming
+* [x] Run soming
 * [ ] Complete the core
   * [ ] CPU
     * [ ] Interpreter
@@ -15,14 +15,16 @@ WIP
       * [x] boot bios
     * [ ] asmjit
   * [ ] DMA
-    * [ ] look like working
+    * [x] look like working
     * [ ] Working on Thread
   * [ ] GPU
     * [x] Display soming
     * [x] Display Bios Logo
-    * [ ] Working on Thread
+    * [x] Working on Thread
     * [ ] Use AI to enhance textures ?!
   * [ ] GTE
+    * [*] working
+    * [ ] test
   * [ ] SPU
     * [ ] Speak out
     * [ ] Working on Thread
@@ -39,10 +41,11 @@ WIP
     * [ ] SIO
     * [ ] Timer
   * [ ] BIOS
+    * [x] Show logo
     * [ ] PS Native bios
     * [ ] Homemade bios
   * [ ] Multi-platform
-    * [ ] Windows
+    * [x] Windows
     * [ ] Mac
     * [ ] linux
     * [ ] x86-64
@@ -55,11 +58,11 @@ WIP
 * [Sound API](https://github.com/thestk/rtaudio)
 * [Sound resampler](https://github.com/avaneev/r8brain-free-src)
 * [Graphics Mathematics](http://eigen.tuxfamily.org/index.php?title=Main_Page)
-* [Sound API](https://github.com/jarikomppa/soloud) @
-* [OpenGL GUI](https://github.com/wjakob/nanogui) @
+* [Sound API](https://github.com/jarikomppa/soloud) %
+* [OpenGL GUI](https://github.com/wjakob/nanogui) %
 
   ? May be removed  
-  @ not install
+  % not install
 
 
 # Helpful website

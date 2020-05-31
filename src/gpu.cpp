@@ -50,7 +50,7 @@ void GPU::initOpenGL() {
   ds.setDepthTest(true);
   ds.setBlend(true);
 
-  vram.init();
+  vram.init(screen);
   frame = vram.size();
 
   // 必须释放 gl 上下文, 另一个线程才能绑定.
@@ -94,6 +94,7 @@ void GPU::gpu_thread() {
   u32 frames = 0;
   glfwMakeContextCurrent(glwindow);
   GLVertexArrays vao;
+  info("GPU Thread ID:%x\n", this_thread_id());
 
   while (!glfwWindowShouldClose(glwindow)) {
     vram.drawShape();
@@ -121,7 +122,6 @@ void GPU::gpu_thread() {
     }
 
     glfwSwapBuffers(glwindow);
-    glfwPollEvents();
     //debug("\r\t\t\t\t\t\t%d, %f\r", ++frames, glfwGetTime());
   }
 }
@@ -206,38 +206,17 @@ void GPU::enableDrawScope(bool enable) {
 }
 
 
-static void initBoxVertices(float* vertices) {
-  float v[] = {
-    -1.0f,  1.0f,     0.0f, 1.0f,
-    -1.0f, -1.0f,     0.0f, 0.0f,
-     1.0f, -1.0f,     1.0f, 0.0f,
-
-    -1.0f,  1.0f,     0.0f, 1.0f,
-     1.0f, -1.0f,     1.0f, 0.0f,
-     1.0f,  1.0f,     1.0f, 1.0f
-  };
-  memcpy(vertices, v, sizeof(v));
-}
-
-
 VirtualFrameBuffer::VirtualFrameBuffer(int _mul) : 
     multiple(_mul), gsize{0, 0, Width * _mul, Height * _mul}, ds(0.03f)
 {
 }
 
 
-void VirtualFrameBuffer::init() {
+void VirtualFrameBuffer::init(GpuDataRange& screen) {
   vao.init();
   gl_scope(vao);
-  vbo.init(vao);
-  gl_scope(vbo);
-  
-  float vertices[4*6];
-  const int UZ = sizeof(float);
-  initBoxVertices(vertices);
-  GLBufferData bd(vbo, vertices, sizeof(vertices));
-  bd.floatAttr(0, 2, 4, 0);
-  bd.floatAttr(1, 2, 4, 2);
+  GpuDataRange scope = {0, 0, 1, 1};
+  setSize(screen, scope);
 
   frame_buffer.init(gsize.width, gsize.height);
   gl_scope(frame_buffer);
@@ -249,6 +228,43 @@ void VirtualFrameBuffer::init() {
   ds.clear(0, 0, 0);
 
   shader = new VirtualScreenShader();
+}
+
+
+//TODO: 实现 scope
+void VirtualFrameBuffer::setSize(GpuDataRange& screen, GpuDataRange& scope) {
+  vbo.init(vao);
+  gl_scope(vbo);
+
+  float sd = float(screen.width) / screen.height;
+  float gd = float(gsize.width) / gsize.height;
+  float w, h;
+  if (sd > gd) {
+    // 适配屏幕高度
+    h = 1;
+    w = ((1.0f / sd) * gsize.height) / screen.width;
+  } else if (sd < gd) {
+    // 适配屏幕宽度
+    h = ((1.0f / sd) * gsize.width) / screen.height;
+    w = 1;
+  } else {
+    w = h = 1;
+  }
+  
+  float vertices[4*6] = {
+    -w,  h,     0.0f, 1.0f,
+    -w, -h,     0.0f, 0.0f,
+     w, -h,     1.0f, 0.0f,
+
+    -w,  h,     0.0f, 1.0f,
+     w, -h,     1.0f, 0.0f,
+     w,  h,     1.0f, 1.0f
+  };
+
+  const int UZ = sizeof(float);
+  GLBufferData bd(vbo, vertices, sizeof(vertices));
+  bd.floatAttr(0, 2, 4, 0);
+  bd.floatAttr(1, 2, 4, 2);
 }
 
 

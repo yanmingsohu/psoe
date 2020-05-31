@@ -65,6 +65,7 @@ void debug(R3000A& cpu, Bus& bus) {
   u32 address = 0;
   //t.set_int_exc_point(0xbfc00404);
   //cpu.set_data_rw_point(0x0011'f854, 0x00ff'ffff);
+  LocalEvents event;
 
   for (;;) {
     if (show_code > 0) {
@@ -73,6 +74,7 @@ void debug(R3000A& cpu, Bus& bus) {
       info(" ... \n");
     } else if ((show_code & 0x1FFFFF) == 0) {
       printf("\rPC.%x %d\r", cpu.getpc(), counter);
+      event.systemEvents();
     }
 
     cpu.next();
