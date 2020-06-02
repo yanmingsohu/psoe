@@ -240,12 +240,12 @@ void VirtualFrameBuffer::setSize(GpuDataRange& screen, GpuDataRange& scope) {
   float gd = float(gsize.width) / gsize.height;
   float w, h;
   if (sd > gd) {
-    // 适配屏幕高度
+    // 适配屏幕高度, 4:3 老式电视机比例
     h = 1;
-    w = ((1.0f / sd) * gsize.height) / screen.width;
+    w = ((1.0f / sd) * gsize.height) / screen.width *(3.0/4.0);
   } else if (sd < gd) {
     // 适配屏幕宽度
-    h = ((1.0f / sd) * gsize.width) / screen.height;
+    h = ((1.0f / sd) * gsize.width) / screen.height *(4.0/3.0);
     w = 1;
   } else {
     w = h = 1;

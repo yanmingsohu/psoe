@@ -1151,15 +1151,15 @@ private:
   }
 
   void ii(char const* iname, mips_reg t, mips_reg s, s16 i) const {
-    debug(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x\n",
+    debug(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x, +=%08x\n",
       pc, bus.read32(pc), iname, rname(t), rname(s), i,
-      rname(t), reg.u[t], rname(s), reg.u[s]);
+      rname(t), reg.u[t], rname(s), reg.u[s], reg.u[s]+i);
   }
 
   void iw(char const* iname, mips_reg t, mips_reg s, s16 i) const {
-    debug(DBG_HD "[$%s + 0x%08x], $%s\t \x1b[1;30m# $%s=%x, $%s=%x\n",
+    debug(DBG_HD "[$%s + 0x%08x], $%s\t \x1b[1;30m# $%s=%x, $%s=%x, +=%08x\n",
       pc, bus.read32(pc), iname, rname(s), i, rname(t),
-      rname(t), reg.u[t], rname(s), reg.u[s]);
+      rname(t), reg.u[t], rname(s), reg.u[s], reg.u[s] + i);
   }
 
   void i2(char const* iname, mips_reg t, s16 i) const {

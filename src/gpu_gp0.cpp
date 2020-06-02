@@ -549,6 +549,7 @@ public:
   static const bool DisableDrawScopeLimit = true;
 
   bool write(const u32 c) {
+    //printf("fv %08x\n", c);
     switch (step) {
       case 0:
         color = c;
@@ -597,6 +598,7 @@ public:
   }
 
   bool write(const u32 c) {
+    //printf("FM %d %08x\n", step, c);
     switch (step) {
       case -3:
         break;

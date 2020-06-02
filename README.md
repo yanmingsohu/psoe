@@ -23,7 +23,7 @@ WIP
     * [x] Working on Thread
     * [ ] Use AI to enhance textures ?!
   * [ ] GTE
-    * [*] working
+    * [x] working
     * [ ] test
   * [ ] SPU
     * [ ] Speak out

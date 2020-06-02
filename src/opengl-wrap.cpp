@@ -1,6 +1,7 @@
 ﻿#include <glad/glad.h>
 #include <GLFW/glfw3.h> 
 #include <stdexcept>
+#include <chrono>
 
 #include "opengl-wrap.h"
 #include "gpu.h"
@@ -264,7 +265,7 @@ void GLTexture::init2px(int w, int h, void* pixeldata) {
   glGenTextures(1, &text);
   bind();
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 
-      w, h, 0, GL_RED, GL_UNSIGNED_SHORT, pixeldata);
+      w, h, 0, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV, pixeldata);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -280,7 +281,7 @@ void GLTexture::release() {
 }
 
 void GLDrawState::readPsinnerPixel(int x, int y, int w, int h, u32* data) {
-  glReadPixels(x, y, w, h, GL_RED, GL_UNSIGNED_SHORT, data);
+  glReadPixels(x, y, w, h, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV, data);
 }
 
 
@@ -547,12 +548,21 @@ void GLDrawState::setScissorEnable(bool enable) {
 
 
 void LocalEvents::systemEvents() {
-  glfwPollEvents();
+  static auto SEC_1 = 
+    std::chrono::duration_cast<std::chrono::steady_clock::duration>
+      (std::chrono::milliseconds(700)).count();
+  
+  auto sec = std::chrono::steady_clock::now().time_since_epoch().count();
+ 
+  if (sec - update_time > SEC_1) {
+    update_time = sec;
+    glfwPollEvents();
+  }
 }
 
 
-LocalEvents::LocalEvents() {
-  info("System Event Thread ID:%x\n", this_thread_id());
+LocalEvents::LocalEvents() : update_time(0) {
+    info("System Event Thread ID:%x\n", this_thread_id());
 }
 
 

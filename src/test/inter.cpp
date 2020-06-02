@@ -112,6 +112,11 @@ void debug(R3000A& cpu, Bus& bus) {
           show_code = -1;
           break;
 
+        case '0':
+          cpu.reset();
+          printf("RESET\n");
+          break;
+
         case '1':
           show_code = 100;
           break;
@@ -138,10 +143,21 @@ void debug(R3000A& cpu, Bus& bus) {
           }
           break;
 
+        case 'c':
+          if (inputHexVal("Address HEX:", address)) {
+            u32 v;
+            if (inputHexVal("Velue HEX:", v)) {
+              bus.write32(address, v);
+              printf("change [%08x]: %x\n", address, v);
+            }
+          }
+          break;
+
         case 'h':
           printf("\r'r' show reg.\t'x' run, hide debug.\t");
           printf("'1' debug 100.\t'a' show address value.\n");
           printf("'2' debug 10000.\t'3' debug 1000000.\n");
+          printf("'0' Reset.\t'c' change mem.");
           printf("'h' show help.\t'ESC' Exit.\n");
           break;
 

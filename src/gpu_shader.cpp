@@ -26,27 +26,27 @@ vec4 color_ps2gl(uint pscolor, float max) {
 float get_x(uint ps_pos) {
   uint t = (0xFFFFu & ps_pos); 
   uint s = t & 0x400u;
-  int a  = int(t) & 0x3FF;
+  int a  = int(t) & 0xfFF; // not limit 0x3ff 
   if (s != 0u) a = ~(a) + 1;
   int x = a + offx;
-  return float(x) / frame_width  * 2 - 1;
+  return float(x) / frame_width *2-1;
 }
 
 float get_y(uint ps_pos) {
   uint t = (0xFFFFu & (ps_pos>>16u)); 
   uint s = t & 0x400u;
-  int a  = int(t) & 0x1FF;
+  int a  = int(t) & 0xfFF; // not limit 0x1ff
   if (s != 0u) a = ~(a) + 1;
   int y = a + offy;
-  return (float(y) / frame_height  * 2 - 1);
+  return (float(y) / frame_height *2-1);
 }
 
 float norm_x(uint n) { 
-  return float(n) / frame_width  * 2 - 1;
+  return float(n) / frame_width *2-1;
 }
 
 float norm_y(uint n) {
-  return (float(n) / frame_height  * 2 - 1);
+  return (float(n) / frame_height *2-1);
 }
 
 // TODO: Textwin Texcoord = (Texcoord AND (NOT (Mask*8))) OR ((Offset AND Mask)*8)
@@ -94,8 +94,9 @@ vec4 text_pscolor_rgb(int red16) {
 }
 
 vec4 texture_red16(sampler2D text, vec2 coord) {
-  int red = int(texture(text, coord).r * 0xffffu);
-  return text_pscolor_rgb(red);
+  //int red = int(texture(text, coord).r * 0xffffu);
+  //return text_pscolor_rgb(red);
+  return texture(text, coord);
 }
 
 uint get_clut_index(sampler2D text, vec2 coord, uint mask, int rol) {
@@ -103,7 +104,14 @@ uint get_clut_index(sampler2D text, vec2 coord, uint mask, int rol) {
   uint fx   = uint(coord.x * frame_width);
   coord.x   = float(fx & mask) / frame_width;
   uint bit  = (fx & rm) << rol;
-  uint word = uint(texture(text, coord).r * 0xffff);
+  //uint word = uint(texture(text, coord).r * 0xffff);
+
+  vec4 color = texture(text, coord);
+  uint word = (uint(color.a) << 15) 
+            | (uint(color.r * 255.0 / 0x1f) << 10) 
+            | (uint(color.g * 255.0 / 0x1f) << 5) 
+            |  uint(color.b * 255.0 / 0x1f);
+
   //TODO: bit 顺序正确性需要测试
   return (word >> bit);
 }

@@ -222,8 +222,10 @@ public:
 
 
 class LocalEvents {
-public:
+private:
+  long long update_time;
 
+public:
   LocalEvents();
   // 用来处理系统(窗口)消息, 必须在主线程调用
   void systemEvents();
