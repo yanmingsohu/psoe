@@ -240,6 +240,32 @@ public:
 };
 
 
+class U16Reg {
+protected:
+  u16 reg;
+public:
+  inline void write(u32 value) {
+    reg = 0xFFFF & value;
+  }
+  inline u32 read() {
+    return reg;
+  }
+};
+
+
+class U8Reg {
+protected:
+  u8 reg;
+public:
+  inline void write(u32 value) {
+    reg = 0xFF & value;
+  }
+  inline u32 read() {
+    return reg;
+  }
+};
+
+
 // 设备上的一个 IO 端口, 默认什么都不做
 class DeviceIO {
 public:
@@ -255,12 +281,12 @@ public:
   // 应该重写这个方法, 默认其他 writeX 方法是对该方法的包装
   virtual void write(u32 value) {}
 
-  virtual void write(u8 v) { write(u32(v)); }
-  virtual void write(u16 v) { write(u32(v)); }
-  virtual void write1(u8 v) { write((u32) u32(v)<<8); }
-  virtual void write2(u8 v) { write((u32) u32(v)<<16); }
+  virtual void write(u8 v)   { write(u32(v)); }
+  virtual void write(u16 v)  { write(u32(v)); }
+  virtual void write1(u8 v)  { write((u32) u32(v)<<8); }
+  virtual void write2(u8 v)  { write((u32) u32(v)<<16); }
   virtual void write2(u16 v) { write((u32) u32(v)<<16); }
-  virtual void write3(u8 v) { write((u32) u32(v)<<24); }
+  virtual void write3(u8 v)  { write((u32) u32(v)<<24); }
   
   // mips 总线上不可能在这个地址写 32 位值, 这个错误会被 cpu 捕获不会发送到总线
   void write1(u32 v) { write2(v); }
@@ -309,6 +335,8 @@ public:
   virtual u32 read() override { 
     return reg.read();
   }
+
+friend Parent;
 };
 
 

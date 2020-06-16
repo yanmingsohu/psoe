@@ -9,19 +9,6 @@ namespace ps1e {
 class SoundProcessing;
 
 
-class U16Reg {
-protected:
-  u16 reg;
-public:
-  inline void write(u32 value) {
-    reg = 0xFFFF & value;
-  }
-  inline u32 read() {
-    return reg;
-  }
-};
-
-
 template<DeviceIOMapper t_vol, DeviceIOMapper t_sr,
          DeviceIOMapper t_sa,  DeviceIOMapper t_adsr,
          DeviceIOMapper t_acv, DeviceIOMapper t_ra,

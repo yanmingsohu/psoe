@@ -68,6 +68,9 @@
     <ClInclude Include="..\src\gte.h">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\cdrom.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">
@@ -121,6 +124,9 @@
     <ClCompile Include="..\src\gte.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\cdrom.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\makefile">
@@ -128,6 +134,9 @@
     </None>
     <None Include="..\README.md">
       <Filter>资源文件</Filter>
+    </None>
+    <None Include="..\src\bus.inl">
+      <Filter>header</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
