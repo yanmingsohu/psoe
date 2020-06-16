@@ -1,5 +1,6 @@
 ﻿#include <stdexcept>
 #include "bus.h" 
+#include "bus.inl"
 
 namespace ps1e {
 
@@ -142,6 +143,7 @@ u8 Bus::read8(psmem addr) {
 }
 
 
+// 该函数为测试用, 最终可以删除其中的代码
 void Bus::__on_write(psmem addr, u32 v) {
 return;
   addr = addr & 0x00ff'ffff;
