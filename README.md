@@ -76,3 +76,4 @@ WIP
 * [PSX document 2](https://github.com/simias/psx-guide)
 * [PSX Test](https://github.com/simias/psx-hardware-tests)
 * [OpenGL Tutorial](http://www.opengl-tutorial.org/)
+* [GUN libcdio](https://www.gnu.org/software/libcdio/libcdio.html)

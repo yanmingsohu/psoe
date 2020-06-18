@@ -28,7 +28,7 @@ static void test_mips_size() {
 static void test_mips_inter() {
   MemJit mmjit;
   MMU mmu(mmjit);
-  if (!mmu.loadBios("demo/SCPH1000.BIN")) {
+  if (!mmu.loadBios("ps-exe/SCPH1000.BIN")) {
     panic("load bios fail");
   }
 
