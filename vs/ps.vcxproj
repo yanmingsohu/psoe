@@ -127,13 +127,13 @@
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <IntDir>..\bin\$(Platform)\$(Configuration)\core</IntDir>
     <LibraryPath>..\bin;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)..\deps\glad\include;$(ProjectDir)..\deps\glfw\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\deps\glad\include;$(ProjectDir)..\deps\glfw\include;$(ProjectDir)..\deps\libcdio\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <IntDir>..\bin\$(Platform)\$(Configuration)\core</IntDir>
     <LibraryPath>..\bin;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)..\deps\glad\include;$(ProjectDir)..\deps\glfw\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\deps\glad\include;$(ProjectDir)..\deps\glfw\include;$(ProjectDir)..\deps\libcdio\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
