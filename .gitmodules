@@ -13,7 +13,6 @@
 [submodule "deps/eigen"]
 	path = deps/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-	
 [submodule "deps/libcdio"]
 	path = deps/libcdio
 	url = https://github.com/ShiftMediaProject/libcdio.git

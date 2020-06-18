@@ -5,7 +5,44 @@
 
 namespace ps1e {
 
-CdDrive::CdDrive() : cd(0) {
+static void message(const char* oper, const driver_return_code_t t) {
+  switch (t) {
+    case DRIVER_OP_ERROR:
+      warn("%s: error\n", oper); 
+      break;
+
+    case DRIVER_OP_UNSUPPORTED:
+      warn("%s: Unsupported\n", oper); 
+      break;
+
+    case DRIVER_OP_UNINIT:
+      warn("%s: hasn't been initialized\n", oper); 
+      break;
+
+    case DRIVER_OP_NOT_PERMITTED:
+      warn("%s: Not permitted\n", oper); 
+      break;
+
+    case DRIVER_OP_BAD_PARAMETER:
+      warn("%s: Bad parameter\n", oper); 
+      break;
+
+    case DRIVER_OP_BAD_POINTER:
+      warn("%s: Bad pointer to memory area\n", oper); 
+      break;
+
+    case DRIVER_OP_NO_DRIVER:
+      warn("%s: Driver not available on this OS\n", oper); 
+      break;
+
+    case DRIVER_OP_MMC_SENSE_DATA:
+      warn("%s: MMC operation returned sense data, but no other error above recorded.\n", oper); 
+      break;
+  }
+}
+
+
+CdDrive::CdDrive() : cd(0), first_track(0), num_track(0), offset(-1) {
 }
 
 
@@ -18,8 +55,8 @@ bool CdDrive::open(CDIO c) {
   close();
   if (c) {
     cd = c;
-    first_track = cdio_get_first_track_num(static_cast<CdIo_t*>(cd));
-    num_track   = cdio_get_num_tracks(static_cast<CdIo_t*>(cd)); 
+    first_track = cdio_get_first_track_num(cd);
+    num_track   = cdio_get_num_tracks(cd); 
     info("CD-ROM Track (%i - %i)\n", first_track, num_track); 
     return true;
   }
@@ -30,7 +67,7 @@ bool CdDrive::open(CDIO c) {
 
 void CdDrive::close() {
   if (cd) {
-    cdio_destroy(static_cast<CdIo_t*>(cd));
+    cdio_destroy(cd);
     cd = 0;
   }
 }
@@ -51,7 +88,7 @@ bool CdDrive::openImage(char* path) {
 
 
 int CdDrive::getTrackFormat(CDTrack track) {
-  return cdio_get_track_format(static_cast<CdIo_t*>(cd), track);
+  return cdio_get_track_format(cd, track);
 }
 
 
@@ -85,16 +122,40 @@ CDTrack CdDrive::end() {
 
 
 bool CdDrive::getTrackMsf(CDTrack t, CdMsf *r) {
-  msf_t msf;
-  if (!cdio_get_track_msf(static_cast<CdIo_t*>(cd), t, &msf)) {
-    return false;
-  }
-  *r = {msf.m, msf.s, msf.f};
-  return true;
+  return cdio_get_track_msf(cd, t, reinterpret_cast<msf_t*>(r));
+}
+
+
+bool CdDrive::seek(const CdMsf* s) {
+  // CDIO_INVALID_LSN
+  offset = cdio_msf_to_lsn(reinterpret_cast<const msf_t*>(s));
+}
+
+
+bool CdDrive::readAudio(void* buf) {
+  driver_return_code_t r = cdio_read_audio_sector(cd, buf, offset);
+  if (r) message("ReadAudio", r);
+  return r == 0;
+}
+
+
+// mode2[true=M2RAW_SECTOR_SIZE(2336), false=CDIO_CD_FRAMESIZE(2048)]
+bool CdDrive::readData(void* buf) {
+  driver_return_code_t r = cdio_read_mode2_sector(cd, buf, offset, false);
+  if (r) message("ReadData", r);
+  return r == 0;
 }
 
 
 CDrom::CDrom(Bus& b) : status(this, b), cmd(this, b), parm(this, b), req(this, b), bus(b) {
+}
+
+
+void CDrom::send_irq(u8 irq) {
+  irq_flag = irq;
+  if (irq_enb & (1<<irq)) {
+    bus.send_irq(IrqDevMask::cdrom);
+  }
 }
 
 
@@ -196,7 +257,10 @@ void CDrom::RegReq::write(u32 v) {
       break;
 
     case 1: // 中断标志寄存器
-      p.irq_flag = p.irq_flag & (0xff ^ static_cast<u8>(v));
+      p.irq_flag = p.irq_flag & (~static_cast<u8>(v));
+      if (v & (1<<6)) {
+        p.parm.reset_parm_fifo();
+      }
       break;
 
     case 2:

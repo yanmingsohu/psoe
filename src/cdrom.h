@@ -2,12 +2,16 @@
 
 #include "bus.h"
 
+struct msf_s;
+struct _CdIo;
+
 
 namespace ps1e {
 
 class CDrom;
-typedef void* CDIO;
-typedef u8 CDTrack;
+typedef _CdIo* CDIO;
+typedef u8    CDTrack;
+typedef s32   CdLsn;
 
 
 #pragma pack(push, 1)
@@ -23,20 +27,15 @@ union CdStatus {
     u8 busy       : 1; //7 (1=Busy)  ;Command/parameter transmission busy  
   };
 };
-#pragma pack(pop)
 
-
-#pragma pack(push, 1)
 struct CdSpuVol {
   u8 cd_l_spu_l;
   u8 cd_l_spu_r;
   u8 cd_r_spu_r;
   u8 cd_r_spu_l;
 };
-#pragma pack(pop)
 
-
-#pragma pack(push, 1)
+// 必须与 `struct msf_t` 二进制兼容
 struct CdMsf {
   u8 m, s, f;
 };
@@ -45,9 +44,13 @@ struct CdMsf {
 
 class CdDrive {
 private:
+  static const int AUDIO_BUF_SIZE = 2352;
+  static const int DATA_BUF_SIZE  = 2048;
+
   CDIO cd;
   CDTrack first_track;
   CDTrack num_track;
+  CdLsn offset;
 
   bool open(CDIO);
 
@@ -63,6 +66,11 @@ public:
   CDTrack first();
   CDTrack end();
   bool getTrackMsf(CDTrack, CdMsf*);
+  bool seek(const CdMsf*);
+  // buf[AUDIO_BUF_SIZE]
+  bool readAudio(void *buf);
+  // buf[DATA_BUF_SIZE]
+  bool readData(void *buf);
 };
 
 
@@ -99,6 +107,7 @@ private:
     virtual u32 read();
     virtual void write(u32 value);
     RegParm(CDrom* parent, Bus& b);
+    void reset_parm_fifo();
   };
 
   class RegReq : public DeviceIO {
@@ -131,6 +140,7 @@ private:
     return status.s.index;
   }
 
+  void send_irq(u8);
   void do_cmd(u32);
 
   void CmdSync();
