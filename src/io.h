@@ -123,10 +123,7 @@ namespace ps1e {
     rw(0x1F80'1124, time2_mode          , a, v, 4) \
     rw(0x1F80'1128, time2_tar_val       , a, v, 4) \
                                                    \
-    rw(0x1F80'1800, cd_status_index     , a, v, 1) \
-    rw(0x1F80'1801, cd_resp_fifo_cmd    , a, v, 1) \
-    rw(0x1F80'1802, cd_data_fifo_parm   , a, v, 1) \
-    rw(0x1F80'1803, cd_irq_vol          , a, v, 1) \
+    rw(0x1F80'1800, cd_rom_io           , a, v, 4) \
                                                    \
     rw(0x1F80'1810, gpu_gp0             , a, v, 4) \
     rw(0x1F80'1814, gpu_gp1             , a, v, 4) \
@@ -289,10 +286,10 @@ public:
   virtual void write3(u8 v)  { write((u32) u32(v)<<24); }
   
   // mips 总线上不可能在这个地址写 32 位值, 这个错误会被 cpu 捕获不会发送到总线
-  void write1(u32 v) { write2(v); }
-  void write1(u16 v) { write2(v); }
-  void write3(u32 v) { write2(v); }
-  void write3(u16 v) { write2(v); }
+  void write1(u32 v) {}
+  void write1(u16 v) {}
+  void write3(u32 v) {}
+  void write3(u16 v) {}
  
   void write2(u32 v) {
     // throw exception

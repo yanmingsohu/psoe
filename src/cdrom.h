@@ -33,11 +33,52 @@ struct CdSpuVol {
   u8 cd_l_spu_r;
   u8 cd_r_spu_r;
   u8 cd_r_spu_l;
+
+  void setall(u8 v) {
+    cd_l_spu_l = cd_l_spu_r = cd_r_spu_r = cd_r_spu_l = v;
+  }
+};
+
+union CdAudioCode {
+  u8 v;
+  struct {
+    u8 ch   : 2; //0,1 (0=Mono, 1=Stereo)
+    u8 rate : 2; //2,3 (0=37800Hz, 1=18900Hz)
+    u8 bit  : 2; //4,5 (0=4bit, 1=8bit)
+    u8 emp  : 2; //6,7 (0=Off, 1=Emphasis)
+  };
 };
 
 // 必须与 `struct msf_t` 二进制兼容
 struct CdMsf {
   u8 m, s, f;
+};
+
+//  ___These values appear in the FIRST response; with stat.bit0 set___
+//  10h - Invalid Sub_function (for command 19h), or invalid parameter value
+//  20h - Wrong number of parameters
+//  40h - Invalid command
+//  80h - Cannot respond yet (eg. required info was not yet read from disk yet)
+//           (namely, TOC not-yet-read or so)
+//           (also appears if no disk inserted at all)
+//
+//  ___These values appear in the SECOND response; with stat.bit2 set___
+//  04h - Seek failed (when trying to use SeekL on Audio CDs)
+//
+//  ___These values appear even if no command was sent; with stat.bit2 set___
+//  08h - Drive door became opened
+union CdAttribute {
+  u8 v;
+  struct {
+    u8 error      : 1; //0 Invalid Command/parameters (followed by Error Byte)
+    u8 motor      : 1; //1 Spindle Motor (0=Motor off, or in spin-up phase, 1=Motor on)
+    u8 seekerr    : 1; //2 (0=Okay, 1=Seek error)     (followed by Error Byte)
+    u8 iderror    : 1; //3 (0=Okay, 1=GetID denied) (also set when Setmode.Bit4=1)
+    u8 shellopen  : 1; //4 Once shell open (0=Closed, 1=Is/was Open)
+    u8 read       : 1; //5 Reading data sectors  ;/only ONE of these bits can be set
+    u8 seek       : 1; //6 Seeking               ; at a time (ie. Read/Play won't get
+    u8 play       : 1; //7 Playing CD-DA         ;\set until after Seek completion)
+  };
 };
 #pragma pack(pop)
 
@@ -74,60 +115,51 @@ public:
 };
 
 
-class CDrom {
+class CDROM_REG : public DeviceIO {
 private:
-  class RegStatus : public DeviceIO {
-  public:
-    CDrom& p;
-    CdStatus s;
+  CDrom& p;
+public:
+  CDROM_REG(CDrom &_p, Bus& b);
+  u32 read();
+  u32 read1();
+  u32 read2();
+  u32 read3();
+  void write(u32 value);
+  void write(u8 v);
+  void write(u16 v);
+  void write1(u8 v);
+  void write2(u8 v);
+  void write2(u16 v);
+  void write3(u8 v);
+};
 
-    RegStatus(CDrom* parent, Bus& b);
-    virtual u32 read();
-    virtual void write(u32 value);
-  };
 
-  class RegCmd : public DeviceIO {
-  public:
-    CDrom& p;
-    // response fifo
-    u8 fifo[16];
-    u8 pfifo;
-    u8 fifo_data_len;
-  
-    virtual u32 read();
-    virtual void write(u32 value);
-    void resp_fifo_ready(u8 len);
-    RegCmd(CDrom* parent, Bus& b);
-  };
-
-  class RegParm : public DeviceIO {
-  public:
-    CDrom& p;
-
-    virtual u32 read();
-    virtual void write(u32 value);
-    RegParm(CDrom* parent, Bus& b);
-    void reset_parm_fifo();
-  };
-
-  class RegReq : public DeviceIO {
-  public:
-    CDrom& p;
-
-    virtual u32 read();
-    virtual void write(u32 value);
-    RegReq(CDrom* parent, Bus& b);
-  };
-
+class CdromFifo {
 private:
-  RegStatus status;
-  RegCmd cmd;
-  RegParm parm;
-  RegReq req;
+  u8 *d;
+  u16 pread;
+  u16 pwrite;
+  const u8 len;
+  const u16 mask;
+public:
+  CdromFifo(u8 len16bit);
+  ~CdromFifo();
+  void reset();
+  bool read(u8&);
+  bool write(u8);
+};
 
+
+class CDrom : public DMADev, public NonCopy {
+private:
   Bus& bus;
+  CdDrive& drive;
   CdSpuVol change;
   CdSpuVol apply;
+  CdStatus status;
+  CDROM_REG reg;
+  CdAudioCode code;
+  CdAttribute attr;
   u8 irq_enb;
   u8 irq_flag;
   bool mute;
@@ -136,10 +168,11 @@ private:
   // Want Command Start Interrupt on Next Command (0=No change, 1=Yes)
   bool SMEN;
 
-  u8 getIndex() {
-    return status.s.index;
-  }
+  CdromFifo response;
+  CdromFifo param;
+  CdromFifo cmd;
 
+  void resp_fifo_ready();
   void send_irq(u8);
   void do_cmd(u32);
 
@@ -178,7 +211,9 @@ private:
   void CmdSecret(int);
 
 public:
-  CDrom(Bus&);
+  CDrom(Bus&, CdDrive&);
+
+friend class CDROM_REG;
 };
 
 }

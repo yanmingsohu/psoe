@@ -147,7 +147,9 @@ bool CdDrive::readData(void* buf) {
 }
 
 
-CDrom::CDrom(Bus& b) : status(this, b), cmd(this, b), parm(this, b), req(this, b), bus(b) {
+CDrom::CDrom(Bus& b, CdDrive& d) 
+: bus(b), drive(d), reg(*this, b), response(1), param(4), cmd(1), 
+  DMADev(bus, DeviceIOMapper::dma_cdrom_base) {
 }
 
 
@@ -159,35 +161,111 @@ void CDrom::send_irq(u8 irq) {
 }
 
 
-CDrom::RegStatus::RegStatus(CDrom* parent, Bus& b) : p(*parent) {
-  b.bind_io(DeviceIOMapper::cd_status_index, this);
+void CDrom::resp_fifo_ready() {
+  status.resp_empt = 1;
 }
 
 
-void CDrom::RegStatus::write(u32 value) {
-  s.index = 0x03 & value;
+CdromFifo::CdromFifo(u8 len16bit) : len(0x10 * len16bit), mask(len-1) {
+  reset();
+  d = new u8[len];
 }
 
 
-u32 CDrom::RegStatus::read() {
-  return s.v;
+CdromFifo::~CdromFifo() {
+  delete [] d;
 }
 
 
-CDrom::RegCmd::RegCmd(CDrom* parent, Bus& b) : p(*parent) {
-  b.bind_io(DeviceIOMapper::cd_resp_fifo_cmd, this);
+void CdromFifo::reset() {
+  pread = 0;
+  pwrite = 0;
 }
 
 
-void CDrom::RegCmd::write(u32 v) {
-  switch (p.getIndex()) {
-    case 0: // command 
-      p.do_cmd(v);
+bool CdromFifo::read(u8& v) {
+  v = d[pread & mask];
+  pread++;
+  return pread < pwrite;
+}
+
+
+bool CdromFifo::write(u8 v) {
+  d[pwrite & mask] = v;
+  pwrite++;
+  return pwrite < len;
+}
+
+
+CDROM_REG::CDROM_REG(CDrom &_p, Bus& b) : p(_p) {
+  b.bind_io(DeviceIOMapper::cd_rom_io, this);
+}
+
+
+// 0x1F80'1800
+u32 CDROM_REG::read() {
+  u32 v = p.status.v;
+  return v | (v << 8) | (v << 16) | (v << 24);
+}
+
+
+// 0x1F80'1801 
+// command response, 16byte
+u32 CDROM_REG::read1() {
+  u8 r;
+  if (!p.response.read(r)) {
+    p.status.resp_empt = 0;
+  }
+  return r;
+}
+
+
+// 0x1F80'1802 读取数据
+u32 CDROM_REG::read2() {}
+
+
+// 0x1F80'1803
+u32 CDROM_REG::read3() {
+  switch (p.status.index) {
+    case 0: // 中断使能寄存器
+    case 2: // 镜像
+      return p.irq_enb;
       break;
+
+    case 1: // 中断标志寄存器
+    case 3: // 镜像
+      return p.irq_flag;
+      break;
+  }
+}
+
+
+void CDROM_REG::write(u32 value) {}
+
+
+// 0x1F80'1800
+void CDROM_REG::write(u8 v) {
+  p.status.index = 0x03 & v;
+}
+
+
+void CDROM_REG::write(u16 v) {}
+
+
+// 0x1F80'1801
+void CDROM_REG::write1(u8 v) {
+  switch (p.status.index) {
+    case 0: // command 
+      p.cmd.write(v);
+      break;
+
     case 1: // 声音映射数据输出
       break;
+
     case 2: // 声音映射编码信息
+      p.code.v = v;
       break;
+
     case 3: 
       p.change.cd_r_spu_r = v;
       break;
@@ -195,30 +273,14 @@ void CDrom::RegCmd::write(u32 v) {
 }
 
 
-// command response, 16byte
-u32 CDrom::RegCmd::read() {
-  u8 r = fifo[pfifo++ & 0xF];
-  if (pfifo > fifo_data_len) {
-    p.status.s.resp_empt = 0;
-  }
-  return r;
-}
-
-
-void CDrom::RegCmd::resp_fifo_ready(u8 len) {
-  fifo_data_len = len;
-  p.status.s.resp_empt = 1;
-}
-
-
-CDrom::RegParm::RegParm(CDrom* parent, Bus& b) : p(*parent) {
-  b.bind_io(DeviceIOMapper::cd_data_fifo_parm, this);
-}
-
-
-void CDrom::RegParm::write(u32 v) {
-  switch (p.getIndex()) {
+// 0x1F80'1802
+void CDROM_REG::write2(u8 v) {
+  switch (p.status.index) {
     case 0: // Parameter fifo
+      if (!p.param.write(v)) {
+        p.status.parm_full = 0;
+      }
+      p.status.parm_empt = 0;
       break;
     case 1: // 中断使能寄存器
       p.irq_enb = static_cast<u8>(v);
@@ -233,33 +295,25 @@ void CDrom::RegParm::write(u32 v) {
 }
 
 
-// 读取数据
-u32 CDrom::RegParm::read() {
-  return 0;
-}
+void CDROM_REG::write2(u16 v) {}
 
 
-CDrom::RegReq::RegReq(CDrom* parent, Bus& b) : p(*parent) {
-  b.bind_io(DeviceIOMapper::cd_irq_vol, this);
-}
-
-
-void CDrom::RegReq::write(u32 v) {
-  switch (p.getIndex()) {
+// 0x1F80'1803
+void CDROM_REG::write3(u8 v) {
+  switch (p.status.index) {
     case 0: // 请求寄存器
       p.BFRD = v & (1<<7);
       p.SMEN = v & (1<<5);
       if (p.BFRD) {
-        p.status.s.data_empt = 1;
-      } else {
-        //TODO: Reset Data Fifo?
+        //TODO: Reset Data Fifo
+        p.status.data_empt = 1;
       }
       break;
 
     case 1: // 中断标志寄存器
       p.irq_flag = p.irq_flag & (~static_cast<u8>(v));
       if (v & (1<<6)) {
-        p.parm.reset_parm_fifo();
+        p.param.reset();
       }
       break;
 
@@ -277,30 +331,15 @@ void CDrom::RegReq::write(u32 v) {
 }
 
 
-u32 CDrom::RegReq::read() {
-  switch (p.getIndex()) {
-    case 0: // 中断使能寄存器
-    case 2: // 镜像
-      return p.irq_enb;
-      break;
-
-    case 1: // 中断标志寄存器
-    case 3: // 镜像
-      return p.irq_flag;
-      break;
-  }
-}
-
-
 #define CD_CMD(n, fn) \
-  case n: Cmd##fn(); break
+  case n: Cmd##fn(); debug("CD-ROM CMD:%s", #fn); break
 
 #define CD_CMD_SE(n, fn, x) \
-  case n: Cmd##fn(x); break
+  case n: Cmd##fn(x); debug("CD-ROM CMD:%s", #fn #x); break
 
 
 void CDrom::do_cmd(u32 c) {
-  status.s.busy = 1;
+  status.busy = 1;
   switch (c) {
     CD_CMD(0x00, Sync);
     CD_CMD(0x01, Getstat);
@@ -346,5 +385,54 @@ void CDrom::do_cmd(u32 c) {
     CD_CMD_SE(0x57, Secret, 7);
   }
 }
+
+
+void CDrom::CmdInit() {
+  status.v = 0x18;
+  response.reset();
+  param.reset();
+  cmd.reset();
+  change.setall(0);
+  apply.setall(0);
+  mute = true;
+  BFRD = false;
+  SMEN = false;
+}
+
+
+void CDrom::CmdReset() {}
+
+
+void CDrom::CmdSync() {}
+void CDrom::CmdGetstat() {}
+void CDrom::CmdSetloc() {}
+void CDrom::CmdPlay() {}
+void CDrom::CmdForward() {}
+void CDrom::CmdBackward() {}
+void CDrom::CmdReadN() {}
+void CDrom::CmdMotorOn() {}
+void CDrom::CmdStop() {}
+void CDrom::CmdPause() {}
+void CDrom::CmdMute() {}
+void CDrom::CmdDemute() {}
+void CDrom::CmdSetfilter() {}
+void CDrom::CmdSetmode() {}
+void CDrom::CmdGetparam() {}
+void CDrom::CmdGetlocL() {}
+void CDrom::CmdGetlocP() {}
+void CDrom::CmdSetSession() {}
+void CDrom::CmdGetTN() {}
+void CDrom::CmdGetTD() {}
+void CDrom::CmdSeekL() {}
+void CDrom::CmdSeekP() {}
+void CDrom::CmdSetClock() {}
+void CDrom::CmdGetClock() {}
+void CDrom::CmdTest() {}
+void CDrom::CmdGetID() {}
+void CDrom::CmdReadS() {}
+void CDrom::CmdGetQ() {}
+void CDrom::CmdReadTOC() {}
+void CDrom::CmdVideoCD() {}
+void CDrom::CmdSecret(int) {}
 
 }
