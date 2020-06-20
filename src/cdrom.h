@@ -1,6 +1,9 @@
 ﻿#pragma once 
 
 #include "bus.h"
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 struct msf_s;
 struct _CdIo;
@@ -52,6 +55,7 @@ union CdAudioCode {
 // 必须与 `struct msf_t` 二进制兼容
 struct CdMsf {
   u8 m, s, f;
+  void next_section();
 };
 
 //  ___These values appear in the FIRST response; with stat.bit0 set___
@@ -79,15 +83,36 @@ union CdAttribute {
     u8 seek       : 1; //6 Seeking               ; at a time (ie. Read/Play won't get
     u8 play       : 1; //7 Playing CD-DA         ;\set until after Seek completion)
   };
+  void reading();
+  void seeking();
+  void playing();
+  void donothing();
+  void clearerr();
+};
+
+union CdMode {
+  u8 v;
+  struct {
+    u8 cdda   : 1; //0 (0=Off, 1=Allow to Read CD-DA Sectors; ignore missing EDC)
+    u8 ap     : 1; //1 (0=Off, 1=Auto Pause upon End of Track) ;for Audio Play 
+    u8 rep    : 1; //2 (0=Off, 1=Enable Report-Interrupts for Audio Play)
+    u8 filter : 1; //3 (0=Off, 1=Process only XA-ADPCM sectors that match Setfilter)
+    u8 ib     : 1; //4 (0=Normal, 1=Ignore Sector Size and Setloc position)
+    u8 size   : 1; //5 (0=800h=DataOnly, 1=924h=WholeSectorExceptSyncBytes)
+    u8 xa     : 1; //6 (0=Off, 1=Send XA-ADPCM sectors to SPU Audio Input) 
+    u8 speed  : 1; //7 (0=Normal speed, 1=Double speed)
+  };
+  u16 data_size();
 };
 #pragma pack(pop)
 
 
 class CdDrive {
-private:
+public:
   static const int AUDIO_BUF_SIZE = 2352;
   static const int DATA_BUF_SIZE  = 2048;
 
+private:
   CDIO cd;
   CDTrack first_track;
   CDTrack num_track;
@@ -134,19 +159,22 @@ public:
 };
 
 
+//TODO: fix 当 pwrite 回绕到 0 逻辑错误
 class CdromFifo {
 private:
   u8 *d;
-  u16 pread;
-  u16 pwrite;
+  u32 pread;
+  u32 pwrite;
   const u8 len;
   const u16 mask;
 public:
   CdromFifo(u8 len16bit);
   ~CdromFifo();
   void reset();
-  bool read(u8&);
-  bool write(u8);
+  u8 read();
+  bool canRead();
+  void write(u8);
+  bool canWrite();
 };
 
 
@@ -156,25 +184,58 @@ private:
   CdDrive& drive;
   CdSpuVol change;
   CdSpuVol apply;
+
   CdStatus status;
   CDROM_REG reg;
   CdAudioCode code;
   CdAttribute attr;
+  CdMode mode;
+  u8 file;
+  u8 channel;
   u8 irq_enb;
+  u8 session;
+
+  //0-2   Read: Response Received   Write: 7=Acknowledge   ;INT1..INT7
+  //3     Read: Unknown (usually 0) Write: 1=Acknowledge   ;INT8  ;XXX CLRBFEMPT
+  //4     Read: Command Start       Write: 1=Acknowledge   ;INT10h;XXX CLRBFWRDY
+  //5     Read: Always 1 ;XXX "_"   Write: 1=Unknown              ;XXX SMADPCLR
+  //6     Read: Always 1 ;XXX "_"   Write: 1=Reset Parameter Fifo ;XXX CLRPRM
+  //7     Read: Always 1 ;XXX "_"   Write: 1=Unknown              ;XXX CHPRST
   u8 irq_flag;
+
   bool mute;
   // Want Data (0=No/Reset Data Fifo, 1=Yes/Load Data Fifo)
   bool BFRD;
   // Want Command Start Interrupt on Next Command (0=No change, 1=Yes)
   bool SMEN;
+  CdMsf loc;
+
+  bool thread_running;
+  std::thread th;
+  std::mutex for_irq;
+  std::condition_variable wait_irq;
 
   CdromFifo response;
   CdromFifo param;
   CdromFifo cmd;
 
-  void resp_fifo_ready();
+  bool _swap_buf;
+  u8 *data_buf[2];
+  u8 *accept_buf;
+  u8 *read_buf;
+  u16 data_read_point;
+  u16 data_size;
+  u8 locL[8];
+  u8 locP[8];
+
+  void command_processor();
+
+  void push_response(u8);
   void send_irq(u8);
-  void do_cmd(u32);
+  void do_cmd(u8);
+  u8 read_param();
+  void read_next_section();
+  void swap_buf();
 
   void CmdSync();
   void CmdGetstat();
@@ -212,6 +273,7 @@ private:
 
 public:
   CDrom(Bus&, CdDrive&);
+  ~CDrom();
 
 friend class CDROM_REG;
 };
