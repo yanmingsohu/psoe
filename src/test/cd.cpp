@@ -26,7 +26,7 @@ static void test_cdio() {
 
 
 void test_cd() {
-  test_cdio();
+  //test_cdio();
 }
 
 

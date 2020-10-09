@@ -5,6 +5,7 @@
 #include "../spu.h"
 #include "../serial_port.h"
 #include "../otc.h"
+#include "../cdrom.h"
 #include <conio.h>
 
 
@@ -26,6 +27,8 @@ static void test_mips_size() {
 
 
 static void test_mips_inter() {
+  char image[] = "ps-exe/Raiden Project, The (Europe).cue";
+
   MemJit mmjit;
   MMU mmu(mmjit);
   if (!mmu.loadBios("ps-exe/SCPH1000.BIN")) {
@@ -37,6 +40,10 @@ static void test_mips_inter() {
   SoundProcessing spu(bus);
   OrderingTables otc(bus);
   SerialPort spi(bus);
+  CdDrive dri;
+  dri.openImage(image);
+  CDrom cdrom(bus, dri);
+
   R3000A cpu(bus);
   bus.bind_irq_receiver(&cpu);
   cpu.reset();

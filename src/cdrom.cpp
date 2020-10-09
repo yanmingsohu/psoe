@@ -44,6 +44,11 @@ static void message(const char* oper, const driver_return_code_t t) {
 }
 
 
+static void _wait(long ms) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
+
 void CdAttribute::reading() {
   motor = read = 1;
   seek = play = 0;
@@ -118,6 +123,11 @@ void CdDrive::close() {
     cdio_destroy(cd);
     cd = 0;
   }
+}
+
+
+bool CdDrive::hasDisk() {
+  return cd != 0;
 }
 
 
@@ -197,7 +207,7 @@ bool CdDrive::readData(void* buf) {
 
 CDrom::CDrom(Bus& b, CdDrive& d) 
 : bus(b), drive(d), reg(*this, b), response(1), param(4), cmd(1), 
-  DMADev(bus, DeviceIOMapper::dma_cdrom_base), thread_running(true),
+  DMADev(b, DeviceIOMapper::dma_cdrom_base), thread_running(true),
   th(&CDrom::command_processor, this) 
 {
   data_buf[0] = new u8[CdDrive::AUDIO_BUF_SIZE];
@@ -225,9 +235,9 @@ CDrom::~CDrom() {
   delete [] data_buf[1];
   thread_running = false;
   //TODO: 线程可能无法退出
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  _wait(1000);
   wait_irq.notify_all();
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  _wait(1000);
   wait_irq.notify_all();
   th.join();
 }
@@ -235,16 +245,15 @@ CDrom::~CDrom() {
 
 void CDrom::send_irq(u8 irq) {
   std::unique_lock<std::mutex> lk(for_irq);
+  // 等待前一个中断处理完成
   if (irq_flag & 0x1F) {
+    debug("CD-rom wait irq %x %x\n", irq_flag, irq);
     wait_irq.wait(lk);
+    debug("CD-rom irq wait exit\n");
   }
 
   irq_flag = irq;
-  if (irq < 8) {
-    if (irq_enb & (1<<irq)) {
-      bus.send_irq(IrqDevMask::cdrom);
-    }
-  } else {
+  if (irq & irq_enb) {
     bus.send_irq(IrqDevMask::cdrom);
   }
 }
@@ -252,6 +261,7 @@ void CDrom::send_irq(u8 irq) {
 
 void CDrom::push_response(u8 v) {
   status.resp_empt = 1;
+  if (!response.canRead()) response.reset();
   response.write(v);
 }
 
@@ -314,6 +324,7 @@ CDROM_REG::CDROM_REG(CDrom &_p, Bus& b) : p(_p) {
 
 // 0x1F80'1800
 u32 CDROM_REG::read() {
+  info("CD-ROM r 1f801800\n");
   u32 v = p.status.v;
   return v | (v << 8) | (v << 16) | (v << 24);
 }
@@ -322,6 +333,7 @@ u32 CDROM_REG::read() {
 // 0x1F80'1801 
 // command response, 16byte
 u32 CDROM_REG::read1() {
+  info("CD-ROM r 1f801801\n");
   u8 r = p.response.read();
   if (!p.response.canRead()) {
     p.status.resp_empt = 0;
@@ -332,12 +344,14 @@ u32 CDROM_REG::read1() {
 
 // 0x1F80'1802 读取数据
 u32 CDROM_REG::read2() {
+  info("CD-ROM r 1f801802\n");
   return p.read_buf[p.data_read_point++];
 }
 
 
 // 0x1F80'1803
 u32 CDROM_REG::read3() {
+  info("CD-ROM r 1f801803\n");
   switch (p.status.index) {
     case 0: // 中断使能寄存器
     case 2: // 镜像
@@ -352,23 +366,32 @@ u32 CDROM_REG::read3() {
 }
 
 
-void CDROM_REG::write(u32 value) {}
+void CDROM_REG::write(u32 v) {
+  info("CD-ROM w 1f801800(32) %08x\n", v);
+}
 
 
 // 0x1F80'1800
 void CDROM_REG::write(u8 v) {
+  info("CD-ROM w 1f801800(8) %08x\n", v);
   p.status.index = 0x03 & v;
 }
 
 
-void CDROM_REG::write(u16 v) {}
+void CDROM_REG::write(u16 v) {
+  info("CD-ROM w 1f801800(16) %08x\n", v);
+}
 
 
 // 0x1F80'1801
 void CDROM_REG::write1(u8 v) {
+  info("CD-ROM w 1f801801(8) %08x\n", v);
   switch (p.status.index) {
     case 0: // command 
+      //ps1e_t::ext_stop = 1;
+      if (!p.cmd.canRead()) p.cmd.reset();
       p.cmd.write(v);
+      debug("CD-ROM cmd %x\n", v);
       break;
 
     case 1: // 声音映射数据输出
@@ -387,6 +410,7 @@ void CDROM_REG::write1(u8 v) {
 
 // 0x1F80'1802
 void CDROM_REG::write2(u8 v) {
+  info("CD-ROM w 1f801802(8) %08x\n", v);
   switch (p.status.index) {
     case 0: // Parameter fifo
       p.param.write(v);
@@ -397,6 +421,7 @@ void CDROM_REG::write2(u8 v) {
       break;
 
     case 1: // 中断使能寄存器
+      debug("CD-ROM irq enable %08x\n", v);
       p.irq_enb = static_cast<u8>(v);
       break;
 
@@ -411,11 +436,14 @@ void CDROM_REG::write2(u8 v) {
 }
 
 
-void CDROM_REG::write2(u16 v) {}
+void CDROM_REG::write2(u16 v) {
+  info("CD-ROM w 1f801802(16) %08x\n", v);
+}
 
 
 // 0x1F80'1803
 void CDROM_REG::write3(u8 v) {
+  info("CD-ROM w 1f801803(8) %08x\n", v);
   switch (p.status.index) {
     case 0: // 请求寄存器
       p.BFRD = v & (1<<7);
@@ -428,13 +456,17 @@ void CDROM_REG::write3(u8 v) {
       break;
 
     case 1: // 中断标志寄存器
+      debug("CD-ROM irq flag %02x < %02x\n", p.irq_flag, v);
       p.irq_flag = p.irq_flag & (~static_cast<u8>(v));
       if (v & (1<<6)) {
         p.param.reset();
       }
       if ((p.irq_flag & 0x1F) == 0) {
+        std::unique_lock<std::mutex> lk(p.for_irq);
         p.status.busy = 0;
+        debug("CD-ROM ask irq\n");
         p.wait_irq.notify_one();
+        ps1e_t::ext_stop = 1;
       }
       break;
 
@@ -453,10 +485,10 @@ void CDROM_REG::write3(u8 v) {
 
 
 #define CD_CMD(n, fn) \
-  case n: Cmd##fn(); debug("CD-ROM CMD:%s", #fn); break
+  case n: Cmd##fn(); debug("CD-ROM CMD: %s\n", #fn); break
 
 #define CD_CMD_SE(n, fn, x) \
-  case n: Cmd##fn(x); debug("CD-ROM CMD:%s", #fn #x); break
+  case n: Cmd##fn(x); debug("CD-ROM CMD: %s\n", #fn #x); break
 
 
 void CDrom::do_cmd(u8 c) {
@@ -471,7 +503,6 @@ void CDrom::do_cmd(u8 c) {
     CD_CMD(0x07, MotorOn);
     CD_CMD(0x08, Stop);
     CD_CMD(0x09, Pause);
-    CD_CMD(0x0a, Init);
     CD_CMD(0x0b, Mute);
     CD_CMD(0x0c, Demute);
     CD_CMD(0x0d, Setfilter);
@@ -490,10 +521,12 @@ void CDrom::do_cmd(u8 c) {
     CD_CMD(0x19, Test);
     CD_CMD(0x1a, GetID);
     CD_CMD(0x1b, ReadS);
-    CD_CMD(0x1c, Reset);
     CD_CMD(0x1d, GetQ);
     CD_CMD(0x1e, ReadTOC);
     CD_CMD(0x1f, VideoCD);
+    
+    CD_CMD(0x0a, Reset);
+    CD_CMD(0x1c, Init);
 
     CD_CMD_SE(0x50, Secret, 0);
     CD_CMD_SE(0x51, Secret, 1);
@@ -525,10 +558,11 @@ void CDrom::command_processor() {
 
     if (cmd.canRead()) {
       status.busy = 1;
+      attr.clearerr();
       u8 c = cmd.read();
       do_cmd(c);
     } else {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      _wait(10);
     }
   }
 }
@@ -564,9 +598,10 @@ void CDrom::CmdInit() {
 
   mode.v = 0;
   attr.v = 0;
-  attr.motor = 1;
+  attr.seeking();
   cmd.reset();
   mute = true;
+  _wait(1000);
 
   push_response(attr.v);
   send_irq(2);
@@ -575,11 +610,14 @@ void CDrom::CmdInit() {
 
 void CDrom::CmdReset() {
   push_response(attr.v);
-  send_irq(3);
+  send_irq(0x3);
 
   status.v = 0x18;
   mode.v = 0;
   attr.v = 0;
+  if (drive.hasDisk()) {
+    attr.seeking();
+  }
   response.reset();
   param.reset();
   cmd.reset();
@@ -801,16 +839,94 @@ void CDrom::CmdGetQ() {
 }
 
 
-void CDrom::CmdPlay() {}
-void CDrom::CmdForward() {}
-void CDrom::CmdBackward() {}
-void CDrom::CmdMute() {}
-void CDrom::CmdDemute() {}
+//Drive Status           1st Response   2nd Response
+//Door Open              INT5(11h,80h)  N/A
+//Spin-up                INT5(01h,80h)  N/A
+//Detect busy            INT5(03h,80h)  N/A
+//No Disk                INT3(stat)     INT5(08h,40h, 00h,00h, 00h,00h,00h,00h)
+//Audio Disk             INT3(stat)     INT5(0Ah,90h, 00h,00h, 00h,00h,00h,00h)
+//Unlicensed:Mode1       INT3(stat)     INT5(0Ah,80h, 00h,00h, 00h,00h,00h,00h)
+//Unlicensed:Mode2       INT3(stat)     INT5(0Ah,80h, 20h,00h, 00h,00h,00h,00h)
+//Unlicensed:Mode2+Audio INT3(stat)     INT5(0Ah,90h, 20h,00h, 00h,00h,00h,00h)
+//Debug/Yaroze:Mode2     INT3(stat)     INT2(02h,00h, 20h,00h, 20h,20h,20h,20h)
+//Licensed:Mode2         INT3(stat)     INT2(02h,00h, 20h,00h, 53h,43h,45h,4xh)
+//Modchip:Audio/Mode1    INT3(stat)     INT2(02h,00h, 00h,00h, 53h,43h,45h,4xh)
+//SCEI (49 日本 / NTSC), SCEA (41 美国 / NTSC), SCEE (45 欧洲 / PAL)
+void CDrom::CmdGetID() {
+  if (attr.shellopen == 1) {
+    attr.error = 1;
+    push_response(attr.v);
+    push_response(0x80);
+    send_irq(5);
+  } else {
+    push_response(attr.v); 
+    send_irq(3);
+
+    push_response(0x02);
+    push_response(0x00);
+    push_response(0x20);
+    push_response(0x00);
+    push_response(0x53);
+    push_response(0x43);
+    push_response(0x45);
+    push_response(0x49);
+    send_irq(2);
+  }
+}
+
+
+void CDrom::CmdMute() {
+  mute = 1;
+  push_response(attr.v); 
+  send_irq(3);
+}
+
+
+void CDrom::CmdDemute() {
+  mute = 0;
+  push_response(attr.v); 
+  send_irq(3);
+}
+
+
+//TODO: Report/AutoPause
+void CDrom::CmdPlay() {
+  CDTrack t = read_param();
+  push_response(attr.v); 
+  send_irq(3);
+}
+
+
+void CDrom::CmdForward() {
+  push_response(attr.v); 
+  send_irq(3);
+}
+
+
+void CDrom::CmdBackward() {
+  push_response(attr.v); 
+  send_irq(3);
+}
+
+
+void CDrom::CmdTest() {
+  u8 sub = read_param();
+  attr.error = 1;
+  push_response(attr.v); 
+  push_response(0x10);
+  send_irq(5);
+}
+
+
+void CDrom::CmdSecret(int) {
+  push_response(attr.v); 
+  push_response(0x40);
+  send_irq(5);
+}
+
+
 void CDrom::CmdSetClock() {}
 void CDrom::CmdGetClock() {}
-void CDrom::CmdTest() {}
-void CDrom::CmdGetID() {}
 void CDrom::CmdVideoCD() {}
-void CDrom::CmdSecret(int) {}
 
 }

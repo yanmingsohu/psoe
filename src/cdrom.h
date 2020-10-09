@@ -137,6 +137,7 @@ public:
   bool readAudio(void *buf);
   // buf[DATA_BUF_SIZE]
   bool readData(void *buf);
+  bool hasDisk();
 };
 
 

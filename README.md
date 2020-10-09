@@ -1,6 +1,8 @@
 # May be playstation 1 emulator
 
-WIP
+I am very curious, if there is no speed limit processing on the cpu and each chip is simulated in a separate thread, what will the game result be?
+
+This project is to test these assumptions.
 
 
 # TODO list

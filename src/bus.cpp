@@ -161,6 +161,13 @@ return;
 }
 
 
+void Bus::__on_read(psmem addr) {
+  if ((addr & 0xffff'fff0) == 0x1f80'1800) {
+    ps1e_t::ext_stop = 1;
+  }
+}
+
+
 void Bus::show_mem_console(psmem begin, u32 len) {
   printf("|----------|-");
   for (int i=0; i<0x10; ++i) {

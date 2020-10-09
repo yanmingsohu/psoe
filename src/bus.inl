@@ -57,6 +57,8 @@ template<class T> void Bus::write(psmem addr, T v) {
 
 
 template<class T> T Bus::read(psmem addr) {
+  __on_read(addr);
+
   if (use_d_cache) {
     T* p = (T*) mmu.d_cache(addr);
     if (p) return *p;

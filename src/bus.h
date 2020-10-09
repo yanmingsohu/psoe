@@ -133,6 +133,7 @@ public:
   template<class T> void write(psmem addr, T v);
   template<class T> T read(psmem addr);
   void __on_write(psmem addr, u32 v);
+  void __on_read(psmem addr);
 
 private:
   // dma_dpcr 同步到 dma 设备上

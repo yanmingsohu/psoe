@@ -39,7 +39,7 @@ int main() {
   test_dma();
   test_cpu();
   test_cd();
-  //test_disassembly();
+  test_disassembly();
   info("Test all passd\n");
   return 0;
 }
