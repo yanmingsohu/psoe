@@ -51,13 +51,15 @@ float norm_y(uint n) {
 
 // TODO: Textwin Texcoord = (Texcoord AND (NOT (Mask*8))) OR ((Offset AND Mask)*8)
 vec2 to_textcoord(uint coord, uint page, uint textwin) {
-  float pagex = float(0x0Fu & page) * 0x40;
-  float pagey = float(1u & (page >> 4)) * 0x100;
-  // TODO: 纹理页的大小来自纹理格式字段 64/128/256
-  float x = float(coord & 0x0FFu) / 0xff * 0x39; 
-  float y = float((coord >> 8) & 0x0FFu);
-  return vec2((x + pagex)/frame_width, (y + pagey)/frame_height);
+  //uint pagex = (0x0Fu & page) << 6; //* 0x40;
+  uint pagey = (1u & (page >> 4)) << 8; //* 0x100;
+  // TODO: 纹理页的大小来自纹理格式字段 64 0x40 | 128 0x80 | 256 0xff
+  uint x = coord & 0x0FFu;
+  uint y = ((coord >> 8) & 0x0FFu);
+  return vec2(float(x)/frame_width, float(y + pagey)/frame_height);
 }
+
+
 )shader"
 
 
@@ -68,6 +70,9 @@ uniform float transparent;
 uniform uint frame_width;
 uniform uint frame_height;
 
+// Color 0000h          全透明
+//       0001h..7FFFh   不透明
+//       8000h..FFFFh   半透明
 vec4 mix_color(vec4 b, vec4 f) {
   vec4 r;
   if (b.rgb == 0) {
@@ -94,46 +99,53 @@ vec4 text_pscolor_rgb(int red16) {
 }
 
 vec4 texture_red16(sampler2D text, vec2 coord) {
-  //int red = int(texture(text, coord).r * 0xffffu);
-  //return text_pscolor_rgb(red);
-  return texture(text, coord);
+  vec4 pix = texture(text, coord);
+  if (pix.rgb == 0) {
+    pix.a = 0; // 0:完全透明, 1:不透明
+  } else {
+    pix.a = 1;
+  }
+  return pix;
 }
 
-uint get_clut_index(sampler2D text, vec2 coord, uint mask, int rol) {
-  uint rm   = (~mask) & 0xFFFFu;
+uint get_clut_index(sampler2D text, vec2 coord, uint mask, int mulrol, int devrol) {
+  uint pagex = (0x0Fu & page) << 6; //* 0x40;
+  //uint pagey = (1u & (page >> 4)) << 8; //* 0x100;
+
+  uint rm   = (~mask) & 0xFFFFu; //4bit:011, 8bit:01
   uint fx   = uint(coord.x * frame_width);
-  coord.x   = float(fx & mask) / frame_width;
-  uint bit  = (fx & rm) << rol;
-  //uint word = uint(texture(text, coord).r * 0xffff);
-
+  coord.x   = float((fx >> devrol) + pagex) / frame_width;
+  uint bit  = ((fx + pagex) & rm) << mulrol;
+  
   vec4 color = texture(text, coord);
-  uint word = (uint(color.a) << 15) 
-            | (uint(color.r * 255.0 / 0x1f) << 10) 
-            | (uint(color.g * 255.0 / 0x1f) << 5) 
-            |  uint(color.b * 255.0 / 0x1f);
-
-  //TODO: bit 顺序正确性需要测试
+  uint word =((uint(color.a * 0xff) & 1u) << 15) 
+            | (uint(color.b * 0xff / 0x1f) << 10) 
+            | (uint(color.g * 0xff / 0x1f) << 5) 
+            |  uint(color.r * 0xff / 0x1f);
+  //return 0u;
   return (word >> bit);
 }
 
 vec2 get_clut_coord(uint clut_index) {
   uint clut_x = ((clut & 0x3fu) << 4) + uint(clut_index);
   uint clut_y = ((clut >> 6) & 0x1ffu);
-  return vec2(float(clut_x)/frame_width, float(clut_y)/frame_height);
+  return vec2(float(clut_x)/(frame_width), float(clut_y)/(frame_height));
 }
 
 vec4 texture_mode(sampler2D text, vec2 coord) {
   switch (int(page >> 7) & 0x03) {
     case 0: // 4bit
-      uint index4 = get_clut_index(text, coord, 0xFFFCu, 2) & 0xFu;
+      uint index4 = get_clut_index(text, coord, 0xFFFCu, 2, 2) & 0xFu;
       return texture_red16(text, get_clut_coord(index4));
       
     case 1: // 8bit
-      uint index8 = get_clut_index(text, coord, 0xFFFEu, 3) & 0xFFu;
+      uint index8 = get_clut_index(text, coord, 0xFFFEu, 3, 1) & 0xFFu;
       return texture_red16(text, get_clut_coord(index8));
 
     default:
     case 2: // 16bit
+      uint pagex = (0x0Fu & page) << 6; //* 0x40;
+      coord.x = coord.x + (float(pagex) / frame_width);
       return texture_red16(text, coord);
   }
 }
@@ -204,7 +216,7 @@ uniform sampler2D text;
   
 void main() {
   vec4 c = texture_mode(text, oCoord);
-  FragColor = vec4(c.rgb, oColor.a);
+  FragColor = vec4(c.rgb, oColor.a * c.a);
 }
 )shader";
 

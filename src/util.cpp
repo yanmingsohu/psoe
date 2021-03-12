@@ -260,6 +260,15 @@ void print_code(const char* src) {
 }
 
 
+void print_hex(const char* title, u8* data, u32 size) {
+  printf("%s", title);
+  for (u32 i=0; i < size; ++i) {
+    printf(" %02X", data[i]);
+  }
+  printf("\n");
+}
+
+
 size_t this_thread_id() {
 #if defined(LINUX) || defined(MACOS)
   return gettid();

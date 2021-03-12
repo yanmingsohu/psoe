@@ -26,40 +26,26 @@ enum class IrqDevMask : u32 {
 
 class IrqReceiver {
 private:
-  static const u32 IRQ_REQUEST_BIT = (1 << 10);
+  static const u32 IRQ_BIT_SIZE = 11;
+  static const u32 IRQ_REQUEST_BIT = (1 << IRQ_BIT_SIZE)-1;
   u32 mask;
-  u32 mask_prev;
+  u32 trigger;
 
 protected:
-  IrqReceiver() : mask(0) {}
+  IrqReceiver() : mask(0), trigger(0) {}
 
   // 接收方实现方法, 设置 cpu 外部中断
   virtual void set_ext_int(CpuCauseInt i) = 0;
   // 接收方实现方法, 清除 cpu 外部中断
   virtual void clr_ext_int(CpuCauseInt i) = 0;
-
   // 准备好接受 irq 信号后, 由接收方调用
-  void ready_recv_irq() {
-    if (mask == 0) {
-      clr_ext_int(CpuCauseInt::hardware);
-      return;
-    }
-
-    u32 m = mask & IRQ_REQUEST_BIT;
-    u32 p = mask_prev & IRQ_REQUEST_BIT;
-    if ((mask & IRQ_REQUEST_BIT) && NOT(mask_prev & IRQ_REQUEST_BIT)) {
-      set_ext_int(CpuCauseInt::hardware);
-    }
-    mask_prev = mask;
-  }
+  void ready_recv_irq();
 
 public:
   virtual ~IrqReceiver() {}
 
   // 发送方调用
-  void send_irq(u32 m) {
-    mask = m;
-  }
+  void send_irq(u32 m);
 
   // 接收方实现, 发送总线异常
   virtual void send_bus_exception() = 0;

@@ -73,7 +73,7 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
       p.status.width0     = 0b11 & c.parm;
       p.status.height     = 0b1  & (c.parm >> 2);
       p.status.video      = 0b1  & (c.parm >> 3);
-      p.status.isrgb24    = 0b1  & (c.parm >> 4);
+      p.status.isrgb24    = 0b1  & (c.parm >> 4); //TODO
       p.status.isinter    = 0b1  & (c.parm >> 5);
       p.status.width1     = 0b1  & (c.parm >> 6);
       p.status.distorted  = 0b1  & (c.parm >> 7);

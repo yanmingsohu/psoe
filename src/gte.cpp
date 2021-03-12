@@ -375,7 +375,7 @@ void GTE::write_ctrl(const u8 i, const u32 d) {
   fn(0x3E, GPL,   c) \
   fn(0x3F, NCCT,  c)
 
-#define GTE_CMD_CASE(n, f, c)   case n: f(c); break;
+#define GTE_CMD_CASE(n, f, c)   case n: /*printf("GTE CMD %s\n", #f);*/ f(c); break;
 
 
 bool GTE::execute(const GteCommand c) {

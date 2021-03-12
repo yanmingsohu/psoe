@@ -30,6 +30,7 @@ template<class T> void Bus::write(psmem addr, T v) {
       return;
 
     CASE_IO_MIRROR(0x1F80'1070):
+      // 写入 0 清除, 1 不变
       irq_status &= v & IRQ_ST_WR_MASK;
       update_irq_to_reciver();
       return;

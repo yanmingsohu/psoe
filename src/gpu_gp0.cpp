@@ -7,6 +7,8 @@
 
 namespace ps1e {
 
+//#define DEBUG_GP0_SHOW_CMD
+
 static const u32 X_MASK  = 0x0000'03FF;
 static const u32 Y_MASK  = 0x01FF'0000;
 static const u32 XY_MASK = X_MASK | Y_MASK;
@@ -539,6 +541,11 @@ public:
 
 class FillVertices : public SquareVertices<0> {
 private:
+  //FILL命令参数的掩蔽和舍入
+  //Xpos=(Xpos AND 3F0h)                       ;range 0..3F0h, in steps of 10h
+  //Ypos=(Ypos AND 1FFh)                       ;range 0..1FFh
+  //Xsiz=((Xsiz AND 3FFh)+0Fh) AND (NOT 0Fh)   ;range 0..400h, in steps of 10h
+  //Ysiz=((Ysiz AND 1FFh))                     ;range 0..1FFh
   void align_x10() {
     vertices[1] &= offset_limit_x10;
     vertices[2] &= offset_limit_x10;
@@ -560,7 +567,7 @@ public:
         break;
 
       case 2:
-        update_vertices(c);
+        update_vertices(c + 0x0000'000F);
         align_x10();
         fix_width_height_offset();
         break;
@@ -595,8 +602,26 @@ public:
     text.init2px(w, h, buf);
     text.bind();
     text.copyTo(gpu.useTexture(), 0, 0, x, y, w, h);
-  }
 
+    // 能读数据与原始字节相同
+    //printf("SRC TXT %d %d %d %d\n", x, y, w, h);
+    //print_hex("", (u8*)buf, buf_length * 4);
+    /*
+    u32* out = new u32[buf_length];
+    gpu.useTexture()->bind();
+    GLDrawState::readPsinnerPixel(x, y, w, h, out);
+    print_hex("\nOUT TXT", (u8*)out, buf_length * 4);
+    delete [] out;
+    */
+  }
+  
+  //
+  // COPY命令参数的遮罩
+  // Xpos=(Xpos AND 3FFh)                       ;range 0..3FFh
+  // Ypos=(Ypos AND 1FFh)                       ;range 0..1FFh
+  // Xsiz=((Xsiz-1) AND 3FFh)+1                 ;range 1..400h
+  // Ysiz=((Ysiz-1) AND 1FFh)+1                 ;range 1..200h
+  //
   bool write(const u32 c) {
     //printf("FM %d %08x\n", step, c);
     switch (step) {
@@ -604,11 +629,13 @@ public:
         break;
 
       case -2: 
-        get_xy32(c & offset_limit_x10, x, y);
+        get_xy32(c, x, y);
         break;
 
       case -1:
         get_xy32(c, w, h);
+        w = ((w-1) & 0x3ff) +1;
+        h = ((h-1) & 0x1FF) +1;
         buf_length = get_buffer_len(w, h);
         buf = new u32[buf_length];
         break;
@@ -672,7 +699,7 @@ public:
     prog->setShaderUni(vertices, gpu, transparent);
 
     if (Shader::Texture) gpu.useTexture()->bind();
-    if (Vertices::DisableDrawScopeLimit) gpu.enableDrawScope(false);
+    //if (Vertices::DisableDrawScopeLimit) gpu.enableDrawScope(false);
     Draw(vao, vertices.elementCount());
     if (Shader::Texture) gpu.useTexture()->unbind();
   }
@@ -744,8 +771,8 @@ private:
 
   void dataReady() {
     gpu.useTexture()->bind();
-    const int reverse_y = VirtualFrameBuffer::Height-1 -y;
-    GLDrawState::readPsinnerPixel(x, reverse_y, w, h, reader->getDataPoint());
+    //const int reverse_y = VirtualFrameBuffer::Height-1 -y;
+    GLDrawState::readPsinnerPixel(x, y, w, h, reader->getDataPoint());
     reader->unlock();
   }
 
@@ -877,6 +904,7 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     // 复制显存
     case 0x80:
+      //TODO: 传输受“掩码”设置影响。
       shape = new CopyVramToVram();
       break;
 
@@ -887,6 +915,7 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     // 绘图模式设置 Texpage
     case 0xE1:
+      //TODO: bit10实现绘制到显示区域开关
       p.status.v = SET_BIT(p.status.v, 0b11'1111'1111, c.parm);
       p.status.text_off = (c.parm >> 11) & 1;
       p.status.inter_f  = (c.parm >> 13) & 1;
@@ -1221,6 +1250,9 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       break;
 
     default:
+      #ifdef DEBUG_GP0_SHOW_CMD
+        ps1e_t::ext_stop = 1;
+      #endif
       error("Invaild GP0 Command %x %x\n", c.cmd, c.v);
       return false;
   }
@@ -1244,21 +1276,30 @@ u32 GPU::GP0::read() {
 
 
 void GPU::GP0::write(u32 v) {
-  //debug("GP0 Write 0x%08x\n", v);
+  //printf("GP0 Write 0x%08x\n", v);
   switch (stage) {
     case ShapeDataStage::read_command:
       if (!parseCommand(v)) {
         break;
       }
-      //printf("command gpu %08x\n", v); ps1e_t::ext_stop = 1;
+      #ifdef DEBUG_GP0_SHOW_CMD
+        printf("command gpu %08x, color %dbit\n", v, p.status.isrgb24 ? 24 : 15);
+        ps1e_t::ext_stop = 1;
+      #endif
       stage = ShapeDataStage::read_data;
       // do not break
 
     case ShapeDataStage::read_data:
+      #ifdef DEBUG_GP0_SHOW_CMD
+        printf("\t0x%08x", v);
+      #endif
       if (!shape->write(v)) {
         p.send(shape);
         shape = NULL;
         stage = ShapeDataStage::read_command;
+        #ifdef DEBUG_GP0_SHOW_CMD
+          printf("\nGpu cmd over\n");
+        #endif
       }
       break;
   }

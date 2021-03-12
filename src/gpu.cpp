@@ -164,13 +164,13 @@ void GPU::dma_order_list(psmem addr) {
 
 void GPU::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
   std::lock_guard<std::recursive_mutex> guard(for_draw_queue);
-  //printf("COPY ram go GPU begin:%x %dbyte\n", addr, bytesize);
+  //printf("\nCOPY ram go GPU begin:%x %dbyte\n", addr, bytesize);
   const int step = inc << 2;
   const int len = bytesize >> 2;
 
   for (int i = 0; i < len; ++i) {
     u32 d = bus.read32(addr);
-    //debug("CC %x %x\t", addr, d);
+    //printf("%08x ", d);
     gp0.write(d);
     addr += step;
   }
@@ -193,9 +193,10 @@ void GPU::dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) {
 void GPU::updateDrawScope() {
   u32 x = draw_tp_lf.x;
   u32 y = draw_tp_lf.y;
-  u32 w = x + draw_bm_rt.x;
-  u32 h = y + draw_bm_rt.y;
+  u32 w = draw_bm_rt.x - x;
+  u32 h = draw_bm_rt.y - y;
   ds.setScissor(x, y, w, h);
+  ps1e_t::ext_stop = 1;
   printf("draw scope: %d,%d %d,%d", x, y, w, h);
 }
 

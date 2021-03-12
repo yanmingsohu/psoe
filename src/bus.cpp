@@ -5,6 +5,77 @@
 namespace ps1e {
 
 
+static void showIrq(u32 mask) {
+  //ps1e_t::ext_stop = 1;
+  switch ((IrqDevMask) mask) {
+    case IrqDevMask::cdrom:
+      printf("CDROM irq\n");
+      break;
+    case IrqDevMask::vblank:
+      printf("VBLANK irq\n");
+      break;
+    case IrqDevMask::gpu:
+      printf("GPU irq\n");
+      break;
+    case IrqDevMask::dma:
+      printf("DMA irq\n");
+      break;
+    case IrqDevMask::dotclk:
+      printf("CLOCK irq\n");
+      break;
+    case IrqDevMask::hblank:
+      printf("HBLANK irq\n");
+      break;
+    case IrqDevMask::sysclk:
+      printf("SYS clock irq\n");
+      break;
+    case IrqDevMask::sio:
+      printf("SIO irq\n");
+      break;
+    case IrqDevMask::pad_mm:
+      printf("PAD irq\n");
+      break;
+    case IrqDevMask::spu:
+      printf("SPU irq\n");
+      break;
+    case IrqDevMask::pio:
+      printf("PIO irq\n");
+      break;
+  }
+}
+
+
+void IrqReceiver::ready_recv_irq() {
+  if (mask == 0) {
+    clr_ext_int(CpuCauseInt::hardware);
+    return;
+  }
+
+  if (trigger) {
+    showIrq(mask);
+    set_ext_int(CpuCauseInt::hardware);
+    trigger = 0;
+  }
+}
+
+
+void IrqReceiver::send_irq(u32 m) {
+  m = m & IRQ_REQUEST_BIT;
+  if (m == mask) return;
+
+  // 上升沿触发
+  u32 test = 1;
+  for (int i=0; i<IRQ_BIT_SIZE; ++i) {
+    if (((mask & test) == 0) && ((m & test) == 1)) {
+      trigger = 1;
+      break;
+    }
+    test <<= 1;
+  }
+  mask = m;
+}
+
+
 Bus::Bus(MMU& _mmu, IrqReceiver* _ir) : 
     mmu(_mmu), ir(_ir), dmadev{0}, dma_dpcr{0}, 
     irq_status(0), irq_mask(0), use_d_cache(false)

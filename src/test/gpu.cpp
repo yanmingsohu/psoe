@@ -15,11 +15,28 @@ void gpu_basic() {
 }
 
 
+union Clut {
+  u16 v;
+  struct {
+    u16 cx:6;
+    u16 cy:9;
+    u16 _:1;
+  };
+
+  Clut(u16 _cx, u16 _cy)
+  : cx(_cx), cy(_cy) {}
+};
+
+
 union pos {
   u32 v;
   struct {
     u32 x:16; 
     u32 y:16; 
+  };
+  struct {
+    u32 w:16;
+    u32 h:16;
   };
 
   pos(u16 _x, u16 _y) : x(_x), y(_y) {}
@@ -35,6 +52,18 @@ union Color {
   };
 
   Color(u8 cmd, u8 _r, u8 _g, u8 _b) : r(_r), g(_g), b(_b), _(cmd) {}
+};
+
+union Color2 {
+  u16 v;
+  struct {
+    u16 r:5;
+    u16 g:5;
+    u16 b:5;
+    u16 a:1;
+  };
+
+  Color2(u8 _r, u8 _g, u8 _b) : r(_r), g(_g), b(_b) {}
 };
 
 union TexpageAttr {
@@ -284,19 +313,75 @@ static void bios_code(GPU& gpu, Bus& bus) {
 }
 
 
-void test_gpu(GPU& gpu, Bus& bus) {
-  gpu_basic();
-  bus.write32(gp1, 0x0200'0001); // open display
-  
+static void test_clut(GPU& gpu, Bus& bus) {
+  draw_offset(bus, 0, 0);
+
+  // 写调色板
+  u16 clutx = 16; // 16的倍数
+  u16 cluty = 256;
+  bus.write32(gp0, 0xA0000000);
+  bus.write32(gp0, pos(clutx, cluty).v);
+  bus.write32(gp0, pos(16, 1).v);
+  // 写颜色
+  for (int i=0; i<2; ++i) {
+    //TODO: 需要确认字节顺序: 高低16位是否需要互换
+    // 0红 1绿 2蓝 3黄 4青 5白 6灰 7紫
+    bus.write32(gp0, (Color2(0x1f, 0, 0).v)     | (Color2(0, 0x1f, 0).v << 16));
+    bus.write32(gp0, (Color2(0, 0, 0x1f).v)     | (Color2(0x1f, 0x1f, 0).v << 16));
+    bus.write32(gp0, (Color2(0, 0x1f, 0x1f).v)  | (Color2(0x1f, 0x1f, 0x1f).v << 16));
+    bus.write32(gp0, (Color2(10, 10, 10).v)     | (Color2(0x1f, 0, 0x1f).v << 16));
+  }
+
+  // 写纹理
+  u16 text_x = 512; // 64 的倍数
+  u16 text_y = 0; // 0 | 256
+  bus.write32(gp0, 0xA0000000);
+  bus.write32(gp0, pos(text_x, text_y).v);
+  bus.write32(gp0, pos(32, 32).v);
+
+  for (int j=0; j<16; ++j) {
+    for (int i=0; i<4; ++i) {
+      bus.write32(gp0, 0x67452301);
+      bus.write32(gp0, 0x33443344);
+      bus.write32(gp0, 0x55557777);
+      bus.write32(gp0, 0x12121212);
+    }
+
+    for (int i=0; i<4; ++i) {
+      bus.write32(gp0, 0x00000000);
+      bus.write32(gp0, 0x00000000);
+      bus.write32(gp0, 0x00000000);
+      bus.write32(gp0, 0x00000000);
+    }
+  }
+
+  TexpageAttr t = {0};
+  t.px = text_x / 64;
+  t.py = text_y;
+  //0=4bit, 1=8bit, 2=15bit,
+  t.color_mode = 0;
+
+  bus.write32(gp0, Color(0x2d, 0,0,0).v);
+  bus.write32(gp0, pos(10, 10).v); // Vertex1
+  bus.write32(gp0, TCoord(0, 0, Clut(clutx/16, cluty).v).v); //Texcoord1+Palette (ClutYyXxh)
+  bus.write32(gp0, pos(10, 200).v); // Vertex2
+  bus.write32(gp0, TCoord(0, 32, t.v).v); //Texcoord2+Texpage (PageYyXxh)x
+  bus.write32(gp0, pos(200, 10).v); // Vertex3
+  bus.write32(gp0, TCoord(32, 0).v);
+  bus.write32(gp0, pos(200, 200).v); // Vertex4
+  bus.write32(gp0, TCoord(32, 32).v);
+
+  for (;;) sleep(1000);//!!!!!!
+}
+
+
+static void test_shape(GPU& gpu, Bus& bus) {
   bus.write32(gp0, Color(0x20, 0xff,0,0).v);
   bus.write32(gp0, pos(80, 10).v);
   bus.write32(gp0, pos(100, 100).v);
   bus.write32(gp0, pos(120, 80).v);
   
   draw_offset(bus, 0, 0);
-  
-  //bios_code(gpu, bus);
-  //return;
 
   draw_l1(bus);
   draw_l1(bus, 0x42, 5);
@@ -371,8 +456,21 @@ void test_gpu(GPU& gpu, Bus& bus) {
   draw_box2(bus, 360, 280, 0x7D);
   draw_box2(bus, 380, 280, 0x7E);
   draw_box2(bus, 400, 280, 0x7F);
+}
 
+
+void test_gpu(GPU& gpu, Bus& bus) {
+  gpu_basic();
+  bus.write32(gp1, 0x0200'0001); // open display
+  
+  //bios_code(gpu, bus);
+  //test_shape(gpu, bus);
+  //test_clut(gpu, bus);
+
+  // end
+  draw_offset(bus, 0, 0);
   gclear(bus, 100, 100, 50, 50);
+  //sleep(10000);
 }
 
 }

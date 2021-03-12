@@ -238,6 +238,7 @@ private:
   void read_next_section();
   void swap_buf();
 
+public:
   void CmdSync();
   void CmdGetstat();
   void CmdSetloc();

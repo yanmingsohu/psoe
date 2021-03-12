@@ -47,8 +47,11 @@ static void test_mips_inter() {
   R3000A cpu(bus);
   bus.bind_irq_receiver(&cpu);
   cpu.reset();
-  //test_gpu(gpu, bus);
+  test_gpu(gpu, bus); //!!
   debug(cpu, bus);
+
+  //cdrom.CmdInit();
+  //cdrom.CmdMotorOn();
 }
 
 

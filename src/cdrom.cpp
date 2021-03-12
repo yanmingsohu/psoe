@@ -208,7 +208,7 @@ bool CdDrive::readData(void* buf) {
 CDrom::CDrom(Bus& b, CdDrive& d) 
 : bus(b), drive(d), reg(*this, b), response(1), param(4), cmd(1), 
   DMADev(b, DeviceIOMapper::dma_cdrom_base), thread_running(true),
-  th(&CDrom::command_processor, this) 
+  th(&CDrom::command_processor, this)
 {
   data_buf[0] = new u8[CdDrive::AUDIO_BUF_SIZE];
   data_buf[1] = new u8[CdDrive::AUDIO_BUF_SIZE];
@@ -247,13 +247,15 @@ void CDrom::send_irq(u8 irq) {
   std::unique_lock<std::mutex> lk(for_irq);
   // 等待前一个中断处理完成
   if (irq_flag & 0x1F) {
-    debug("CD-rom wait irq %x %x\n", irq_flag, irq);
+    u8 waitirq = irq_flag;
+    debug("CD-rom wait irq %x\n", waitirq);
     wait_irq.wait(lk);
-    debug("CD-rom irq wait exit\n");
+    debug("CD-rom irq %x release\n", waitirq);
   }
 
   irq_flag = irq;
   if (irq & irq_enb) {
+    debug("CD-rom send IRQ %x - %x\n", irq, irq_enb);
     bus.send_irq(IrqDevMask::cdrom);
   }
 }
@@ -391,7 +393,7 @@ void CDROM_REG::write1(u8 v) {
       //ps1e_t::ext_stop = 1;
       if (!p.cmd.canRead()) p.cmd.reset();
       p.cmd.write(v);
-      debug("CD-ROM cmd %x\n", v);
+      debug("CD-ROM cmd 0x%X\n", v);
       break;
 
     case 1: // 声音映射数据输出
@@ -456,17 +458,17 @@ void CDROM_REG::write3(u8 v) {
       break;
 
     case 1: // 中断标志寄存器
-      debug("CD-ROM irq flag %02x < %02x\n", p.irq_flag, v);
+      /*debug("CD-ROM irq flag %02x < %02x\n", p.irq_flag, v);*/
       p.irq_flag = p.irq_flag & (~static_cast<u8>(v));
       if (v & (1<<6)) {
         p.param.reset();
       }
       if ((p.irq_flag & 0x1F) == 0) {
-        std::unique_lock<std::mutex> lk(p.for_irq);
+        //std::unique_lock<std::mutex> lk(p.for_irq);
         p.status.busy = 0;
-        debug("CD-ROM ask irq\n");
-        p.wait_irq.notify_one();
-        ps1e_t::ext_stop = 1;
+        p.wait_irq.notify_all();
+        debug("CD-ROM ask irq %02x < %02x\n", p.irq_flag, v);
+        //ps1e_t::ext_stop = 1;
       }
       break;
 
@@ -485,10 +487,10 @@ void CDROM_REG::write3(u8 v) {
 
 
 #define CD_CMD(n, fn) \
-  case n: Cmd##fn(); debug("CD-ROM CMD: %s\n", #fn); break
+  case n: debug("CD-ROM CMD: %s\n", #fn); Cmd##fn(); break
 
 #define CD_CMD_SE(n, fn, x) \
-  case n: Cmd##fn(x); debug("CD-ROM CMD: %s\n", #fn #x); break
+  case n: debug("CD-ROM CMD-SE: %s\n", #fn #x); Cmd##fn(x); break
 
 
 void CDrom::do_cmd(u8 c) {
@@ -525,8 +527,8 @@ void CDrom::do_cmd(u8 c) {
     CD_CMD(0x1e, ReadTOC);
     CD_CMD(0x1f, VideoCD);
     
-    CD_CMD(0x0a, Reset);
-    CD_CMD(0x1c, Init);
+    CD_CMD(0x0a, Init);
+    CD_CMD(0x1c, Reset);
 
     CD_CMD_SE(0x50, Secret, 0);
     CD_CMD_SE(0x51, Secret, 1);
@@ -601,7 +603,7 @@ void CDrom::CmdInit() {
   attr.seeking();
   cmd.reset();
   mute = true;
-  _wait(1000);
+  //_wait(1000);
 
   push_response(attr.v);
   send_irq(2);

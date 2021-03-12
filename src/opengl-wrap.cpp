@@ -258,6 +258,7 @@ void GLTexture::init(int w, int h, void* pixeldata) {
 }
 
 
+// PlayStation color format:
 // | 15 | 14 - - - 10 | 9 - - - 5 | 4 - - - 0 |
 // | S  |      B      |     G     |     R     |
 void GLTexture::init2px(int w, int h, void* pixeldata) {
@@ -498,6 +499,13 @@ void GLDrawState::setBlend(const bool t) {
 }
 
 
+// 1F801814h bit5-6
+//  B=Back  (the old pixel read from the image in the frame buffer)
+//  F=Front (the new halftransparent pixel)
+//  0* 0.5 x B + 0.5 x F    ;aka B/2+F/2
+//  1* 1.0 x B + 1.0 x F    ;aka B+F
+//  2* 1.0 x B - 1.0 x F    ;aka B-F
+//  3* 1.0 x B +0.25 x F    ;aka B+F/4
 void GLDrawState::setSemiMode(u8 mode) {
   switch (mode) {
     case 0: // B/2+F/2

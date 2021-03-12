@@ -160,7 +160,7 @@ protected:
 
 public:
   virtual ~IDrawShape() {}
-  // 写入命令数据(包含第一次的命令数据), 如果改形状已经读取全部数据则返回 false
+  // 写入命令数据(包含第一次的命令数据), 如果形状已经读取全部数据则返回 false
   virtual bool write(const u32 c) = 0;
   // 绘制图像
   virtual void draw(GPU&, GLVertexArrays& vao) = 0;

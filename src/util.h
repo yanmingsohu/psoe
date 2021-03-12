@@ -193,6 +193,7 @@ void*   melloc_exec(size_t size, void* near = 0);
 bool    free_exec(void* p, size_t size = 0);
 size_t  get_page_size();
 void    print_code(const char* src);
+void    print_hex(const char* title, u8* data, u32 size);
 size_t  readFile(void *buf, size_t bufsize, char const* filename);
 size_t  this_thread_id();
 

@@ -4,6 +4,25 @@
 
 namespace ps1e {
 
+template<class Vertices> static u32 palette_x(Vertices &v) {
+  return ((v.clut & 0x1fu) << 4);
+}
+
+
+template<class Vertices> static u32 palette_y(Vertices &v) {
+  return (v.clut >> 5) & 0x1ffu;
+}
+
+
+template<class Vertices> static u32 textpage_x(Vertices &v) {
+  return (v.page & 0xF) << 6;
+}
+
+
+template<class Vertices> static u32 textpage_y(Vertices &v) {
+  return (v.page & 0x10) << 4;
+}
+
 
 class PSShaderBase : public OpenGLShader {
 private:
@@ -32,8 +51,8 @@ public:
     if (update_flag != flag) {
       x.setInt(gpu.draw_offset.offx());
       y.setInt(gpu.draw_offset.offy());
-      fw.setUint(gpu.frame.width -1);
-      fh.setUint(gpu.frame.height -1);
+      fw.setUint(gpu.frame.width-1);
+      fh.setUint(gpu.frame.height-1);
       update_flag = flag;
     }
   }
@@ -42,6 +61,36 @@ public:
     u32 x = ((clut & 0x3fu) << 4);
     u32 y = (clut >> 6) & 0x1ffu;
     printf("Texture clut [%d x %d]\n", x, y);
+  }
+
+  template<class Vertices>
+  void textureSampling(Vertices& v, GPU& gpu) {
+    // 颜色表使用 32 字节对齐
+    switch ((v.page >> 7) & 0x03) {
+      case 0: // 4bit
+        drawTextureToText<16>(v);
+        return;
+
+      case 1: // 8bit
+        drawTextureToText<256>(v);
+        return;
+
+      case 2: // 16bit
+        return;
+    }
+  }
+
+private:
+  //TODO: Textwin Texcoord = (Texcoord AND (NOT (Mask*8))) OR ((Offset AND Mask)*8)
+  template<u32 palette_size_hword, class Vertices>
+  void drawTextureToText(Vertices& v) {
+    u16 pal[palette_size_hword];
+    GLDrawState::readPsinnerPixel(palette_x(v), palette_y(v), palette_size_hword >> 1, 1, (u32*)&pal);
+    print_hex("Palette", (u8*)pal, palette_size_hword<<1);
+
+    u16 txt[64 * 256];
+    GLDrawState::readPsinnerPixel(textpage_x(v), textpage_y(v), 64>>1, 256>>1, (u32*)&txt);
+    print_hex("Texture", (u8*)txt, 16);
   }
 };
 
@@ -101,6 +150,7 @@ public:
     clut.setUint(v.clut);
     textwin.setUint(gpu.text_win.v);
     //printClut(v.clut);
+    //textureSampling(v, gpu);
   }
 };
 
@@ -153,6 +203,7 @@ public:
     page.setUint(v.page);
     clut.setUint(v.clut);
     textwin.setUint(gpu.text_win.v);
+    //textureSampling(v, gpu);
   }
 };
 
