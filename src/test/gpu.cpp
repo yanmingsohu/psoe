@@ -318,7 +318,7 @@ static void test_clut(GPU& gpu, Bus& bus) {
 
   // 写调色板
   u16 clutx = 16; // 16的倍数
-  u16 cluty = 256;
+  u16 cluty = 410;
   bus.write32(gp0, 0xA0000000);
   bus.write32(gp0, pos(clutx, cluty).v);
   bus.write32(gp0, pos(16, 1).v);
@@ -341,16 +341,13 @@ static void test_clut(GPU& gpu, Bus& bus) {
 
   for (int j=0; j<16; ++j) {
     for (int i=0; i<4; ++i) {
-      bus.write32(gp0, 0x67452301);
+      bus.write32(gp0, 0x11112222);
       bus.write32(gp0, 0x33443344);
       bus.write32(gp0, 0x55557777);
-      bus.write32(gp0, 0x12121212);
+      bus.write32(gp0, 0x88889999);
     }
 
-    for (int i=0; i<4; ++i) {
-      bus.write32(gp0, 0x00000000);
-      bus.write32(gp0, 0x00000000);
-      bus.write32(gp0, 0x00000000);
+    for (int i=0; i<16; ++i) {
       bus.write32(gp0, 0x00000000);
     }
   }
@@ -361,14 +358,15 @@ static void test_clut(GPU& gpu, Bus& bus) {
   //0=4bit, 1=8bit, 2=15bit,
   t.color_mode = 0;
 
+  int box = 400;
   bus.write32(gp0, Color(0x2d, 0,0,0).v);
   bus.write32(gp0, pos(10, 10).v); // Vertex1
   bus.write32(gp0, TCoord(0, 0, Clut(clutx/16, cluty).v).v); //Texcoord1+Palette (ClutYyXxh)
-  bus.write32(gp0, pos(10, 200).v); // Vertex2
+  bus.write32(gp0, pos(10, box).v); // Vertex2
   bus.write32(gp0, TCoord(0, 32, t.v).v); //Texcoord2+Texpage (PageYyXxh)x
-  bus.write32(gp0, pos(200, 10).v); // Vertex3
+  bus.write32(gp0, pos(box, 10).v); // Vertex3
   bus.write32(gp0, TCoord(32, 0).v);
-  bus.write32(gp0, pos(200, 200).v); // Vertex4
+  bus.write32(gp0, pos(box, box).v); // Vertex4
   bus.write32(gp0, TCoord(32, 32).v);
 
   for (;;) sleep(1000);//!!!!!!

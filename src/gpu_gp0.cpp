@@ -951,10 +951,13 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       return false;
 
     // 屏蔽位设置
+    // TODO:掩码设置会影响所有渲染命令以及CPU到VRAM和VRAM到VRAM的传输命令
+    //（它作用于单独的半字，即15位纹理）。但是，遮罩不影响Fill-VRAM命令。
     case 0xE6:
       p.status.mask = c.parm & 1;
       p.status.enb_msk = (c.parm >> 1) & 1;
       p.dirtyAttr();
+      printf("\nGPU E6 lock:%d mask:%d\n", p.status.enb_msk, p.status.mask);
       return false;
       
     // 单色三点多边形，不透明

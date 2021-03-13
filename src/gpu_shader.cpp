@@ -98,7 +98,7 @@ vec4 text_pscolor_rgb(int red16) {
   return vec4(r, g, b, a);
 }
 
-vec4 texture_red16(sampler2D text, vec2 coord) {
+vec4 texture_ps_pix(sampler2D text, vec2 coord) {
   vec4 pix = texture(text, coord);
   if (pix.rgb == 0) {
     pix.a = 0; // 0:完全透明, 1:不透明
@@ -118,11 +118,11 @@ uint get_clut_index(sampler2D text, vec2 coord, uint mask, int mulrol, int devro
   uint bit  = ((fx + pagex) & rm) << mulrol;
   
   vec4 color = texture(text, coord);
-  uint word =((uint(color.a * 0xff) & 1u) << 15) 
-            | (uint(color.b * 0xff / 0x1f) << 10) 
-            | (uint(color.g * 0xff / 0x1f) << 5) 
-            |  uint(color.r * 0xff / 0x1f);
-  //return 0u;
+  uint word =((color.a == 0 ? 0u : 1u) << 15) 
+            | (uint(color.b * 0x20) << 10) 
+            | (uint(color.g * 0x20) << 5) 
+            |  uint(color.r * 0x20);
+  
   return (word >> bit);
 }
 
@@ -136,17 +136,17 @@ vec4 texture_mode(sampler2D text, vec2 coord) {
   switch (int(page >> 7) & 0x03) {
     case 0: // 4bit
       uint index4 = get_clut_index(text, coord, 0xFFFCu, 2, 2) & 0xFu;
-      return texture_red16(text, get_clut_coord(index4));
+      return texture_ps_pix(text, get_clut_coord(index4));
       
     case 1: // 8bit
       uint index8 = get_clut_index(text, coord, 0xFFFEu, 3, 1) & 0xFFu;
-      return texture_red16(text, get_clut_coord(index8));
+      return texture_ps_pix(text, get_clut_coord(index8));
 
     default:
     case 2: // 16bit
       uint pagex = (0x0Fu & page) << 6; //* 0x40;
       coord.x = coord.x + (float(pagex) / frame_width);
-      return texture_red16(text, coord);
+      return texture_ps_pix(text, coord);
   }
 }
 )shader"

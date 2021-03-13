@@ -31,8 +31,8 @@ union GpuStatus {
     u32 tp        : 2; //7-8 纹理页颜色模式 0{4bit CLUT}, 1{8bit CLUT}, 2:{15bit}
     u32 dtd       : 1; //  9 1:开启抖动Dither, 24抖15
     u32 draw      : 1; // 10 1:允许绘图命令绘制显示区域, 0:prohibited
-    u32 mask      : 1; // 11 1:绘制时修改蒙板bit (bit15?)
-    u32 enb_msk   : 1; // 12 1:启用蒙板, 只能绘制到蒙板区域
+    u32 mask      : 1; // 11 1:绘制时强制修改缓冲区 bit15 = 1; 0:等于纹理的bit15, 非纹理=0
+    u32 enb_msk   : 1; // 12 1:帧缓冲区中bit15 = 1的任何（旧）像素均受写保护; 0:允许绘制
     u32 inter_f   : 1; // 13 always 1 when GP1(08h).5=0
     u32 distorted : 1; // 14 GP1(08h).7
     u32 text_off  : 1; // 15 1=Disable Textures
