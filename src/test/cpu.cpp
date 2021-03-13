@@ -38,13 +38,14 @@ public:
   MemJit mmjit;
   MMU mmu;
   Bus bus;
+  TimerSystem ti;
   R3000A t;
   SerialPort sio;
   MipsReg& r;
   u32 memp = 0;
 
   BinLoader() 
-  : mmjit(), mmu(mmjit), bus(mmu), t(bus), sio(bus), r(t.getreg()) {
+  : mmjit(), mmu(mmjit), bus(mmu), ti(bus), t(bus, ti), sio(bus), r(t.getreg()) {
   }
 
   void w32(u32 d) {

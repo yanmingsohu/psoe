@@ -16,11 +16,11 @@ u32 textureAttr(GpuStatus& st, GpuTextFlip& flip) {
 }
 
 
-GPU::GPU(Bus& bus) : 
+GPU::GPU(Bus& bus, TimerSystem& ts) : 
     DMADev(bus, DeviceIOMapper::dma_gpu_base), status{0}, screen{0}, display{0},
     gp0(*this), gp1(*this), cmd_respons(0), vram(1), ds(0), disp_hori{0},
     disp_veri{0}, text_win{0}, draw_offset{0}, draw_tp_lf{0}, draw_bm_rt{0},
-    status_change_count(0)
+    status_change_count(0), timer(ts)
 {
   initOpenGL();
 
@@ -120,8 +120,10 @@ void GPU::gpu_thread() {
     if (status.height) {
       status.lcf = ~status.lcf;
     }
-
+    
+    timer.vblank(false);
     glfwSwapBuffers(glwindow);
+    timer.vblank(true);
     //debug("\r\t\t\t\t\t\t%d, %f\r", ++frames, glfwGetTime());
   }
 }

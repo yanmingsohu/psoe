@@ -5,6 +5,7 @@
 #include "mem.h"
 #include "bus.h"
 #include "gte.h"
+#include "time.h"
 
 namespace ps1e {
 
@@ -12,6 +13,7 @@ namespace ps1e {
 class R3000A : public IrqReceiver {
 private:
   Bus& bus;
+  TimerSystem& timer;
   MipsReg reg;
   Cop0Reg cop0;
   GTE gte;
@@ -25,9 +27,9 @@ public:
   // 仅用于统计调试, 无实际用途
   u32 exception_counter = 0;
 
-  R3000A(Bus& _bus)  : 
+  R3000A(Bus& _bus, TimerSystem& _t)  : 
       bus(_bus), cop0({0}), pc(0), hi(0), lo(0), 
-      slot_over_pc(0), on_slot_time(false)
+      slot_over_pc(0), on_slot_time(false), timer(_t)
   {
     reset();
   }
@@ -52,6 +54,7 @@ public:
     ready_recv_irq();
     check_exe_break();
     process_exception();
+    timer.systemClock();
 
     if (npc & 0b11) {
       exception(ExeCodeTable::ADEL, true);

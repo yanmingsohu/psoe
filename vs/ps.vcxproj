@@ -37,6 +37,7 @@
     <ClInclude Include="..\src\serial_port.h" />
     <ClInclude Include="..\src\spu.h" />
     <ClInclude Include="..\src\system.h" />
+    <ClInclude Include="..\src\time.h" />
     <ClInclude Include="..\src\util.h" />
     <ClCompile Include="..\src\bus.cpp" />
   </ItemGroup>
@@ -57,6 +58,7 @@
     <ClCompile Include="..\src\serial_port.cpp" />
     <ClCompile Include="..\src\spu.cpp" />
     <ClCompile Include="..\src\system.cpp" />
+    <ClCompile Include="..\src\time.cpp" />
     <ClCompile Include="..\src\util.cpp" />
   </ItemGroup>
   <ItemGroup>

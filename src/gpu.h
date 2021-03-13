@@ -8,6 +8,7 @@
 #include "bus.h"
 #include "opengl-wrap.h"
 #include "otc.h"
+#include "time.h"
 
 struct GLFWwindow;
 
@@ -260,6 +261,7 @@ private:
   std::recursive_mutex for_read_queue;
   GLDrawState ds;
   u32 status_change_count;
+  TimerSystem& timer;
     
   // 这是gpu线程函数, 不要调用
   void gpu_thread();
@@ -276,7 +278,7 @@ protected:
   void dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) override;
 
 public:
-  GPU(Bus& bus);
+  GPU(Bus& bus, TimerSystem&);
   ~GPU();
 
   void reset();

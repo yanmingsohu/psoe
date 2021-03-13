@@ -6,6 +6,7 @@
 #include "../serial_port.h"
 #include "../otc.h"
 #include "../cdrom.h"
+#include "../time.h"
 #include <conio.h>
 
 
@@ -36,7 +37,8 @@ static void test_mips_inter() {
   }
 
   Bus bus(mmu);
-  GPU gpu(bus);
+  TimerSystem ti(bus);
+  GPU gpu(bus, ti);
   SoundProcessing spu(bus);
   OrderingTables otc(bus);
   SerialPort spi(bus);
@@ -44,7 +46,7 @@ static void test_mips_inter() {
   dri.openImage(image);
   CDrom cdrom(bus, dri);
 
-  R3000A cpu(bus);
+  R3000A cpu(bus, ti);
   bus.bind_irq_receiver(&cpu);
   cpu.reset();
   test_gpu(gpu, bus); //!!
