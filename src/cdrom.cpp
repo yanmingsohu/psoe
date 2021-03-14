@@ -100,12 +100,12 @@ CdDrive::CdDrive() : cd(0), first_track(0), num_track(0), offset(-1) {
 
 
 CdDrive::~CdDrive() {
-  close();
+  releaseDisk();
 }
 
 
-bool CdDrive::open(CDIO c) {
-  close();
+bool CdDrive::loadDisk(CDIO c) {
+  releaseDisk();
   if (c) {
     cd = c;
     first_track = cdio_get_first_track_num(cd);
@@ -118,7 +118,7 @@ bool CdDrive::open(CDIO c) {
 }
 
 
-void CdDrive::close() {
+void CdDrive::releaseDisk() {
   if (cd) {
     cdio_destroy(cd);
     cd = 0;
@@ -131,17 +131,17 @@ bool CdDrive::hasDisk() {
 }
 
 
-bool CdDrive::openPhysical(char* src) {
+bool CdDrive::loadPhysical(char* src) {
   info("Open physical CDROM %s\n", src);
   ::CdIo_t *p_cdio = cdio_open(src, DRIVER_UNKNOWN);
-  return open(p_cdio);
+  return loadDisk(p_cdio);
 }
 
 
-bool CdDrive::openImage(char* path) {
+bool CdDrive::loadImage(char* path) {
   info("Open virtual CDROM image from %s\n", path);
   ::CdIo_t *p_cdio = cdio_open_bincue(path);
-  return open(p_cdio);
+  return loadDisk(p_cdio);
 }
 
 
@@ -369,7 +369,7 @@ u32 CDROM_REG::read3() {
 
 
 void CDROM_REG::write(u32 v) {
-  info("CD-ROM w 1f801800(32) %08x\n", v);
+  error("CD-ROM w 1f801800(32) %08x\n", v);
 }
 
 
@@ -381,7 +381,7 @@ void CDROM_REG::write(u8 v) {
 
 
 void CDROM_REG::write(u16 v) {
-  info("CD-ROM w 1f801800(16) %08x\n", v);
+  error("CD-ROM w 1f801800(16) %08x\n", v);
 }
 
 
@@ -425,6 +425,7 @@ void CDROM_REG::write2(u8 v) {
     case 1: // 中断使能寄存器
       debug("CD-ROM irq enable %08x\n", v);
       p.irq_enb = static_cast<u8>(v);
+      ps1e_t::ext_stop = 1;
       break;
 
     case 2:

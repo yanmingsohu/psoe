@@ -43,7 +43,7 @@ static void test_mips_inter() {
   OrderingTables otc(bus);
   SerialPort spi(bus);
   CdDrive dri;
-  dri.openImage(image);
+  dri.loadImage(image);
   CDrom cdrom(bus, dri);
 
   R3000A cpu(bus, ti);
@@ -108,7 +108,8 @@ void debug(R3000A& cpu, Bus& bus) {
           disa.decode(-i);
         }
       }
-        
+
+wait_input:  
       info("CPU <%d> %d >>", ext_count, counter);
       int ch = _getch();
       printf("\r                                     \r");
@@ -117,7 +118,7 @@ void debug(R3000A& cpu, Bus& bus) {
         case ' ':
         case 'r':
           printMipsReg(cpu.getreg());
-          break;
+          goto wait_input;
 
         case 'x':
           ext_stop = 0;
@@ -145,7 +146,7 @@ void debug(R3000A& cpu, Bus& bus) {
           if (inputHexVal("Address HEX:", address)) {
             bus.show_mem_console(address, 0x60);
           }
-          break;
+          goto wait_input;
 
         case 'd':
           if (inputHexVal("Stop Address Hex:", address)) {
@@ -163,15 +164,16 @@ void debug(R3000A& cpu, Bus& bus) {
               printf("change [%08x]: %x\n", address, v);
             }
           }
-          break;
+          goto wait_input;
 
         case 'h':
-          printf("\r'r' show reg.\t'x' run, hide debug.\t");
-          printf("'1' debug 100.\t'a' show address value.\n");
-          printf("'2' debug 10000.\t'3' debug 1000000.\n");
-          printf("'0' Reset.\t'c' change mem.");
-          printf("'h' show help.\t'ESC' Exit.\n");
-          break;
+          printf("\n'r' show reg.       'x' run, hide debug.  \n");
+          printf("'1' debug 100.      'a' show address value.\n");
+          printf("'2' debug 10000.    '3' debug 1000000.\n");
+          printf("'0' Reset.          'c' write memory.\n");
+          printf("'d' set break.      'Enter' next op\n");
+          printf("'h' show help.      'ESC' Exit.\n");
+          goto wait_input;
 
         case 'q':
         case 0x1b: // ESC

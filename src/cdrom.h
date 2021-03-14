@@ -118,15 +118,15 @@ private:
   CDTrack num_track;
   CdLsn offset;
 
-  bool open(CDIO);
+  bool loadDisk(CDIO);
 
 public:
   CdDrive();
   virtual ~CdDrive();
 
-  void close();
-  bool openPhysical(char* src);
-  bool openImage(char* filepath);
+  void releaseDisk();
+  bool loadPhysical(char* src);
+  bool loadImage(char* filepath);
   int getTrackFormat(CDTrack track);
   const char* trackFormatStr(int);
   CDTrack first();

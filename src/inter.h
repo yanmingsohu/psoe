@@ -91,8 +91,10 @@ public:
   }
 
   inline u32 has_exception() {
-    if (cop0.sr.ie == 0) return 0;
-    return (cop0.sr.im & cop0.cause.ip);
+    if (cop0.sr.ie) {
+      return (cop0.sr.im & cop0.cause.ip);
+    }
+    return 0;
   }
 
   void send_bus_exception() {
@@ -123,7 +125,10 @@ private:
     ++exception_counter;
     cop0.cause.ip |= static_cast<u8>(i);
     if (!has_exception()) {
+      // debug info
       printf(YELLOW("SKIP exception (%X)%s PC=%x\n"), e, MipsCauseStr[static_cast<u32>(e)], pc);
+      printf("IE %d, IM %x, IP %x\n", cop0.sr.ie, cop0.sr.im, cop0.cause.ip);
+
       if (from_instruction) {
         pc += 4;
       }
@@ -812,6 +817,10 @@ private:
 
 public:
   DisassemblyMips(R3000A& im) : bus(im.bus), reg(im.reg), cpc(im.pc), pc(im.pc) {}
+
+  const MipsReg& getreg() {
+    return reg;
+  }
 
   // 解析当前pc指向的指令
   void current() {

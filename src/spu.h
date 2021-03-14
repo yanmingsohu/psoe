@@ -70,6 +70,7 @@ private:
     }
   };
 
+  //TODO: 拆分成两个 u16 寄存器
   Reg32<DeviceIOMapper::spu_main_vol>       mainVol;
   Reg32<DeviceIOMapper::spu_reverb_vol>     reverbVol;
   Reg32<DeviceIOMapper::spu_cd_vol>         cdVol;
@@ -116,6 +117,7 @@ private:
   Reg32<DeviceIOMapper::spu_rb_apf_addr2>   mAPF2;
   Reg32<DeviceIOMapper::spu_rb_in_vol>      vIN;
   
+  // ch0 ... ch23
   SPU_DEF_ALL_CHANNELS(ch, SPU_DEF_VAL)
 
 public:

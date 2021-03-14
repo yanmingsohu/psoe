@@ -328,10 +328,13 @@ bool mips_decode(const instruction_st i, InstructionReceiver* r) {
         case 0:
           // $t = cop0[$d];
           r->mfc0(i.R.rt, i.R.rd);
+          //printf("CPU Read COP0.%d = %x\n", i.R.rd, i.R.rt);
           break;
         case 4:
           // cop0[$d] = $t;
           r->mtc0(i.R.rt, i.R.rd);
+          //ps1e_t::ext_stop = 1;
+          //printf("MOV COP0.%d = %x\n", i.R.rd, r->getreg().u[i.R.rt]);
           break;
 
         case 16:
@@ -380,10 +383,12 @@ bool mips_decode(const instruction_st i, InstructionReceiver* r) {
     case 48: // lwc0 !!!
       // cop0[$t] = [$s + imm];
       //r->lwc0(i.I.rt, i.I.rs, i.I.imm);
+      error("lwc0\n");
       return false;
     case 56: // swc0 !!!
       // [$s + imm] = cop0[$t];
       //r->swc0(i.I.rt, i.I.rs, i.I.imm);
+      error("swc0\n");
       return false;//TODO: remove
 
     case 18: // cop2 GTE like op 16

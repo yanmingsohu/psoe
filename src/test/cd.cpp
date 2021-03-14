@@ -8,7 +8,7 @@ static void test_cdio() {
   char image[] = "ps-exe/Raiden Project, The (Europe).cue";
   ps1e::CdDrive cd;
 
-  if (!cd.openImage(image)) {
+  if (!cd.loadImage(image)) {
     return;
   }
 

@@ -66,7 +66,7 @@ void IrqReceiver::send_irq(u32 m) {
   // 上升沿触发
   u32 test = 1;
   for (int i=0; i<IRQ_BIT_SIZE; ++i) {
-    if (((mask & test) == 0) && ((m & test) == 1)) {
+    if (((mask & test) == 0) && (m & test)) {
       trigger = 1;
       break;
     }
@@ -216,6 +216,12 @@ u8 Bus::read8(psmem addr) {
 
 // 该函数为测试用, 最终可以删除其中的代码
 void Bus::__on_write(psmem addr, u32 v) {
+  if (addr == 0x1F80'1070) {
+    printf("BUS write irq status %x\n", v);
+  }
+  else if (ps1e_t::ext_stop) {
+    if (!(0x8000'0000 & addr)) printf("BUS Write %x %x\n", addr, v);
+  }
 return;
   addr = addr & 0x00ff'ffff;
   /*if ((addr >= 0x0011f8a0) && (addr <= 0x0011f8b8)) {*/
@@ -232,10 +238,17 @@ return;
 }
 
 
+// 该函数为测试用, 最终可以删除其中的代码
 void Bus::__on_read(psmem addr) {
-  if ((addr & 0xffff'fff0) == 0x1f80'1800) {
-    ps1e_t::ext_stop = 1;
+  if (addr == 0x1F80'1070) {
+    printf("BUS read irq status\n");
   }
+  else if (ps1e_t::ext_stop) {
+    if (!(0x8000'0000 & addr)) printf("BUS read %x\n", addr);
+  }
+  /*if ((addr & 0xffff'fff0) == 0x1f80'1800) {
+    ps1e_t::ext_stop = 1;
+  }*/
 }
 
 
