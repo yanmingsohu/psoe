@@ -118,7 +118,7 @@ uint get_clut_index(sampler2D text, vec2 coord, uint mask, int mulrol, int devro
   uint bit  = ((fx + pagex) & rm) << mulrol;
   
   vec4 color = texture(text, coord);
-  uint word =((color.a == 0 ? 0u : 1u) << 15) 
+  uint word =((color.a > 0 ? 1u : 0u) << 15) 
             | (uint(color.b * 0x20) << 10) 
             | (uint(color.g * 0x20) << 5) 
             |  uint(color.r * 0x20);

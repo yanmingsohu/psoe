@@ -3,7 +3,7 @@
 #include "bus.h"
 #include <thread>
 #include <mutex>
-#include <condition_variable>
+//#include <condition_variable>
 
 struct msf_s;
 struct _CdIo;
@@ -31,6 +31,18 @@ union CdStatus {
   };
 };
 
+
+union CdReq {
+  u8 v;
+  struct {
+    u8 notuse : 5; //0-4
+    u8 smen   : 1; //5 SMEN Want Command Start Interrupt on Next Command (0=No change, 1=Yes)
+    u8 bfwr   : 1; //6
+    u8 bfrd   : 1; //7 (0=No/Reset Data Fifo, 1=Yes/Load Data Fifo)
+  };
+};
+
+
 struct CdSpuVol {
   u8 cd_l_spu_l;
   u8 cd_l_spu_r;
@@ -42,6 +54,7 @@ struct CdSpuVol {
   }
 };
 
+
 union CdAudioCode {
   u8 v;
   struct {
@@ -52,11 +65,13 @@ union CdAudioCode {
   };
 };
 
+
 // 必须与 `struct msf_t` 二进制兼容
 struct CdMsf {
   u8 m, s, f;
   void next_section();
 };
+
 
 //  ___These values appear in the FIRST response; with stat.bit0 set___
 //  10h - Invalid Sub_function (for command 19h), or invalid parameter value
@@ -89,6 +104,7 @@ union CdAttribute {
   void donothing();
   void clearerr();
 };
+
 
 union CdMode {
   u8 v;
@@ -162,20 +178,20 @@ public:
 
 //TODO: fix 当 pwrite 回绕到 0 逻辑错误
 class CdromFifo {
-private:
+public:
   u8 *d;
   u32 pread;
   u32 pwrite;
-  const u8 len;
+  const u32 len;
   const u16 mask;
+
 public:
+  // len16bit - 16字节的倍数
   CdromFifo(u8 len16bit);
   ~CdromFifo();
   void reset();
   u8 read();
-  bool canRead();
   void write(u8);
-  bool canWrite();
 };
 
 
@@ -186,7 +202,6 @@ private:
   CdSpuVol change;
   CdSpuVol apply;
 
-  CdStatus status;
   CDROM_REG reg;
   CdAudioCode code;
   CdAttribute attr;
@@ -196,6 +211,15 @@ private:
   u8 irq_enb;
   u8 session;
 
+  // 解决多线程冲突
+  u8 s_index;
+  u8 s_adpcm_empt;
+  u8 s_parm_empt;
+  u8 s_parm_full;
+  u8 s_resp_empt;
+  u8 s_data_empt;
+  u8 s_busy;
+
   //0-2   Read: Response Received   Write: 7=Acknowledge   ;INT1..INT7
   //3     Read: Unknown (usually 0) Write: 1=Acknowledge   ;INT8  ;XXX CLRBFEMPT
   //4     Read: Command Start       Write: 1=Acknowledge   ;INT10h;XXX CLRBFWRDY
@@ -203,40 +227,40 @@ private:
   //6     Read: Always 1 ;XXX "_"   Write: 1=Reset Parameter Fifo ;XXX CLRPRM
   //7     Read: Always 1 ;XXX "_"   Write: 1=Unknown              ;XXX CHPRST
   u8 irq_flag;
+  u8 irq_flag2;
+  bool has_irq_flag2;
 
   bool mute;
-  // Want Data (0=No/Reset Data Fifo, 1=Yes/Load Data Fifo)
-  bool BFRD;
-  // Want Command Start Interrupt on Next Command (0=No change, 1=Yes)
-  bool SMEN;
+  CdReq req;
   CdMsf loc;
 
   bool thread_running;
   std::thread th;
-  std::mutex for_irq;
-  std::condition_variable wait_irq;
 
   CdromFifo response;
   CdromFifo param;
-  CdromFifo cmd;
+  CdromFifo data;
+  volatile u8 cmd;
+  volatile bool has_cmd;
 
-  bool _swap_buf;
-  u8 *data_buf[2];
-  u8 *accept_buf;
-  u8 *read_buf;
-  u16 data_read_point;
-  u16 data_size;
   u8 locL[8];
   u8 locP[8];
 
   void command_processor();
 
   void push_response(u8);
+  // 由cdrom命令调用
   void send_irq(u8);
+  // 由cdrom命令调用
+  void send_irq2(u8);
   void do_cmd(u8);
   u8 read_param();
   void read_next_section();
-  void swap_buf();
+  
+  void clear_data_fifo();
+  void set_busy(bool);
+  void clear_resp_fifo(bool resetFifo = true);
+  void clear_parm_fifo(bool resetFifo = true);
 
 public:
   void CmdSync();

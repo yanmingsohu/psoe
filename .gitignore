@@ -16,6 +16,7 @@ ps-exe/*.bin
 ps-exe/*.o
 ps-exe/*.cue
 deps/*/**
+ps-exe/psx-hardware-tests-master
 
 *.dll
 *.db

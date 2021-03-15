@@ -133,6 +133,9 @@
     <ClCompile Include="..\src\time.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\inter.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\makefile">

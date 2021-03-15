@@ -86,7 +86,7 @@ template<class T> T Bus::read(psmem addr) {
     return *tp;
   }
   warn("READ BUS invaild %x[%d]\n", addr, sizeof(T));
-  ir->send_bus_exception();
+  if (ir) ir->send_bus_exception();
   return 0;
 }
 

@@ -102,7 +102,7 @@ bool MMU::loadBios(char const* filename) {
   u8* buf = bios.point(0);
   size_t rz = readFile(buf, bios.size(), filename);
   if (rz <= 0) {
-    printf(RED("cannot read bios %s\n"), filename);
+    printf(RED("cannot load bios %s\n"), filename);
     return false;
   }
   return true;

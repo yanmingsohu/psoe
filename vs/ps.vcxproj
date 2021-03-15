@@ -51,6 +51,7 @@
     <ClCompile Include="..\src\gpu_gp1.cpp" />
     <ClCompile Include="..\src\gpu_shader.cpp" />
     <ClCompile Include="..\src\gte.cpp" />
+    <ClCompile Include="..\src\inter.cpp" />
     <ClCompile Include="..\src\mem.cpp" />
     <ClCompile Include="..\src\mips.cpp" />
     <ClCompile Include="..\src\opengl-wrap.cpp" />

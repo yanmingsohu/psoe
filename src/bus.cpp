@@ -219,6 +219,12 @@ void Bus::__on_write(psmem addr, u32 v) {
   if (addr == 0x1F80'1070) {
     printf("BUS write irq status %x\n", v);
   }
+  else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
+    printf("BUS write JOY %x = %x\n", addr, v);
+  }
+  //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
+  //  printf("BUS write SPU %x = %x\n", addr, v);
+  //}
   else if (ps1e_t::ext_stop) {
     if (!(0x8000'0000 & addr)) printf("BUS Write %x %x\n", addr, v);
   }
@@ -241,8 +247,14 @@ return;
 // 该函数为测试用, 最终可以删除其中的代码
 void Bus::__on_read(psmem addr) {
   if (addr == 0x1F80'1070) {
-    printf("BUS read irq status\n");
+    printf("BUS read irq status %x\n", irq_status);
   }
+  else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
+    printf("BUS read JOY %x\n", addr);
+  }
+  //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
+  //  printf("BUS read SPU %x\n", addr);
+  //}
   else if (ps1e_t::ext_stop) {
     if (!(0x8000'0000 & addr)) printf("BUS read %x\n", addr);
   }

@@ -8,6 +8,8 @@
 #include "../cdrom.h"
 #include "../time.h"
 #include <conio.h>
+#include <mutex>
+#include <condition_variable>
 
 
 namespace ps1e_t {
@@ -15,6 +17,9 @@ using namespace ps1e;
 
 // 通过这个全局变量在任意地方停止cpu并开始调试
 int ext_stop = 0;
+int exit_debug = 0;
+std::mutex debug_lck;
+std::condition_variable wait_debug;
 
 // https://alanhogan.com/asu/assembler.php
 // https://github.com/oscourse-tsinghua/cpu-testcase
@@ -29,10 +34,11 @@ static void test_mips_size() {
 
 static void test_mips_inter() {
   char image[] = "ps-exe/Raiden Project, The (Europe).cue";
+  char biosf[] = "H:\\EMU-console\\PlayStation1\\bios\\SCPH1000.BIN";
 
   MemJit mmjit;
   MMU mmu(mmjit);
-  if (!mmu.loadBios("ps-exe/SCPH1000.BIN")) {
+  if (!mmu.loadBios(biosf)) {
     panic("load bios fail");
   }
 
@@ -49,7 +55,7 @@ static void test_mips_inter() {
   R3000A cpu(bus, ti);
   bus.bind_irq_receiver(&cpu);
   cpu.reset();
-  test_gpu(gpu, bus); //!!
+  //test_gpu(gpu, bus); //!!
   debug(cpu, bus);
 
   //cdrom.CmdInit();
@@ -79,6 +85,10 @@ void debug(R3000A& cpu, Bus& bus) {
   //cpu.set_data_rw_point(0x0011'f854, 0x00ff'ffff);
   LocalEvents event;
 
+  //disa.setInterruptPC(0x8004fe54); // 在 bios 菜单中停止
+  //disa.setInterruptPC(0x8003ea54); // 进入bios菜单后陷入读取cdrom状态
+  //disa.setInterruptPC(0x800560e4); // 调用 cdrom setloc 后陷入
+
   for (;;) {
     if (show_code > 0) {
       disa.current();
@@ -98,8 +108,10 @@ void debug(R3000A& cpu, Bus& bus) {
       ext_count += cpu.exception_counter;
       cpu.exception_counter = 0;
       // 打印前后 5 条指令
-      for (int i=-5; i<0; ++i) disa.decode(i);
-      show_code = 5;
+      if (!ext_stop) {
+        for (int i=-5; i<0; ++i) disa.decode(i);
+        show_code = 5;
+      }
     }
 
     if (ext_stop || disa.isDebugInterrupt()) {
@@ -123,6 +135,7 @@ wait_input:
         case 'x':
           ext_stop = 0;
           show_code = -1;
+          wait_debug.notify_all();
           break;
 
         case '0':
@@ -190,9 +203,25 @@ wait_input:
 }
 
 
+void wait_anykey_debug() {
+  printf("Press any key debug\n");
+  std::unique_lock<std::mutex> lk(debug_lck);
+  while (!exit_debug) {
+    _getch();
+    ext_stop = 1;
+    wait_debug.wait(lk);
+  }
+}
+
+
 void test_disassembly() {
+  auto anykey = std::thread(wait_anykey_debug);
   test_mips_size();
   test_mips_inter();
+
+  exit_debug = 1;
+  wait_debug.notify_all();
+  anykey.join();
 }
 
 }

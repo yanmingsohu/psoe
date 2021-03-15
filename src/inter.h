@@ -53,7 +53,9 @@ public:
     u32 npc = pc;
     ready_recv_irq();
     check_exe_break();
-    process_exception();
+    if (has_exception()) {
+      process_exception();
+    }
     timer.systemClock();
 
     if (npc & 0b11) {
@@ -124,10 +126,11 @@ private:
   void exception(ExeCodeTable e, bool from_instruction, CpuCauseInt i = CpuCauseInt::software) {
     ++exception_counter;
     cop0.cause.ip |= static_cast<u8>(i);
-    if (!has_exception()) {
+
+    if (e != ExeCodeTable::SYS && (!has_exception())) {
       // debug info
       printf(YELLOW("SKIP exception (%X)%s PC=%x\n"), e, MipsCauseStr[static_cast<u32>(e)], pc);
-      printf("IE %d, IM %x, IP %x\n", cop0.sr.ie, cop0.sr.im, cop0.cause.ip);
+      printf("IE %d, IM %xH, IP %xH\n", cop0.sr.ie, cop0.sr.im, cop0.cause.ip);
 
       if (from_instruction) {
         pc += 4;
@@ -139,9 +142,8 @@ private:
   }
 
   void process_exception() {
-    if (!has_exception()) return;
-    printf(YELLOW("Got exception (%X)%s sr:%x [PC:0x%08x, 0x%08x]\n"), 
-      cop0.cause.ExcCode, MipsCauseStr[cop0.cause.ExcCode], cop0.sr.v, pc, bus.read32(pc));
+    printf(YELLOW("Got exception %s(%X) sr:%x [PC:0x%08x, 0x%08x]\n"), 
+      MipsCauseStr[cop0.cause.ExcCode], cop0.cause.ExcCode, cop0.sr.v, pc, bus.read32(pc));
       
     cop0.sr.KUc = 0;
     cop0.cause.wp = 1;
@@ -170,6 +172,7 @@ private:
       }
     }
     cop0.sr.v = SET_BIT(cop0.sr.v, COP0_SR_RFE_SHIFT_MASK, cop0.sr.v << 2);
+    info("Exception GOTO: %x\n", pc);
   }
 
   void prejump(u32 target_pc) {
@@ -222,6 +225,7 @@ public:
     pc += 4;
   }
 
+  //TODO: 处理除零错误
   void div(mips_reg s, mips_reg t) {
     lo = reg.s[s] / reg.s[t];
     hi = reg.s[s] % reg.s[t];
@@ -593,7 +597,8 @@ public:
       return;
     }
     pc += 4;
-    reg.u[d] = pc + 4;
+    // 防止 0 寄存器写入
+    if (d) reg.u[d] = pc + 4;
     prejump(reg.u[s]);
   }
 
@@ -650,6 +655,8 @@ public:
 
   void syscall() {
     exception(ExeCodeTable::SYS, true);
+    //pc += 4;
+    process_exception();
   }
 
   void brk(u32 code) {
@@ -662,11 +669,16 @@ public:
   }
 
   void mfc0(mips_reg t, mips_reg d) {
+    printf("Cpu GET COP0.%d[%x] => REG.%x\n", d, cop0.r[d], t);
+
     reg.u[t] = cop0.r[d];
     pc += 4;
   }
 
   void mtc0(mips_reg t, mips_reg d) {
+    //ps1e_t::ext_stop = 1;
+    printf("Cpu SET COP0.%d = %x\n", d, reg.u[t]);
+
     switch (d) {
       case COP0_CAUSE_REG_IDX:
         cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_CAUSE_RW_MASK);

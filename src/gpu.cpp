@@ -23,6 +23,7 @@ GPU::GPU(Bus& bus, TimerSystem& ts) :
     status_change_count(0), timer(ts)
 {
   initOpenGL();
+  reset();
 
   bus.bind_io(DeviceIOMapper::gpu_gp0, &gp0);
   bus.bind_io(DeviceIOMapper::gpu_gp1, &gp1);
@@ -134,6 +135,7 @@ void GPU::reset() {
   status.v = 0x14802000;
   status.r_cmd = 1; //TODO: 与状态同步
   status.r_cpu = 1;
+  status.r_dma = 1;
   status.r = 1;
 }
 
