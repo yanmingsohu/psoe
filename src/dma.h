@@ -68,26 +68,26 @@ union DMAChcr {
 union DMAIrq {
   u32 v;
   struct {
-    u32 _0 : 15;
-    u32 force : 1; // 16 bit
+    u32 _0 : 15; //0-14
+    u32 force : 1; // 15 bit
 
-    u32 d0_enable : 1;
-    u32 d1_enable : 1;
-    u32 d2_enable : 1;
-    u32 d3_enable : 1;
-    u32 d4_enable : 1;
-    u32 d5_enable : 1;
-    u32 d6_enable : 1;
-    u32 master_enable : 1; // 24bit
+    u32 d0_enable : 1; //16 MDECin
+    u32 d1_enable : 1; //17 MDECout
+    u32 d2_enable : 1; //18 GPU
+    u32 d3_enable : 1; //19 CDROM
+    u32 d4_enable : 1; //20 SPU
+    u32 d5_enable : 1; //21 PIO
+    u32 d6_enable : 1; //22 OTC
+    u32 master_enable : 1; // 23bit
 
-    u32 d0_flag : 1;
-    u32 d1_flag : 1;
-    u32 d2_flag : 1;
-    u32 d3_flag : 1;
-    u32 d4_flag : 1;
-    u32 d5_flag : 1;
-    u32 d6_flag : 1;
-    u32 master_flag : 1;
+    u32 d0_flag : 1; //24
+    u32 d1_flag : 1; //25
+    u32 d2_flag : 1; //26
+    u32 d3_flag : 1; //27
+    u32 d4_flag : 1; //28
+    u32 d5_flag : 1; //29
+    u32 d6_flag : 1; //30
+    u32 master_flag : 1; //31
   };
 
   struct{

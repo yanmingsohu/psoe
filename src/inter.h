@@ -122,6 +122,10 @@ public:
     return pc;
   }
 
+  u32 getepc() const {
+    return cop0.epc;
+  }
+
 private:
   void exception(ExeCodeTable e, bool from_instruction, CpuCauseInt i = CpuCauseInt::software) {
     ++exception_counter;
@@ -172,7 +176,7 @@ private:
       }
     }
     cop0.sr.v = SET_BIT(cop0.sr.v, COP0_SR_RFE_SHIFT_MASK, cop0.sr.v << 2);
-    info("Exception GOTO: %x\n", pc);
+    debug("Exception GOTO: %x\n", pc);
   }
 
   void prejump(u32 target_pc) {
@@ -669,15 +673,14 @@ public:
   }
 
   void mfc0(mips_reg t, mips_reg d) {
-    printf("Cpu GET COP0.%d[%x] => REG.%x\n", d, cop0.r[d], t);
-
+    //printf("Cpu GET COP0.%d[%x] => REG.%x\n", d, cop0.r[d], t);
     reg.u[t] = cop0.r[d];
     pc += 4;
   }
 
   void mtc0(mips_reg t, mips_reg d) {
     //ps1e_t::ext_stop = 1;
-    printf("Cpu SET COP0.%d = %x\n", d, reg.u[t]);
+    //printf("Cpu SET COP0.%d = %x\n", d, reg.u[t]);
 
     switch (d) {
       case COP0_CAUSE_REG_IDX:
@@ -1028,18 +1031,22 @@ public:
 
   void j(u32 i) const {
     jj("J", i);
+    check_sys_func(i);
   }
 
   void jal(u32 i) const {
     jj("JAL", i);
+    check_sys_func(i);
   }
 
   void jr(mips_reg s) const {
     j1("JR", s);
+    check_sys_func(reg.u[s]);
   }
 
   void jalr(mips_reg d, mips_reg s) const {
     rx("JALR", d, s);
+    check_sys_func(reg.u[s]);
   }
 
   void mfhi(mips_reg d) const {
@@ -1092,10 +1099,12 @@ public:
 
   void syscall() const {
     jj("SYSCAl", reg.v0);
+    show_sys_call();
   }
 
   void brk(u32 code) const {
     jj("BREAK", code);
+    show_brk();
   }
 
   void rfe() const {
@@ -1196,7 +1205,7 @@ private:
   }
 
   void j1(char const* iname, mips_reg s) const {
-    info(DBG_HD "%s\t\t\t\t \x1b[1;30m# $%s=%x\n",
+    info(DBG_HD "$%s\t\t\t\t \x1b[1;30m# $%s=%x\n",
       pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
   }
 
@@ -1227,6 +1236,20 @@ private:
     }
     return MipsRegName[s];
   }
+
+  inline void check_sys_func(u32 addr) const {
+    if (0x08 & addr) {
+      show_sys_func(addr);
+    }
+  }
+
+  void show_sys_func(u32 addr) const;
+  void show_sys_call() const;
+  void show_brk() const;
+  void sys_a_func() const;
+  void sys_b_func() const;
+  void sys_c_func() const;
+  void sf(const char *fname, u8 count, ...) const;
 };
 
 

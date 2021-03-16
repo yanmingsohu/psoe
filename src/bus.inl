@@ -23,10 +23,9 @@ template<class T> void Bus::write(psmem addr, T v) {
       return;
 
     CASE_IO_MIRROR(0x1F80'10F4):
-      dma_irq.v = v;
-      if (v & IRQ_RST_FLG_BIT_MK) { 
-        dma_irq.dd_flag = 0;
-      }
+      dma_irq.v = v & 0x00FF'FFE0; // 最高位不变
+      // 写 1 清除, 0 不变
+      dma_irq.v &= ~(v & IRQ_RST_FLG_BIT_MK);
       return;
 
     CASE_IO_MIRROR(0x1F80'1070):

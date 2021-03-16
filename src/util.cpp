@@ -219,14 +219,14 @@ size_t readFile(void *buf, size_t bufsize, char const *filename) {
   FILE* f = fopen(filename, "rb");
   if (!f) {
     warn("cannot open file %s\n", filename);
-    return -1;
+    return 0;
   }
   auto closeFile = createFuncLocal([f] { 
     fclose(f);
   });
   size_t readsize = fread(buf, 1, bufsize, f);
   if (readsize < 0) {
-    return -1;
+    return 0;
   }
   return readsize;
 }

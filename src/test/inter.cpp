@@ -34,11 +34,18 @@ static void test_mips_size() {
 
 static void test_mips_inter() {
   char image[] = "ps-exe/Raiden Project, The (Europe).cue";
-  char biosf[] = "H:\\EMU-console\\PlayStation1\\bios\\SCPH1000.BIN";
+  const char *biosf[] = { 
+    "H:\\EMU-console\\PlayStation1\\bios\\SCPH1000.BIN", //0
+    "H:\\EMU-console\\PlayStation1\\bios\\SCPH1001.BIN", //1
+    "H:\\EMU-console\\PlayStation1\\bios\\SCPH5000.BIN", //2
+    "H:\\EMU-console\\PlayStation1\\bios\\SCPH5500.BIN", //3
+    "H:\\EMU-console\\PlayStation1\\bios\\SCPH7001.BIN", //4
+    "H:\\EMU-console\\PlayStation1\\bios\\SCPH7502.BIN", //5
+  };
 
   MemJit mmjit;
   MMU mmu(mmjit);
-  if (!mmu.loadBios(biosf)) {
+  if (!mmu.loadBios(biosf[0])) {
     panic("load bios fail");
   }
 
@@ -56,7 +63,7 @@ static void test_mips_inter() {
   bus.bind_irq_receiver(&cpu);
   cpu.reset();
   //test_gpu(gpu, bus); //!!
-  debug(cpu, bus);
+  debug_system(cpu, bus);
 
   //cdrom.CmdInit();
   //cdrom.CmdMotorOn();
@@ -75,7 +82,7 @@ static bool inputHexVal(const char* msg, u32& d) {
 }
 
 
-void debug(R3000A& cpu, Bus& bus) {
+void debug_system(R3000A& cpu, Bus& bus) {
   DisassemblyMips disa(cpu);
   int ext_count = 0;
   int show_code = 10;
@@ -104,14 +111,14 @@ void debug(R3000A& cpu, Bus& bus) {
     ++counter;
 
     if (cpu.exception_counter) {
-      info("Exception<%d> %d\n", ext_count, counter);
+      debug("Exception<%d> %d ON PC %x\n", ext_count, counter, cpu.getepc());
       ext_count += cpu.exception_counter;
       cpu.exception_counter = 0;
       // 打印前后 5 条指令
-      if (!ext_stop) {
+      /*if (!ext_stop) {
         for (int i=-5; i<0; ++i) disa.decode(i);
         show_code = 5;
-      }
+      }*/
     }
 
     if (ext_stop || disa.isDebugInterrupt()) {

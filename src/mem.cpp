@@ -101,7 +101,7 @@ u8* MMU::d_cache(psmem addr) {
 bool MMU::loadBios(char const* filename) {
   u8* buf = bios.point(0);
   size_t rz = readFile(buf, bios.size(), filename);
-  if (rz <= 0) {
+  if (!rz) {
     printf(RED("cannot load bios %s\n"), filename);
     return false;
   }
