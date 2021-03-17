@@ -5,7 +5,7 @@
 namespace ps1e {
 
 
-static void showIrq(u32 mask) {
+static void show_irq_curr(u32 mask) {
   //ps1e_t::ext_stop = 1;
   switch ((IrqDevMask) mask) {
     case IrqDevMask::cdrom:
@@ -45,34 +45,47 @@ static void showIrq(u32 mask) {
 }
 
 
+u32 operator&(u32 a, IrqDevMask b) {
+  return a & static_cast<u32>(b);
+}
+
+
+void show_irq_msg(const char *msg, u32 v) {
+  char i[] = {
+    v & IrqDevMask::cdrom   ?'1':'.',
+    v & IrqDevMask::vblank  ?'1':'.',
+    v & IrqDevMask::gpu     ?'1':'.',
+    v & IrqDevMask::dma     ?'1':'.',
+    v & IrqDevMask::dotclk  ?'1':'.',
+    v & IrqDevMask::hblank  ?'1':'.',
+    v & IrqDevMask::sysclk  ?'1':'.',
+    v & IrqDevMask::sio     ?'1':'.',
+    v & IrqDevMask::pad_mm  ?'1':'.',
+    v & IrqDevMask::spu     ?'1':'.',
+    v & IrqDevMask::pio     ?'1':'.',
+  };
+  printf("IRQ %s: CD.%c VBk.%c GPu.%c Dma.%c Dot.%c HBk.%c Sys.%c Sio.%c Pad.%c Spu.%c Pio.%c\n",
+         msg, i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10]);
+}
+
+
 void IrqReceiver::ready_recv_irq() {
-  if (mask == 0) {
+  if (trigger == 0) {
     clr_ext_int(CpuCauseInt::hardware);
     return;
   }
 
   if (trigger) {
-    //showIrq(mask);
+    show_irq_curr(trigger);
     set_ext_int(CpuCauseInt::hardware);
     trigger = 0;
   }
 }
 
 
-void IrqReceiver::send_irq(u32 m) {
-  m = m & IRQ_REQUEST_BIT;
-  if (m == mask) return;
-
-  // 上升沿触发
-  u32 test = 1;
-  for (int i=0; i<IRQ_BIT_SIZE; ++i) {
-    if (((mask & test) == 0) && (m & test)) {
-      trigger = 1;
-      break;
-    }
-    test <<= 1;
-  }
-  mask = m;
+void IrqReceiver::send_irq(u32 i) {
+  if (i == trigger) return;
+  trigger = i;
 }
 
 
@@ -104,9 +117,9 @@ void Bus::set_used_dcache(bool use) {
 
 
 void Bus::bind_io(DeviceIOMapper m, DeviceIO* i) {
-  if (!i) std::runtime_error("DeviceIO parm null pointer");
+  if (!i) throw std::runtime_error("DeviceIO parm null pointer");
   if (io[static_cast<size_t>(m)] != &nullio) {
-    std::runtime_error("Device IO conflict");
+    throw std::runtime_error("Device IO conflict");
   }
   io[ static_cast<size_t>(m) ] = i;
 }
@@ -118,6 +131,7 @@ bool Bus::set_dma_dev(DMADev* dd) {
     return false;
   }
   dmadev[num] = dd;
+  return true;
 }
 
 
@@ -156,7 +170,7 @@ void Bus::set_dma_dev_status() {
 void Bus::send_dma_irq(DMADev* dd) {
   u32 flag_mask = (1 << static_cast<u32>(dd->number()));
   dma_irq.dd_flag |= flag_mask;
-  update_irq_flag();
+  update_dma_irq_flag();
 
   if (has_dma_irq()) {
     send_irq(IrqDevMask::dma);
@@ -165,14 +179,20 @@ void Bus::send_dma_irq(DMADev* dd) {
 
 
 void Bus::send_irq(IrqDevMask dev_irq_mask) {
+  std::lock_guard<std::mutex> lk(for_irq);
+  // 上升沿触发中断
+  if ((irq_status & dev_irq_mask) == 0) {
+    if (irq_mask & dev_irq_mask) {
+      send_irq_to_reciver(dev_irq_mask);
+    }
+  }
   irq_status |= static_cast<u32>(dev_irq_mask);
-  update_irq_to_reciver();
 }
 
 
-void Bus::update_irq_to_reciver() {
+void Bus::send_irq_to_reciver(IrqDevMask i) {
   if (ir) {
-    ir->send_irq(irq_mask & irq_status);
+    ir->send_irq(static_cast<u32>(i));
   }
 }
 

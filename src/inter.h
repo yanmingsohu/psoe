@@ -685,9 +685,7 @@ public:
   }
 
   void mtc0(mips_reg t, mips_reg d) {
-    //ps1e_t::ext_stop = 1;
-    //printf("Cpu SET COP0.%d = %x\n", d, reg.u[t]);
-
+    printf("Cpu SET COP0.%d = %x\n", d, reg.u[t]);
     switch (d) {
       case COP0_CAUSE_REG_IDX:
         cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_CAUSE_RW_MASK);
@@ -698,6 +696,9 @@ public:
       case COP0_SR_REG_IDX:
         cop0.r[d] = reg.u[t];
         bus.set_used_dcache(cop0.sr.isc);
+        if (cop0.sr.ie) {
+          printf("CPU Enable IRQ, Mask: %x, IP: %x\n", cop0.sr.im, cop0.cause.ip);
+        }
         break;
       default:
         cop0.r[d] = reg.u[t];

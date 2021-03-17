@@ -5,6 +5,7 @@
 #include "mem.h"
 #include "cpu.h"
 #include "io.h"
+#include <mutex>
 
 namespace ps1e {
 
@@ -28,11 +29,10 @@ class IrqReceiver {
 private:
   static const u32 IRQ_BIT_SIZE = 11;
   static const u32 IRQ_REQUEST_BIT = (1 << IRQ_BIT_SIZE)-1;
-  u32 mask;
   u32 trigger;
 
 protected:
-  IrqReceiver() : mask(0), trigger(0) {}
+  IrqReceiver() : trigger(0) {}
 
   // 接收方实现方法, 设置 cpu 外部中断
   virtual void set_ext_int(CpuCauseInt i) = 0;
@@ -66,6 +66,7 @@ private:
   IrqReceiver* ir;
   DeviceIO nullio;
   DeviceIO **io;
+  std::mutex for_irq;
 
   DMADev* dmadev[DMA_LEN];
   DMAIrq  dma_irq;
@@ -76,7 +77,7 @@ private:
 
   // irq_status/irq_mask 寄存器状态改变必须调用方法, 
   // 模拟硬件拉回引脚, 并把状态发送给 IrqReceiver.
-  void update_irq_to_reciver();
+  void send_irq_to_reciver(IrqDevMask i);
 
 public:
   Bus(MMU& _mmu, IrqReceiver* _ir = 0);
@@ -130,11 +131,13 @@ private:
     return dma_irq.master_flag;
   }
 
-  void update_irq_flag() {
+  void update_dma_irq_flag() {
     dma_irq.master_flag = 
       dma_irq.force || (dma_irq.master_enable && (dma_irq.dd_enable & dma_irq.dd_flag));
   }
 };
 
+
+void show_irq_msg(const char *msg, u32 v);
 
 }

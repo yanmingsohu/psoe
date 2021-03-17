@@ -82,6 +82,8 @@ u8* MMU::memPoint(psmem addr, bool read) {
   #ifdef SAFE_MEM
   const u32 e1 = (expansion1_base & 0x1F00'0000);
   const u32 e2 = (expansion2_base & 0x1F00'0000);
+
+  // bios引导时会尝试读写该地址
   if (addr >=e1 && addr < e1+0x7'ffff) {
     warn("Expansion MEM 1 not implements\n");
     return (u8*)&garbage;
