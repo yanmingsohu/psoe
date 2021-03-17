@@ -52,7 +52,7 @@ void IrqReceiver::ready_recv_irq() {
   }
 
   if (trigger) {
-    showIrq(mask);
+    //showIrq(mask);
     set_ext_int(CpuCauseInt::hardware);
     trigger = 0;
   }
@@ -214,53 +214,42 @@ u8 Bus::read8(psmem addr) {
 }
 
 
+u32 Bus::readOp(psmem addr) {
+  return read<u32, true>(addr);
+}
+
+
 // 该函数为测试用, 最终可以删除其中的代码
 void Bus::__on_write(psmem addr, u32 v) {
-  if (addr == 0x1F80'1070) {
+  /*if (addr == 0x1F80'1070) {
     printf("BUS write irq status %x\n", v);
-  }
-  else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
+  }*/
+  /*else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
     printf("BUS write JOY %x = %x\n", addr, v);
-  }
+  }*/
   //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
   //  printf("BUS write SPU %x = %x\n", addr, v);
   //}
-  else if (ps1e_t::ext_stop) {
-    if (!(0x8000'0000 & addr)) printf("BUS Write %x %x\n", addr, v);
-  }
-return;
-  addr = addr & 0x00ff'ffff;
-  /*if ((addr >= 0x0011f8a0) && (addr <= 0x0011f8b8)) {*/
-  if ((addr == 0x0011f8a8)) {
-    printf("!!!!!!!!!! p1 [%08x] %08x %08x \n", addr, v, read32(addr));
-    ps1e_t::ext_stop = 1;
-  } else if (addr == 0x0011f8b0) {
-    printf("!!!!!!!!!! p2 [%08x] %08x %08x\n", addr, v, read32(addr));
-    ps1e_t::ext_stop = 1;
-  } else if (addr == 0x0011f8b8) {
-    printf("!!!!!!!!!! p3 [%08x] %08x %08x\n", addr, v, read32(addr));
-    ps1e_t::ext_stop = 1;
+  if (ps1e_t::ext_stop && (0xFFFF'F000 & addr) == 0x1F80'1000) {
+    printf("BUS Write IO %x %x\n", addr, v);
   }
 }
 
 
 // 该函数为测试用, 最终可以删除其中的代码
 void Bus::__on_read(psmem addr) {
-  if (addr == 0x1F80'1070) {
+  /*if (addr == 0x1F80'1070) {
     printf("BUS read irq status %x\n", irq_status);
-  }
-  else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
+  }*/
+  /*else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
     printf("BUS read JOY %x\n", addr);
-  }
+  }*/
   //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
   //  printf("BUS read SPU %x\n", addr);
   //}
-  else if (ps1e_t::ext_stop) {
-    if (!(0x8000'0000 & addr)) printf("BUS read %x\n", addr);
+  if (ps1e_t::ext_stop && (0xFFFF'F000 & addr) == 0x1F80'1000) {
+    printf("BUS read IO %x\n", addr);
   }
-  /*if ((addr & 0xffff'fff0) == 0x1f80'1800) {
-    ps1e_t::ext_stop = 1;
-  }*/
 }
 
 

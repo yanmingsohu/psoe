@@ -135,6 +135,39 @@ static auto test_scope() {
 }
 
 
+static void _add(u32 a, s32 b, const u32 r) {
+  u32 c = add_us(a, b);
+  if (c != r) {
+    error("Fail add  %x != %x\n", c, r);
+    exit(1);
+  } else {
+    info("Success %x + %x == %x\n", a, b, c);
+  }
+}
+
+
+//80100000+ffffbb44=800FBB44
+//80100000-ffffbb44=801044BC
+//80100000-0000bb44=800F44BC ??
+static void test_add() {
+  u16 x = 0xbb44;
+  // 无视 y 得类型, 符号总是被扩展
+  s32 y = s16(x);
+  eq(u32(y), 0xffffbb44, "unsigned fail");
+  printf("s16 to u32 %x\n", u32(s16(x)));
+  printf("u16 to u64 %x\n", u64(x));
+  printf("y = %x, -y = %x\n", y, -y);
+  
+  _add(0x00000005, 1, 6);
+  _add(0x00000005, -1, 4);
+  _add(0xF0000005, 1, 0xF0000006);
+  _add(0xF0000005, -1, 0xF0000004);
+
+  _add(0x80100000, 0xffffbb44, 0x800f44bc);
+  _add(0x80100000, 0x0000bb44, 0x8010bb44);
+}
+
+
 void test_util() {
   //static StaticVar v;
   StaticInClass sic;
@@ -145,6 +178,7 @@ void test_util() {
   test_overflow();
   test_local();
   test_io_mirrors();
+  //test_add(); // 该测试不正确
 }
 
 }

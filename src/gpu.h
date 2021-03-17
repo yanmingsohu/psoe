@@ -46,7 +46,7 @@ union GpuStatus {
     u32 isinter   : 1; // 22 1:交错开启(隔行扫描)
     u32 display   : 1; // 23 0:开启显示, 1:黑屏
     u32 irq_on    : 1; // 24 1:IRQ
-    u32 r         : 1; // 25 dma 状态总开关, 1:dma 就绪
+    u32 dma_req   : 1; // 25 与 dma_md 得状态有关
     u32 r_cmd     : 1; // 26 1:可以接受命令来自 gp0
     u32 r_cpu     : 1; // 27 1:可以发送 vram 数据到 cpu
     u32 r_dma     : 1; // 28 1:可以接受 dma 数据块
@@ -245,6 +245,10 @@ public:
   GpuRange10    draw_bm_rt;  // 绘图右下角
   GpuTextFlip   text_flip;   // 纹理坐标 x,y 递增方向
   GpuStatus     status;
+
+  // 解决线程争用, 从 GpuStatus 中分离
+  u8 s_r_dma; // cpu to gpu
+  u8 s_r_cpu; // gpu to cpu
 
 private:
   GP0 gp0;

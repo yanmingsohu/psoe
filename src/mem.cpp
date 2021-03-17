@@ -7,22 +7,23 @@ MMU::MMU(MemJit& memjit) : ram(memjit), bios(memjit), scratchpad(memjit), cc{0} 
 }
 
 
-u8* MMU::memPoint(u32 addr) {
+u8* MMU::memPoint(psmem addr, bool read) {
   switch (addr & 0xff00'0000) {
     case 0x0000'0000:
     case 0x8000'0000:
     case 0xA000'0000:
-      if (addr & 0x0FE0'0000) {
-        //warn("MMU: mem out of bounds %x fix: %x\n", addr, addr & (RAM_SIZE-1));
+      /*if (addr & 0x0FE0'0000) {
+        warn("MMU: mem out of bounds %x fix: %x\n", addr, addr & (RAM_SIZE-1));
         return 0;
-      }
+      }*/
       return ram.point(addr & (RAM_SIZE-1));
   }
 
-  switch (addr) {
-    case 0xFFFE'0130:
-      return (u8*)&cc.v;
+  if (addr == 0xFFFE'0130) {
+    return (u8*)&cc.v;
+  }
 
+  switch (addr) {
     CASE_MEM_MIRROR(0x1F80'1000):
       return (u8*)&expansion1_base;
 
@@ -60,29 +61,34 @@ u8* MMU::memPoint(u32 addr) {
         warn("MMU: bios out of bounds %x\n", addr);
         return 0;
       }
-      return bios.point(addr & (BIOS_SIZE-1));
+      if (read) {
+        return bios.point(addr & (BIOS_SIZE-1));
+      }
+      return (u8*)&garbage;
 
     case 0x1F80'0000:
     case 0x9F80'0000:
-      if (addr & 0x000F'F000) {
+      /*if (addr & 0x000F'F000) {
         warn("MMU: scratchpad out of bounds %x\n", addr);
         return 0;
-      }
+      }*/
       return scratchpad.point(addr & (DCACHE_SZ-1));
 
     CASE_MEM_MIRROR(0x1FA0'0000):
       warn("Expansion MEM 3 not implements");
-      return 0;
+      return (u8*)&garbage;
   }
 
   #ifdef SAFE_MEM
-  u32 e1 = (expansion1_base & 0x1F00'0000);
-  u32 e2 = (expansion2_base & 0x1F00'0000);
+  const u32 e1 = (expansion1_base & 0x1F00'0000);
+  const u32 e2 = (expansion2_base & 0x1F00'0000);
   if (addr >=e1 && addr < e1+0x7'ffff) {
     warn("Expansion MEM 1 not implements\n");
+    return (u8*)&garbage;
   }
   else if (addr >= e2 && addr < e2+128) {
     warn("Expansion MEM 2 not implements\n");
+    return (u8*)&garbage;
   }
   #endif
 
@@ -91,10 +97,7 @@ u8* MMU::memPoint(u32 addr) {
 
 
 u8* MMU::d_cache(psmem addr) {
-  if (addr < scratchpad.size()) {
-    return scratchpad.point(addr);
-  }
-  return 0;
+  return scratchpad.point(addr & (DCACHE_SZ-1));
 }
 
 

@@ -59,7 +59,7 @@ public:
   static const u32 DMA_IRQ_WRITE_MASK = (1 << 24) - 1; // 24:DMAIrq::master_enable
 
   static const u32 IRQ_ST_WR_MASK     = (1 << 11) - 1; // 11:IrqDevMask count
-  static const u32 IRQ_RST_FLG_BIT_MK = (1 << 31);
+  static const u32 IRQ_RST_FLG_BIT_MK = 0x7F000000;
 
 private:
   MMU& mmu;
@@ -103,6 +103,7 @@ public:
   u32 read32(psmem addr);
   u16 read16(psmem addr);
   u8 read8(psmem addr);
+  u32 readOp(psmem addr);
 
   void show_mem_console(psmem begin, u32 len = 0x20);
   void set_used_dcache(bool use);
@@ -117,7 +118,7 @@ public:
   bool check_running_state(DMADev* dd);
 
   template<class T> void write(psmem addr, T v);
-  template<class T> T read(psmem addr);
+  template<class T, bool opcode = 0> T read(psmem addr);
   void __on_write(psmem addr, u32 v);
   void __on_read(psmem addr);
 

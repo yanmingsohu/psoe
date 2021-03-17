@@ -133,10 +133,10 @@ void GPU::gpu_thread() {
 void GPU::reset() {
   gp0.reset_fifo();
   status.v = 0x14802000;
-  status.r_cmd = 1; //TODO: 与状态同步
-  status.r_cpu = 1;
-  status.r_dma = 1;
-  status.r = 1;
+  status.r_cmd = 1; 
+  status.dma_req = 1;
+  s_r_cpu = 1;
+  s_r_dma = 1;
 }
 
 
@@ -144,6 +144,7 @@ void GPU::dma_order_list(psmem addr) {
   //warn("GPU ol [%x] x:%d y:%d\n", addr, draw_offset.offx(), draw_offset.offy());
   u32 header = bus.read32(addr);
   std::lock_guard<std::recursive_mutex> guard(for_draw_queue);
+  s_r_dma = 0;
   
   while ((header & OrderingTables::LINK_END) != OrderingTables::LINK_END) {
     u32 next = header & 0x001f'fffc;
@@ -163,12 +164,14 @@ void GPU::dma_order_list(psmem addr) {
     header = bus.read32(addr);
   }
   //debug("\nGPU ol end\n");
+  s_r_dma = 1;
 }
 
 
 void GPU::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
   std::lock_guard<std::recursive_mutex> guard(for_draw_queue);
   //printf("\nCOPY ram go GPU begin:%x %dbyte\n", addr, bytesize);
+  s_r_dma = 0;
   const int step = inc << 2;
   const int len = bytesize >> 2;
 
@@ -178,6 +181,7 @@ void GPU::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
     gp0.write(d);
     addr += step;
   }
+  s_r_dma = 1;
 }
 
 
@@ -185,11 +189,13 @@ void GPU::dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) {
   std::lock_guard<std::recursive_mutex> guard(for_read_queue);
   const int step = inc << 2;
   const int len = bytesize >> 2;
+  s_r_cpu = 0;
 
   for (int i = 0; i < len; ++i) {
     bus.write32(addr, gp0.read());
     addr += step;
   }
+  s_r_cpu = 1;
 }
 
 

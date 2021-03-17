@@ -46,20 +46,21 @@ template<class T> void Bus::write(psmem addr, T v) {
     IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_WRITE, io, v);
   }
 
-  T* tp = (T*)mmu.memPoint(addr);
+  T* tp = (T*)mmu.memPoint(addr, false);
   if (tp) {
     *tp = v;
     return;
   }
   warn("WRIT BUS invaild %x[%d]: %x\n", addr, sizeof(T), v);
   ir->send_bus_exception();
+  ps1e_t::ext_stop = 1;
 }
 
 
-template<class T> T Bus::read(psmem addr) {
+template<class T, bool opcode> T Bus::read(psmem addr) {
   __on_read(addr);
 
-  if (use_d_cache) {
+  if ((!opcode) && use_d_cache) {
     T* p = (T*) mmu.d_cache(addr);
     if (p) return *p;
   }
@@ -80,12 +81,13 @@ template<class T> T Bus::read(psmem addr) {
     IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_READ, io, NULL);
   }
 
-  T* tp = (T*)mmu.memPoint(addr);
+  T* tp = (T*)mmu.memPoint(addr, true);
   if (tp) {
     return *tp;
   }
   warn("READ BUS invaild %x[%d]\n", addr, sizeof(T));
   if (ir) ir->send_bus_exception();
+  ps1e_t::ext_stop = 1;
   return 0;
 }
 

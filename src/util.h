@@ -196,6 +196,7 @@ void    print_code(const char* src);
 void    print_hex(const char* title, u8* data, u32 size);
 size_t  readFile(void *buf, size_t bufsize, char const* filename);
 size_t  this_thread_id();
+u32     add_us(u32, s32);
 
 void debug(const char* format, ...);
 void info(const char* format, ...);

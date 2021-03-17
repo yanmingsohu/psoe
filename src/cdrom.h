@@ -258,7 +258,6 @@ private:
   void read_next_section();
   
   void clear_data_fifo();
-  void set_busy(bool);
   void clear_resp_fifo(bool resetFifo = true);
   void clear_parm_fifo(bool resetFifo = true);
 

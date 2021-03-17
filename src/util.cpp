@@ -312,4 +312,13 @@ void error(const char* format, ...) {
 
 #undef warp_printf
 
+
+// 禁止调用
+u32 add_us(u32 a, s32 b) {
+  if (b < 0) {
+    return a - u16(b);
+  }
+  return a + b;
+}
+
 }

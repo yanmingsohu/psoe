@@ -193,8 +193,8 @@ enum class ExeCodeTable {
 };
 
 
-void printSR(Cop0SR sr);
-void printMipsReg(MipsReg&);
+void printSR(const Cop0SR& sr);
+void printMipsReg(const MipsReg&);
 
 
 }

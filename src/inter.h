@@ -38,7 +38,7 @@ public:
     pc = MMU::BOOT_ADDR;
     cop0.sr.cu0 = 1;
     cop0.sr.cu2 = 1;
-    cop0.sr.ie  = 1;
+    cop0.sr.ie  = 0;
     cop0.sr.im  = 0xFF;
     cop0.sr.bev = 1;
     cop0.dcic.v = 0;
@@ -70,9 +70,10 @@ public:
     bool is_on_slot = on_slot_time;
 
     reg.zero = 0;
-    u32 code = bus.read32(npc);
+    u32 code = bus.readOp(npc);
     if (!mips_decode(code, this)) {
       exception(ExeCodeTable::RI, true);
+      ps1e_t::ext_stop = 1;
     }
     
     if (is_on_slot) {
@@ -83,6 +84,10 @@ public:
 
   MipsReg& getreg() {
     return reg;
+  }
+
+  Cop0Reg& getcop0() {
+    return cop0;
   }
 
   void set_ext_int(CpuCauseInt i) {
@@ -844,7 +849,7 @@ public:
   // 解析当前pc指向的指令
   void current() {
     pc = cpc;
-    mips_decode(bus.read32(pc), this);
+    mips_decode(bus.readOp(pc), this);
 
     if (sys_func_addr == pc) {
       show_sys_func(sys_func_addr);
@@ -856,7 +861,7 @@ public:
   void decode(int offset) {
     pc = cpc + (offset << 2);
     notrealtime = 1;
-    mips_decode(bus.read32(pc), this);
+    mips_decode(bus.readOp(pc), this);
     notrealtime = 0;
   }
 

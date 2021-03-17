@@ -83,7 +83,7 @@ public:
   }
 
   void load(const char* binfilename, const u16 baseaddr = 0x0100) {
-    u8* mem = mmu.memPoint(baseaddr);
+    u8* mem = mmu.memPoint(baseaddr, true);
     size_t rz = readFile(mem, 0xffff, binfilename);
     if (rz <= 0) {
       panic("Cannot read bin file");

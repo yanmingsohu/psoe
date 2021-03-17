@@ -16,7 +16,7 @@ template<class T>
 void eq(T a, T b, char const* errmsg) {
   if (a != b) {
     char tmsg[255];
-    sprintf(tmsg, "Not EQ %s, %d != %d", errmsg, a, b);
+    sprintf(tmsg, "Not EQ %s, %d[%Xh] != %d[%Xh]", errmsg, a, a, b, b);
     panic(tmsg);
   }
 }

@@ -32,7 +32,7 @@ const char* MipsCauseStr[] = {
 };
 
 
-void printSR(Cop0SR sr) {
+void printSR(const Cop0SR& sr) {
   printf("COP0\tIE =%x KUc=%x IEp=%x KUp=%x IEo=%x IEp=%x SX=%x KX=%x \
             \n\tIM =%x ISC=%x SWC=%x TS =%x BEV=%x PX=%x \
             \n\tMX =%x RE =%x FR =%x RP =%x CU =%x%x%x%x\n",\
@@ -42,7 +42,7 @@ void printSR(Cop0SR sr) {
 }
 
 
-void printMipsReg(MipsReg& r) {
+void printMipsReg(const MipsReg& r) {
   for (int i=0; i<MIPS_REG_COUNT; ++i) {
     printf("$%2d  $%s  %08x [ %12d_s %12u_u ]\n",
            i, MipsRegName[i], r.u[i], r.s[i], r.u[i]);

@@ -45,7 +45,7 @@ static void test_mips_inter() {
 
   MemJit mmjit;
   MMU mmu(mmjit);
-  if (!mmu.loadBios(biosf[0])) {
+  if (!mmu.loadBios(biosf[4])) {
     panic("load bios fail");
   }
 
@@ -92,9 +92,10 @@ void debug_system(R3000A& cpu, Bus& bus) {
   //cpu.set_data_rw_point(0x0011'f854, 0x00ff'ffff);
   LocalEvents event;
 
+  // SCPH1000
   //disa.setInterruptPC(0x8004fe54); // 在 bios 菜单中停止
-  //disa.setInterruptPC(0x8003ea54); // 进入bios菜单后陷入读取cdrom状态
-  //disa.setInterruptPC(0x800560e4); // 调用 cdrom setloc 后陷入
+  //disa.setInterruptPC(0x8003e940); // 进入bios菜单后陷入读取cdrom状态
+  //disa.setInterruptPC(0x0B0); // 调用系统函数时停止
 
   for (;;) {
     if (show_code > 0) {
@@ -137,6 +138,7 @@ wait_input:
         case ' ':
         case 'r':
           printMipsReg(cpu.getreg());
+          printSR(cpu.getcop0().sr);
           goto wait_input;
 
         case 'x':

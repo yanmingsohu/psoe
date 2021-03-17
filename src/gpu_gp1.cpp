@@ -129,6 +129,12 @@ void GPU::GP1::write(u32 v) {
 
 
 u32 GPU::GP1::read() {
+  p.status.r_dma = p.s_r_dma;
+  p.status.r_cpu = p.s_r_cpu;
+  // if == 0x02 || 0x03
+  if (p.status.dma_md & 0b10) {
+    p.status.dma_req = p.s_r_cpu | p.s_r_dma;
+  }
   return p.status.v;
 }
 
