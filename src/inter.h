@@ -42,6 +42,7 @@ public:
     cop0.sr.im  = 0xFF;
     cop0.sr.bev = 1;
     cop0.dcic.v = 0;
+    cop0.cause.ip = 0;
 
     for (int i=0; i<MIPS_REG_COUNT; ++i) {
       reg.u[i] = regVal;
@@ -263,7 +264,7 @@ public:
   }
 
   void _nor(mips_reg d, mips_reg s, mips_reg t) {
-    reg.u[d] = ~(reg.u[s] | reg.u[t]);
+    reg.u[d] = 0xFFFF'FFFF ^ (reg.u[s] | reg.u[t]);
     pc += 4;
   }
 
@@ -829,9 +830,12 @@ private:
   const u32& cpc;
   u32 pc;
   u32 debug_pc = 0;
+  u32 sys_func_addr;
+  bool notrealtime = 0;
 
 public:
-  DisassemblyMips(R3000A& im) : bus(im.bus), reg(im.reg), cpc(im.pc), pc(im.pc) {}
+  DisassemblyMips(R3000A& im) 
+  : bus(im.bus), reg(im.reg), cpc(im.pc), pc(im.pc), sys_func_addr(0) {}
 
   const MipsReg& getreg() {
     return reg;
@@ -841,12 +845,19 @@ public:
   void current() {
     pc = cpc;
     mips_decode(bus.read32(pc), this);
+
+    if (sys_func_addr == pc) {
+      show_sys_func(sys_func_addr);
+      sys_func_addr = 0;
+    }
   }
 
   // 解析 pc 偏移指向的指令
   void decode(int offset) {
     pc = cpc + (offset << 2);
+    notrealtime = 1;
     mips_decode(bus.read32(pc), this);
+    notrealtime = 0;
   }
 
   void setInterruptPC(u32 dpc) {
@@ -862,190 +873,339 @@ public:
   }
 
   void add(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("ADD", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "%d = $%s[%d] + $%s[%d]", reg.s[s] + reg.s[t], rname(s), reg.s[s], rname(t), reg.s[t]);
+    rr("ADD", d, s, t, buf);
   }
 
   void addu(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("ADDu", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "%d = $%s[%d] + $%s[%d]", reg.u[s] + reg.u[t], rname(s), reg.u[s], rname(t), reg.u[t]);
+    rr("ADDu", d, s, t, buf);
   }
 
   void sub(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("SUB", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "%d = $%s[%d] - $%s[%d]", reg.s[s] - reg.s[t], rname(s), reg.s[s], rname(t), reg.s[t]);
+    rr("SUB", d, s, t, buf);
   }
 
   void subu(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("SUBu", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "%d = $%s[%d] - $%s[%d]", reg.u[s] - reg.u[t], rname(s), reg.u[s], rname(t), reg.u[t]);
+    rr("SUBu", d, s, t, buf);
   }
 
   void mul(mips_reg s, mips_reg t) const {
-    rx("MUL", s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "H/L = %ld = $%s[%d] * $%s[%d]", reg.s[s] * reg.s[t], rname(s), reg.s[s], rname(t), reg.s[t]);
+    rx("MUL", s, t, buf);
   }
 
   void mulu(mips_reg s, mips_reg t) const {
-    rx("MULu", s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "H/L = %ld = $%s[%d] * $%s[%d]", reg.u[s] * reg.u[t], rname(s), reg.u[s], rname(t), reg.u[t]);
+    rx("MULu", s, t, buf);
   }
 
   void div(mips_reg s, mips_reg t) const {
-    rx("DIV", s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "H/L = %f = $%s[%d] / $%s[%d]", float(reg.s[s]) / reg.s[t], rname(s), reg.s[s], rname(t), reg.s[t]);
+    rx("DIV", s, t, buf);
   }
 
   void divu(mips_reg s, mips_reg t) const {
-    rx("DIVu", s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "H/L = %f = $%s[%d] / $%s[%d]", float(reg.u[s]) / reg.u[t], rname(s), reg.u[s], rname(t), reg.u[t]);
+    rx("DIVu", s, t, buf);
   }
 
   void slt(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("SLT", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x = $%s[0x%x] < $%s[%d]", reg.s[s] < reg.s[t], rname(s), reg.s[s], rname(t), reg.s[t]);
+    rr("SLT", d, s, t, buf);
   }
 
   void sltu(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("SLTu", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x = $%s[0x%x] < $%s[%d]", reg.u[s] < reg.u[t], rname(s), reg.u[s], rname(t), reg.u[t]);
+    rr("SLTu", d, s, t, buf);
   }
 
   void _and(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("AND", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x = $%s[0x%x] & $%s[0x%x]", reg.u[s] & reg.u[t], rname(s), reg.u[s], rname(t), reg.u[t]);
+    rr("AND", d, s, t, buf);
   }
 
   void _or(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("OR", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x =$%s[0x%x] | $%s[0x%x]", reg.u[s] | reg.u[t], rname(s), reg.u[s], rname(t), reg.u[t]);
+    rr("OR", d, s, t, buf);
   }
 
   void _nor(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("NOR", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x = nor($%s[0x%x], $%s[0x%x])", 0xFFFF'FFFF ^ (reg.u[s] | reg.u[t]), rname(s), reg.u[s], rname(t), reg.u[t]);
+    rr("NOR", d, s, t, buf);
   }
 
   void _xor(mips_reg d, mips_reg s, mips_reg t) const {
-    rr("XOR", d, s, t);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x =$%s[0x%x] ^ $%s[0x%x]", reg.u[s] ^ reg.u[t], rname(s), reg.u[s], rname(t), reg.u[t]);
+    rr("XOR", d, s, t, buf);
   }
 
   void addi(mips_reg t, mips_reg s, s32 i) const {
-    ii("ADDi", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "%d = $%s[%d] + %d", reg.s[s] + i, rname(s), reg.s[s], i);
+    ii("ADDi", t, s, i, buf);
   }
 
   void addiu(mips_reg t, mips_reg s, s32 i) const {
-    ii("ADDiu", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "%d = $%s[%d] + %d", reg.u[s] + i, rname(s), reg.u[s], i);
+    ii("ADDiu", t, s, i, buf);
   }
 
   void slti(mips_reg t, mips_reg s, s32 i) const {
-    ii("SLTi", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "%d = $%s[%d] < %d", reg.s[s] < i, rname(s), reg.s[s], i);
+    ii("SLTi", t, s, i, buf);
   }
 
   void sltiu(mips_reg t, mips_reg s, u32 i) const {
-    ii("SLTiu", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "%d = $%s[%d] < %d", reg.u[s] < i, rname(s), reg.u[s], i);
+    ii("SLTiu", t, s, i, buf);
   }
 
   void andi(mips_reg t, mips_reg s, u32 i) const {
-    ii("ANDi", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x = $%s[0x%x] & 0x%x", reg.u[s] & i, rname(s), reg.u[s], i);
+    ii("ANDi", t, s, i, buf);
   }
 
   void ori(mips_reg t, mips_reg s, u32 i) const {
-    ii("ORi", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x = $%s[0x%x] | 0x%x", reg.u[s] | i, rname(s), reg.u[s], i);
+    ii("ORi", t, s, i, buf);
   }
 
   void xori(mips_reg t, mips_reg s, u32 i) const {
-    ii("XORi", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "0x%x = $%s[0x%x] ^ 0x%x", reg.u[s] ^ i, rname(s), reg.u[s], i);
+    ii("XORi", t, s, i, buf);
   }
 
   void lw(mips_reg t, mips_reg s, s32 i) const {
-    ii("LW", t, s, i);
+    char buf[80] = "";
+    if (!notrealtime) {
+      snprintf(buf, sizeof(buf), 
+        "0x%x = addr($%s[0x%x] + %d)", bus.read32(reg.u[s] + i), rname(s), reg.u[s], i);
+    }
+    ii("LW", t, s, i, buf);
   }
 
   void sw(mips_reg t, mips_reg s, s32 i) const {
-    iw("SW", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "addr($%s[0x%x] + %d) = $%s[0x%x]", rname(s), reg.u[s], i, rname(t), reg.u[t]);
+    iw("SW", t, s, i, buf);
   }
 
   void lb(mips_reg t, mips_reg s, s32 i) const {
-    ii("LB", t, s, i);
+    char buf[80] = "";
+    if (!notrealtime) {
+      snprintf(buf, sizeof(buf), 
+        "0x%x = addr8($%s[0x%x] + %d)", (s8)bus.read8(reg.u[s] + i), rname(s), reg.u[s], i);
+    }
+    ii("LB", t, s, i, buf);
   }
 
   void lbu(mips_reg t, mips_reg s, s32 i) const {
-    ii("LBu", t, s, i);
+    char buf[80] = "";
+    if (!notrealtime) {
+      snprintf(buf, sizeof(buf), 
+        "0x%x = addr8($%s[0x%x] + %d)", bus.read8(reg.u[s] + i), rname(s), reg.u[s], i);
+    }
+    ii("LBu", t, s, i, buf);
   }
 
   void sb(mips_reg t, mips_reg s, s32 i) const {
-    iw("SB", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "addr8($%s[0x%x] + %d) = $%s[0x%x]", rname(s), reg.u[s], i, rname(t), 0xff & reg.u[t]);
+    iw("SB", t, s, i, buf);
   }
 
   void lh(mips_reg t, mips_reg s, s32 i) const {
-    ii("LH", t, s, i);
+    char buf[80] = "";
+    if (!notrealtime) {
+      snprintf(buf, sizeof(buf), 
+        "0x%x = addr16($%s[0x%x] + %d)", (s16)bus.read16(reg.u[s] + i), rname(s), reg.u[s], i);
+    }
+    ii("LH", t, s, i, buf);
   }
 
   void lhu(mips_reg t, mips_reg s, s32 i) const {
-    ii("LHu", t, s, i);
+    char buf[80] = "";
+    if (!notrealtime) {
+      snprintf(buf, sizeof(buf), 
+        "0x%x = addr16($%s[0x%x] + %d)", bus.read16(reg.u[s] + i), rname(s), reg.u[s], i);
+    }
+    ii("LHu", t, s, i, buf);
   }
 
   void sh(mips_reg t, mips_reg s, s32 i) const {
-    iw("SH", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "addr16($%s[0x%x] + %d) = $%s[0x%x]", rname(s), reg.u[s], i, rname(t), 0xff & reg.u[t]);
+    iw("SH", t, s, i, buf);
   }
 
   void lui(mips_reg t, u32 i) const {
-    i2("LUi", t, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "$%s = 0x%x = 0x%x << 16", rname(t), i << 16, i);
+    i2("LUi", t, i, buf);
   }
 
   void lwl(mips_reg t, mips_reg s, u32 i) const {
-    ii("LWL", t, s, i);
+    char buf[80] = "";
+    u32 addr = (reg.u[s] + i) & (~0b11);
+    if (!notrealtime) {
+      snprintf(buf, sizeof(buf), 
+        "bit8l(0x%x) = addr($%s[0x%x] + %d)", bus.read32(addr), rname(s), reg.u[s], i);
+    }
+    ii("LWL", t, s, i, buf);
   }
 
   void lwr(mips_reg t, mips_reg s, u32 i) const {
-    ii("LWR", t, s, i);
+    char buf[80] = "";
+    u32 addr = (reg.u[s] + i) & (~0b11);
+    if (!notrealtime) {
+      snprintf(buf, sizeof(buf), 
+        "bit8r(0x%x) = addr($%s[0x%x] + %d)", bus.read32(addr), rname(s), reg.u[s], i);
+    }
+    ii("LWR", t, s, i, buf);
   }
 
   void swl(mips_reg t, mips_reg s, u32 i) const {
-    ii("SWL", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "addr8($%s[0x%x] + %d) = $%s[0x%x]", rname(s), reg.u[s], i, rname(t), reg.u[t]);
+    ii("SWL", t, s, i, buf);
   }
 
   void swr(mips_reg t, mips_reg s, u32 i) const {
-    ii("SWR", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "addr8($%s[0x%x] + %d) = $%s[0x%x]", rname(s), reg.u[s], i, rname(t), reg.u[t]);
+    ii("SWR", t, s, i, buf);
   }
 
   void beq(mips_reg t, mips_reg s, s32 i) const {
-    ji("BEQ", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "if ($%s[%d] == $%s[%d]) jump(0x%x);", rname(t), reg.s[t], rname(s), reg.s[s], pc +4+ (i << 2));
+    ji("BEQ", t, s, i, buf);
   }
 
   void bne(mips_reg t, mips_reg s, s32 i) const {
-    ji("BNE", t, s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "if ($%s[%d] != $%s[%d]) jump(0x%x);", rname(t), reg.s[t], rname(s), reg.s[s], pc +4+ (i << 2));
+    ji("BNE", t, s, i, buf);
   }
 
   void blez(mips_reg s, s32 i) const {
-    j2("BLEZ", s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "if ($%s[%d] <= 0) jump(0x%x);", rname(s), reg.s[s], pc +4+ (i << 2));
+    j2("BLEZ", s, i, buf);
   }
 
   void bgtz(mips_reg s, s32 i) const {
-    j2("BGTZ", s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "if ($%s[%d] > 0) jump(0x%x);", rname(s), reg.s[s], pc +4+ (i << 2));
+    j2("BGTZ", s, i, buf);
   }
 
   void bltz(mips_reg s, s32 i) const {
-    j2("BLTZ", s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "if ($%s[%d] < 0) jump(0x%x);", rname(s), reg.s[s], pc +4+ (i << 2));
+    j2("BLTZ", s, i, buf);
   }
 
   void bgez(mips_reg s, s32 i) const {
-    j2("BGEZ", s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "if ($%s[%d] >= 0) jump(0x%x);", rname(s), reg.s[s], pc +4+ (i << 2));
+    j2("BGEZ", s, i, buf);
   }
 
   void bgezal(mips_reg s, s32 i) const {
-    j2("BGEZAL", s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "if ($%s[%d] >= 0) { $ra = 0x%x; jump(0x%x); }", rname(s), reg.s[s], pc+8, pc +4+ (i << 2));
+    j2("BGEZAL", s, i, buf);
   }
 
   void bltzal(mips_reg s, s32 i) const {
-    j2("BLTZAL", s, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), 
+      "if ($%s[%d] < 0) { $ra = 0x%x; jump(0x%x); }", rname(s), reg.s[s], pc+8, pc +4+ (i << 2));
+    j2("BLTZAL", s, i, buf);
   }
 
-  void j(u32 i) const {
-    jj("J", i);
+  void j(u32 i) {
+    char buf[80];
+    snprintf(buf, sizeof(buf), "$pc = 0x%x;", (i<<2));
+    jj("J", i, buf);
     check_sys_func(i);
   }
 
-  void jal(u32 i) const {
-    jj("JAL", i);
+  void jal(u32 i) {
+    char buf[80];
+    u32 npc = pc + 4;
+    snprintf(buf, sizeof(buf), "$ra = 0x%x; $pc = 0x%x;", npc+4, (npc & 0xF000'000) | (i<<2));
+    jj("JAL", i, buf);
     check_sys_func(i);
   }
 
-  void jr(mips_reg s) const {
+  void jr(mips_reg s) {
     j1("JR", s);
     check_sys_func(reg.u[s]);
   }
 
-  void jalr(mips_reg d, mips_reg s) const {
-    rx("JALR", d, s);
+  void jalr(mips_reg d, mips_reg s) {
+    char buf[80];
+    u32 npc = pc + 4;
+    snprintf(buf, sizeof(buf), "$%s = 0x%x; $pc = $%s[0x%x];", rname(d), npc+4, rname(s), reg.u[s]);
+    rx("JALR", d, s, buf);
     check_sys_func(reg.u[s]);
   }
 
@@ -1066,44 +1226,65 @@ public:
   }
 
   void mfc0(mips_reg t, mips_reg d) const {
-    i2("MFC0", t, d);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "$%s = cop0.reg(%d);", rname(t), d);
+    i2("MFC0", t, d, buf);
   }
 
   void mtc0(mips_reg t, mips_reg d) const {
-    i2("MTC0", t, d);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "cop0.reg(%d) = $%s[0x%x];", d, rname(t), reg.u[t]);
+    i2("MTC0", t, d, buf);
   }
 
   void sll(mips_reg d, mips_reg t, u32 i) const {
-    ii("SLL", d, t, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "0x%x = $%s[0x%x] << %d", reg.u[t] << i, rname(t), reg.u[t], i);
+    ii("SLL", d, t, i, buf);
   }
 
   void sllv(mips_reg d, mips_reg t, mips_reg s) const {
-    rr("SLLV", d, t, s);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "0x%x = $%s[0x%x] << ($%s[0x%x] & 0x1f)", 
+      reg.u[t] << (reg.u[s] & 0x1f), rname(t), reg.u[t], rname(s), reg.u[s]);
+    rr("SLLV", d, t, s, buf);
   }
 
   void sra(mips_reg d, mips_reg t, u32 i) const {
-    ii("SRA", d, t, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "0x%x = $%s[0x%x] >> %d", reg.s[t] >> i, rname(t), reg.s[t], i);
+    ii("SRA", d, t, i, buf);
   }
 
   void srav(mips_reg d, mips_reg t, mips_reg s) const {
-    rr("SRAV", d, t, s);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "0x%x = $%s[0x%x] >> ($%s[0x%x] & 0x1f)", 
+      reg.s[t] >> (reg.u[s] & 0x1f), rname(t), reg.u[t], rname(s), reg.u[s]);
+    rr("SRAV", d, t, s, buf);
   }
 
   void srl(mips_reg d, mips_reg t, u32 i) const {
-    ii("SRL", d, t, i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "0x%x = $%s[0x%x] >> %d", reg.u[t] >> i, rname(t), reg.s[t], i);
+    ii("SRL", d, t, i, buf);
   }
 
   void srlv(mips_reg d, mips_reg t, mips_reg s) const {
-    rr("SRLV", d, t, s);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "0x%x = $%s[0x%x] >> ($%s[0x%x] & 0x1f)", 
+      reg.u[t] >> (reg.u[s] & 0x1f), rname(t), reg.u[t], rname(s), reg.u[s]);
+    rr("SRLV", d, t, s, buf);
   }
 
   void syscall() const {
-    jj("SYSCAl", reg.v0);
+    jj("SYSCAL", 0, "syscall();");
     show_sys_call();
   }
 
   void brk(u32 code) const {
-    jj("BREAK", code);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "break(0x%x);", code);
+    jj("BREAK", code, buf);
     show_brk();
   }
 
@@ -1128,11 +1309,15 @@ public:
   }
 
   void bc2f(u32 i) {
-    jj("BC2F", i);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "if (!gte.flag) jump(%x);", i);
+    jj("BC2F", i, buf);
   }
 
   void bc2t(u32 imm) {
-    jj("BC2T", imm);
+    char buf[80];
+    snprintf(buf, sizeof(buf), "if (gte.flag) jump(%x);", imm);
+    jj("BC2T", imm, buf);
   }
 
   void lwc2(gte_dr t, mips_reg s, u32 i) {
@@ -1150,83 +1335,26 @@ public:
 private:
 #define DBG_HD "%08x | %08x \x1b[35m%6s \033[0m"
 
-  void gm(char const* iname, mips_reg t, char dir, gte_dr d) const {
-    warn(DBG_HD "H/L, $%s %c $cop2.r%02d \t\t \x1b[1;30m# $%s=%x, \n", 
-      pc, bus.read32(pc), iname, rname(t), dir, d, rname(t), reg.u[t]);
-  }
-
-  void gw(char const* iname, gte_dr t, mips_reg s, u32 i) const {
-    warn(DBG_HD "H/L, $cop2.r%02d, $%s, %08x \t\t \x1b[1;30m# $%s=%x, [<<2]=%08x \n", 
-      pc, bus.read32(pc), iname, t, rname(s), i, rname(s), reg.u[s], i<<2);
-  }
-
-  void gc(char const* iname, u32 op) {
-    warn(DBG_HD "%08x [1;30m\n", pc, bus.read32(pc), iname, op);
-  }
-
-  void rx(char const* iname, mips_reg s, mips_reg t) const {
-    debug(DBG_HD "H/L, $%s, $%s \t\t \x1b[1;30m# $%s=%x, $%s=%x\n", 
-      pc, bus.read32(pc), iname, rname(s), rname(t), 
-      rname(s), reg.u[s], rname(t), reg.u[t]);
-  }
-
-  void rr(char const* iname, mips_reg d, mips_reg s, mips_reg t) const {
-    debug(DBG_HD "$%s, $%s, $%s \t\t \x1b[1;30m# $%s=%x, $%s=%x, $%s=%x\n",
-      pc, bus.read32(pc), iname, rname(d), rname(s), rname(t),
-      rname(d), reg.u[d], rname(s), reg.u[s], rname(t), reg.u[t]);
-  }
+  void gm(char const* iname, mips_reg t, char dir, gte_dr d) const;
+  void gw(char const* iname, gte_dr t, mips_reg s, u32 i) const;
+  void gc(char const* iname, u32 op);
+  void rx(char const* iname, mips_reg s, mips_reg t, const char*) const;
+  void rr(char const* iname, mips_reg d, mips_reg s, mips_reg t, const char*) const;
+  void ii(char const* iname, mips_reg t, mips_reg s, u32 i, const char*) const;
+  void iw(char const* iname, mips_reg t, mips_reg s, u32 i, const char*) const;
+  void i2(char const* iname, mips_reg t, u32 i, const char*) const;
+  void jj(char const* iname, u32 i, const char*) const;
+  void j1(char const* iname, mips_reg s) const;
+  void ji(char const* iname, mips_reg t, mips_reg s, u32 i, const char*) const;
+  void j2(char const* iname, mips_reg t, u32 i, const char*) const;
+  void nn(char const* iname) const;
+  void m1(char const* iname, mips_reg s) const;
   
   template<class T>
-  void mem(char const* iname, mips_reg t, mips_reg s, s16 i) const {
+  void mem(char const* iname, mips_reg t, mips_reg s, s16 i) {
     debug(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x, addr[%x]=%x\n",
-      pc, bus.read32(pc), iname, rname(t), rname(s), i,
-      rname(t), reg.u[t], rname(s), reg.u[s], reg.u[s]+i, bus.read<T>(reg.u[s]+i));
-  }
-
-  void ii(char const* iname, mips_reg t, mips_reg s, s16 i) const {
-    debug(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x, +=%08x\n",
-      pc, bus.read32(pc), iname, rname(t), rname(s), i,
-      rname(t), reg.u[t], rname(s), reg.u[s], reg.u[s]+i);
-  }
-
-  void iw(char const* iname, mips_reg t, mips_reg s, s16 i) const {
-    debug(DBG_HD "[$%s + 0x%08x], $%s\t \x1b[1;30m# $%s=%x, $%s=%x, +=%08x\n",
-      pc, bus.read32(pc), iname, rname(s), i, rname(t),
-      rname(t), reg.u[t], rname(s), reg.u[s], reg.u[s] + i);
-  }
-
-  void i2(char const* iname, mips_reg t, s16 i) const {
-    debug(DBG_HD "$%s, 0x%08x\t\t \x1b[1;30m# $%s=%x\n",
-      pc, bus.read32(pc), iname, rname(t), i, rname(t), reg.u[t]);
-  }
-
-  void jj(char const* iname, u32 i) const {
-    info(DBG_HD "0x%08x\t\t\t \x1b[1;30m# %x\n", pc, bus.read32(pc), iname, i, i<<2);
-  }
-
-  void j1(char const* iname, mips_reg s) const {
-    info(DBG_HD "$%s\t\t\t\t \x1b[1;30m# $%s=%x\n",
-      pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
-  }
-
-  void ji(char const* iname, mips_reg t, mips_reg s, s16 i) const {
-    info(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s=%x, $%s=%x, addr[%x]\n",
-      pc, bus.read32(pc), iname, rname(t), rname(s), i,
-      rname(t), reg.u[t], rname(s), reg.u[s], pc + (i << 2) +4);
-  }
-
-  void j2(char const* iname, mips_reg t, s16 i) const {
-    debug(DBG_HD "$%s, 0x%08x\t\t \x1b[1;30m# $%s=%x\n",
-      pc, bus.read32(pc), iname, rname(t), i, rname(t), reg.u[t]);
-  }
-
-  void nn(char const* iname) const {
-    debug(DBG_HD "\n", pc, bus.read32(pc), iname);
-  }
-
-  void m1(char const* iname, mips_reg s) const {
-    debug(DBG_HD "$%s\t\t\t\t \x1b[1;30m# $%s=%x\n",
-      pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
+        pc, bus.read32(pc), iname, rname(t), rname(s), i,
+        rname(t), reg.u[t], rname(s), reg.u[s], reg.u[s] + i, bus.read<T>(reg.u[s] + i));
   }
 
   const char* rname(mips_reg s) const {
@@ -1237,9 +1365,12 @@ private:
     return MipsRegName[s];
   }
 
-  inline void check_sys_func(u32 addr) const {
-    if (0x08 & addr) {
-      show_sys_func(addr);
+  inline void check_sys_func(u32 addr) {
+    // B0h A0h C0h
+    if ((0xFFFF'FF80 & addr) == 0x80) {
+      sys_func_addr = addr;
+    } else {
+      sys_func_addr = 0;
     }
   }
 

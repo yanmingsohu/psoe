@@ -4,20 +4,103 @@
 namespace ps1e {
 
 
+void DisassemblyMips::gm(char const* iname, mips_reg t, char dir, gte_dr d) const {
+  warn(DBG_HD "H/L, $%s %c $cop2.r%02d \t\t \x1b[1;30m# $%s=%x, \n",
+        pc, bus.read32(pc), iname, rname(t), dir, d, rname(t), reg.u[t]);
+}
+
+
+void DisassemblyMips::gw(char const* iname, gte_dr t, mips_reg s, u32 i) const {
+  warn(DBG_HD "H/L, $cop2.r%02d, $%s, %08x \t\t \x1b[1;30m# $%s=%x, [<<2]=%08x \n",
+        pc, bus.read32(pc), iname, t, rname(s), i, rname(s), reg.u[s], i << 2);
+}
+
+
+void DisassemblyMips::gc(char const* iname, u32 op) {
+  warn(DBG_HD "%08x [1;30m\n", pc, bus.read32(pc), iname, op);
+}
+
+
+void DisassemblyMips::rx(char const* iname, mips_reg s, mips_reg t, const char* cm) const {
+  debug(DBG_HD "H/L, $%s, $%s \t\t \x1b[1;30m# %s\n",
+        pc, bus.read32(pc), iname, rname(s), rname(t), cm);
+}
+
+
+void DisassemblyMips::rr(char const* iname, mips_reg d, mips_reg s, mips_reg t, const char* cm) const {
+  debug(DBG_HD "$%s, $%s, $%s \t\t \x1b[1;30m# $%s = %s\n",
+        pc, bus.read32(pc), iname, rname(d), rname(s), rname(t),
+        rname(d), cm);
+}
+
+
+void DisassemblyMips::ii(char const* iname, mips_reg t, mips_reg s, u32 i, const char* cm) const {
+  debug(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# $%s = %s\n",
+        pc, bus.read32(pc), iname, rname(t), rname(s), i,
+        rname(t), cm);
+}
+
+
+void DisassemblyMips::iw(char const* iname, mips_reg t, mips_reg s, u32 i, const char* cm) const {
+  debug(DBG_HD "[$%s + 0x%08x], $%s\t \x1b[1;30m# %s\n",
+        pc, bus.read32(pc), iname, rname(s), i, rname(t), cm);
+}
+
+
+void DisassemblyMips::i2(char const* iname, mips_reg t, u32 i, const char* cm) const {
+  debug(DBG_HD "$%s, 0x%08x\t\t \x1b[1;30m# %s\n",
+        pc, bus.read32(pc), iname, rname(t), i, cm);
+}
+
+
+void DisassemblyMips::jj(char const* iname, u32 i, const char *cm) const {
+  info(DBG_HD "0x%08x\t\t\t \x1b[1;30m# %s\n", pc, bus.read32(pc), iname, i, cm);
+}
+
+
+void DisassemblyMips::j1(char const* iname, mips_reg s) const {
+  info(DBG_HD "$%s\t\t\t\t \x1b[1;30m# $pc=0x%x\n",
+        pc, bus.read32(pc), iname, rname(s), reg.u[s]);
+}
+
+
+void DisassemblyMips::ji(char const* iname, mips_reg t, mips_reg s, u32 i, const char* cm) const {
+  info(DBG_HD "$%s, $%s, 0x%08x \t \x1b[1;30m# %s\n",
+        pc, bus.read32(pc), iname, rname(t), rname(s), i, cm);
+}
+
+
+void DisassemblyMips::j2(char const* iname, mips_reg t, u32 i, const char* cm) const {
+  debug(DBG_HD "$%s, 0x%08x\t\t \x1b[1;30m# %s\n",
+        pc, bus.read32(pc), iname, rname(t), i, cm);
+}
+
+
+void DisassemblyMips::nn(char const* iname) const {
+  debug(DBG_HD "\n", pc, bus.read32(pc), iname);
+}
+
+
+void DisassemblyMips::m1(char const* iname, mips_reg s) const {
+  debug(DBG_HD "$%s\t\t\t\t \x1b[1;30m# $%s=%x\n",
+        pc, bus.read32(pc), iname, rname(s), rname(s), reg.u[s]);
+}
+
+
 void DisassemblyMips::show_sys_func(u32 addr) const {
-    switch (addr) {
-    case 0xA0:
-        sys_a_func();
-        break;
+  switch (addr) {
+  case 0xA0:
+      sys_a_func();
+      break;
 
-    case 0xB0:
-        sys_b_func();
-        break;
+  case 0xB0:
+      sys_b_func();
+      break;
 
-    case 0xC0:
-        sys_c_func();
-        break;
-    }
+  case 0xC0:
+      sys_c_func();
+      break;
+  }
 }
 
 
@@ -361,7 +444,11 @@ void DisassemblyMips::sf(const char* fname, u8 c, ...) const {
         break;
     }
 
-    info("%s=%d, ", val, x);
+    if (i) {
+      putchar(',');
+      putchar(' ');
+    }
+    info("%s=%Xh", val, x);
   }
 
   putchar(')');
