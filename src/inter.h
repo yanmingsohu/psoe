@@ -140,7 +140,7 @@ private:
     if (e != ExeCodeTable::SYS && (!has_exception())) {
       // debug info
       printf(YELLOW("SKIP exception (%X)%s PC=%x\n"), e, MipsCauseStr[static_cast<u32>(e)], pc);
-      printf("IE %d, IM %xH, IP %xH\n", cop0.sr.ie, cop0.sr.im, cop0.cause.ip);
+      //printf("IE %d, IM %xH, IP %xH\n", cop0.sr.ie, cop0.sr.im, cop0.cause.ip);
 
       if (from_instruction) {
         pc += 4;
@@ -181,7 +181,7 @@ private:
         pc = 0x8000'0080;
       }
     }
-    cop0.sr.v = SET_BIT(cop0.sr.v, COP0_SR_RFE_SHIFT_MASK, cop0.sr.v << 2);
+    cop0.sr.v = SET_BIT(cop0.sr.v, COP0_SR_RFE_SHIFT_MASK, u32(cop0.sr.v << 2));
     debug("Exception GOTO: %x\n", pc);
   }
 

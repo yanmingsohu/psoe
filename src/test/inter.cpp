@@ -63,7 +63,7 @@ static void test_mips_inter() {
   bus.bind_irq_receiver(&cpu);
   cpu.reset();
   //test_gpu(gpu, bus); //!!
-  debug_system(cpu, bus);
+  debug_system(cpu, bus, mmu);
 
   //cdrom.CmdInit();
   //cdrom.CmdMotorOn();
@@ -71,6 +71,7 @@ static void test_mips_inter() {
 
 
 static bool inputHexVal(const char* msg, u32& d) {
+  putchar('\n');
   printf(msg);
   if (scanf("%x", &d)) {
     return true;
@@ -82,34 +83,46 @@ static bool inputHexVal(const char* msg, u32& d) {
 }
 
 
-void debug_system(R3000A& cpu, Bus& bus) {
+void debug_system(R3000A& cpu, Bus& bus, MMU& mmu) {
   DisassemblyMips disa(cpu);
   int ext_count = 0;
   int show_code = 10;
-  u32 counter = 0;
+  u64 counter = 0;
   u32 address = 0;
   //t.set_int_exc_point(0xbfc00404);
   //cpu.set_data_rw_point(0x0011'f854, 0x00ff'ffff);
   LocalEvents event;
+  auto start = std::chrono::system_clock::now();
+  std::string ttybuf;
 
   // SCPH1000
   //disa.setInterruptPC(0x8004fe54); // 在 bios 菜单中停止
   //disa.setInterruptPC(0x8003e940); // 进入bios菜单后陷入读取cdrom状态
   //disa.setInterruptPC(0x0B0); // 调用系统函数时停止
+  //disa.setInterruptPC(0x8003eb68); // 循环了 100000 次, 然后通过 8003eb48 判断<0 跳入死循环
 
   for (;;) {
     if (show_code > 0) {
       disa.current();
     } else if (show_code == 0) {
       info(" ... \n");
-    } else if ((show_code & 0x1FFFFF) == 0) {
-      printf("\rPC.%x %d\r", cpu.getpc(), counter);
-      event.systemEvents();
     }
 
     cpu.next();
     --show_code;
     ++counter;
+
+    // pause on std_out_putchar()
+    if ((cpu.getpc() == 0xA0 && cpu.getreg().t1 == 0x3C) || 
+        (cpu.getpc() == 0xB0 && cpu.getreg().t1 == 0x3D)) {
+      char c = char(cpu.getreg().a0);
+      if (c == '\n' || c == '\r' || c == 0) {
+        printf("\x1b[30m\x1b[47m TTY(%d): %s \033[m\n", c, ttybuf.c_str());
+        ttybuf.clear();
+      } else {
+        ttybuf += c;
+      }
+    }
 
     if (cpu.exception_counter) {
       debug("Exception<%d> %d ON PC %x\n", ext_count, counter, cpu.getepc());
@@ -124,15 +137,16 @@ void debug_system(R3000A& cpu, Bus& bus) {
 
     if (ext_stop || disa.isDebugInterrupt()) {
       if (show_code < 0) {
-        for (int i = 30; i > 0; --i) {
+        for (int i = 1; i > 0; --i) {
           disa.decode(-i);
         }
       }
 
 wait_input:  
-      info("CPU <%d> %d >>", ext_count, counter);
+      info("CPU <%d> %d >> ", ext_count, counter);
+      fflush(stdin);
       int ch = _getch();
-      printf("\r                                     \r");
+      putchar('\r');
 
       switch (ch) {
         case ' ':
@@ -143,6 +157,8 @@ wait_input:
 
         case 'x':
           ext_stop = 0;
+          start = std::chrono::system_clock::now();
+          counter = 0;
           show_code = -1;
           wait_debug.notify_all();
           break;
@@ -170,15 +186,15 @@ wait_input:
           }
           goto wait_input;
 
-        case 'd':
-          if (inputHexVal("Stop Address Hex:", address)) {
+        case 'b':
+          if (inputHexVal("Break Address Hex:", address)) {
             disa.setInterruptPC(address);
           } else {
             disa.setInterruptPC(0);
           }
           break;
 
-        case 'c':
+        case 'w':
           if (inputHexVal("Address HEX:", address)) {
             u32 v;
             if (inputHexVal("Velue HEX:", v)) {
@@ -192,8 +208,8 @@ wait_input:
           printf("\n'r' show reg.       'x' run, hide debug.  \n");
           printf("'1' debug 100.      'a' show address value.\n");
           printf("'2' debug 10000.    '3' debug 1000000.\n");
-          printf("'0' Reset.          'c' write memory.\n");
-          printf("'d' set break.      'Enter' next op\n");
+          printf("'0' Reset.          'w' write memory.\n");
+          printf("'b' set break.      'Enter' next op\n");
           printf("'h' show help.      'ESC' Exit.\n");
           goto wait_input;
 
@@ -207,6 +223,13 @@ wait_input:
           ext_stop = 1;
           break;
       }
+    }
+    else if ((counter & 0x3F'FFFF) == 0) {
+      auto end = std::chrono::system_clock::now();
+      std::chrono::duration<double> elapsed_sec = end-start;
+      u32 freq = counter / elapsed_sec.count() / 1e6;
+      printf("\rPC.%08x %09llu %02uMhz\r", cpu.getpc(), counter, freq);
+      event.systemEvents();
     }
   }
 }

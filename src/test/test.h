@@ -30,6 +30,6 @@ void test_dma();
 void test_cd();
 
 // 专门用于调试 cpu, 可在任何条件下调用
-void debug_system(ps1e::R3000A& cpu, ps1e::Bus& bus);
+void debug_system(ps1e::R3000A& cpu, ps1e::Bus& bus, ps1e::MMU&);
 
 }
