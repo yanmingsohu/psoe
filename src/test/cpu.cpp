@@ -111,17 +111,26 @@ static void load_bin_exe(BinLoader& bin) {
 
 
 static void test_lwl(BinLoader& bin) {
-  u32* mem = (u32*) bin.mmu.memPoint(0, true);
-  mem[0] = 0x11223344;
-  mem[1] = 0x55667788;
+  bin.bus.write32(0x0, 0x11223344);
+  bin.bus.write32(0x4, 0x55667788);
+  bin.bus.write32(0x8, 0x99ffff99);
+  bin.bus.write32(0xc, 0xff9999ff);
   bin.r.u[1] = 0xaabb'ccdd;
-  printf("u32: %x, %x\n", bin.r.u[1], ((u32*)(mem))[0]);
 
-  u8* p8 = (u8*) mem;
-  printf("u8: 0-4 > %x %x %x %x\n", p8[0], p8[1], p8[2], p8[3]);
+  //u32 a = 0x1122'3344;
+  //u32 b = 0;
+  //memcpy(&b, &a, 4);
+  //eq(b, u32(0x44332211), "mem copy");
+
+  // memory test 大端模式
+  eq(bin.bus.read8(0), u8(0x11), "mem 1byte 0");
+  eq(bin.bus.read8(1), u8(0x22), "mem 1byte 1");
+  eq(bin.bus.read8(2), u8(0x33), "mem 1byte 2");
+  eq(bin.bus.read8(3), u8(0x44), "mem 1byte 3");
   eq(bin.r.u[1] & 0xff, u32(0xdd), "mem1");
-  eq(mem[0] & 0xff, u32(0x44), "mem2");
+  eq(bin.bus.read32(0) & 0xff, u32(0x44), "mem2");
 
+  // 大端模式
   bin.t.lwl(1, 0, 0x01);
   eq(bin.r.u[1], u32(0x223344dd), "lwl");
   bin.t.lwr(1, 0, 0x04);
@@ -131,6 +140,12 @@ static void test_lwl(BinLoader& bin) {
   eq(bin.r.u[1], u32(0x44334455), "lwl");
   bin.t.lwr(1, 0, 0x06);
   eq(bin.r.u[1], u32(0x44556677), "lwr");
+
+  bin.r.u[1] = 0xaabb'ccdd;
+  bin.t.swl(1, 0, 0x5);
+  eq(bin.bus.read32(0x4), u32(0x55aabbcc), "swl");
+  bin.t.swr(1, 0, 0x9);
+  eq(bin.bus.read32(0x8), u32(0xccddff99), "swr");
 }
 
 
@@ -162,7 +177,7 @@ static void test_instruction() {
   bin.i(0x00644818); // mul $9 $3 $4
   bin.i(0x00645019); // mulu $10 $3 $4
 
-  test_lwl(bin);
+  //test_lwl(bin);
   //bin.printMipsReg();
   load_bin_exe(bin);
 }

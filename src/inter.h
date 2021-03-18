@@ -418,58 +418,38 @@ public:
   void lwl(mips_reg t, mips_reg s, u32 i) {
     const u32 addr = reg.u[s] + i;
     const u32 v = bus.read32(addr & 0xFFFF'FFFC);
-    const u32 byte_off = (addr & 3) << 3;
+    const u32 byte_off = (3 - (addr & 3)) << 3;
     const u32 mask = (0xffff'ffff << byte_off);
-    reg.u[t] = ((v << byte_off) & mask) | (reg.u[t] & (~mask));
+    reg.u[t] = (v << byte_off) | (reg.u[t] & (~mask));
     pc += 4;
   }
 
   void lwr(mips_reg t, mips_reg s, u32 i) {
     const u32 addr = reg.u[s] + i;
     const u32 v = bus.read32(addr & 0xFFFF'FFFC);
-    const u32 byte_off = (3 - (addr & 3)) << 3;
+    const u32 byte_off = ((addr & 3)) << 3;
     const u32 mask = (0xffff'ffff >> byte_off);
-    reg.u[t] = ((v >> byte_off) & mask) | (reg.u[t] & (~mask));
+    reg.u[t] = (v >> byte_off) | (reg.u[t] & (~mask));
     pc += 4;
   }
 
   void swl(mips_reg t, mips_reg s, u32 i) {
-    u32 addr = reg.u[s] + i;
-    u32 v = bus.read32(addr & ~0b11);
-    switch (addr & 3) {
-      case 0:
-        bus.write32(addr & ~0b11, (v & 0xffff'ff00) | (reg.u[t] >> 24));
-        break;
-      case 1:
-        bus.write32(addr & ~0b11, (v & 0xffff'0000) | (reg.u[t] >> 16));
-        break;
-      case 2:
-        bus.write32(addr & ~0b11, (v & 0xff00'0000) | (reg.u[t] >> 8));
-        break;
-      case 3:
-        bus.write32(addr & ~0b11, reg.u[t]);
-        break;
-    }
+    const u32 addr = reg.u[s] + i;
+    const u32 r = bus.read32(addr & 0xFFFF'FFFC);
+    const u32 byte_off = (3 - (addr & 3)) << 3;
+    const u32 mask = (0xffff'ffff >> byte_off);
+    const u32 v = (reg.u[t] >> byte_off) | (r & (~mask));
+    bus.write32(addr & 0xFFFF'FFFC, v);
     pc += 4;
   }
 
   void swr(mips_reg t, mips_reg s, u32 i) {
-    u32 addr = reg.u[s] + i;
-    u32 v = bus.read32(addr & ~0b11);
-    switch (addr & 3) {
-      case 0:
-        bus.write32(addr & ~0b11, reg.u[t]);
-        break;
-      case 1:
-        bus.write32(addr & ~0b11, (v & 0x0000'00ff) | (reg.u[t] << 8));
-        break;
-      case 2:
-        bus.write32(addr & ~0b11, (v & 0x0000'ffff) | (reg.u[t] << 16));
-        break;
-      case 3:
-        bus.write32(addr & ~0b11, (v & 0x00ff'ffff) | (reg.u[t] << 24));
-        break;
-    }
+    const u32 addr = reg.u[s] + i;
+    const u32 r = bus.read32(addr & 0xFFFF'FFFC);
+    const u32 byte_off = ((addr & 3)) << 3;
+    const u32 mask = (0xffff'ffff << byte_off);
+    const u32 v = (reg.u[t] << byte_off) | (r & (~mask));
+    bus.write32(addr & 0xFFFF'FFFC, v);
     pc += 4;
   }
 
