@@ -179,7 +179,6 @@ void Bus::send_dma_irq(DMADev* dd) {
 
 
 void Bus::send_irq(IrqDevMask dev_irq_mask) {
-  std::lock_guard<std::mutex> lk(for_irq);
   // 上升沿触发中断
   if ((irq_status & dev_irq_mask) == 0) {
     if (irq_mask & dev_irq_mask) {

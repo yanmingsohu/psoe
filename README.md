@@ -79,3 +79,5 @@ This project is to test these assumptions.
 * [PSX Test](https://github.com/simias/psx-hardware-tests)
 * [OpenGL Tutorial](http://www.opengl-tutorial.org/)
 * [GUN libcdio](https://www.gnu.org/software/libcdio/libcdio.html)
+* [MIPS lwl/lwr](https://stackoverflow.com/questions/57522055/what-do-the-mips-load-word-left-lwl-and-load-word-right-lwr-instructions-do)
+

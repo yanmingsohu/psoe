@@ -5,7 +5,7 @@
 #include "mem.h"
 #include "cpu.h"
 #include "io.h"
-#include <mutex>
+#include <atomic>
 
 namespace ps1e {
 
@@ -66,14 +66,13 @@ private:
   IrqReceiver* ir;
   DeviceIO nullio;
   DeviceIO **io;
-  std::mutex for_irq;
 
   DMADev* dmadev[DMA_LEN];
   DMAIrq  dma_irq;
   DMADpcr dma_dpcr;
-  u32     irq_status;     // I_STAT
-  u32     irq_mask;       // I_MASK
   bool    use_d_cache;
+  std::atomic<u32> irq_status;     // I_STAT
+  std::atomic<u32> irq_mask;       // I_MASK
 
   // irq_status/irq_mask 寄存器状态改变必须调用方法, 
   // 模拟硬件拉回引脚, 并把状态发送给 IrqReceiver.

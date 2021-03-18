@@ -271,6 +271,7 @@ public:
   // 应该重写这个方法, 默认 readX 方法是对这个方法的包装
   virtual u32 read() { return 0xFFFF'FFFF; }
 
+  // 如果是 8/16 位总线, 必须重写这些方法, 以做出8/16位寄存器响应.
   virtual u32 read1() { return read() >> 8; }
   virtual u32 read2() { return read() >> 16; }
   virtual u32 read3() { return read() >> 24; }
@@ -278,6 +279,7 @@ public:
   // 应该重写这个方法, 默认其他 writeX 方法是对该方法的包装
   virtual void write(u32 value) {}
 
+  // 如果是 8/16 位总线, 必须重写这些方法, 以做出8/16位寄存器响应.
   virtual void write(u8 v)   { write(u32(v)); }
   virtual void write(u16 v)  { write(u32(v)); }
   virtual void write1(u8 v)  { write((u32) u32(v)<<8); }
