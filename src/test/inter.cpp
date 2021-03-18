@@ -45,7 +45,7 @@ static void test_mips_inter() {
 
   MemJit mmjit;
   MMU mmu(mmjit);
-  if (!mmu.loadBios(biosf[0])) {
+  if (!mmu.loadBios(biosf[5])) {
     panic("load bios fail");
   }
 

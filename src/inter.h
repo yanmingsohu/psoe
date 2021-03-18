@@ -416,42 +416,20 @@ public:
   }
 
   void lwl(mips_reg t, mips_reg s, u32 i) {
-    u32 addr = reg.u[s] + i;
-    u32 v = bus.read32(addr & ~0b11);
-    switch (addr & 3) {
-      case 0:
-        reg.u[t] = (reg.u[t] & 0x00ff'ffff) | (v << 24);
-        break;
-      case 1:
-        reg.u[t] = (reg.u[t] & 0x0000'ffff) | (v << 16);
-        break;
-      case 2:
-        reg.u[t] = (reg.u[t] & 0x0000'00ff) | (v << 8);
-        break;
-      case 3:
-        reg.u[t] = v;
-        break;
-    }
+    const u32 addr = reg.u[s] + i;
+    const u32 v = bus.read32(addr & 0xFFFF'FFFC);
+    const u32 byte_off = (addr & 3) << 3;
+    const u32 mask = (0xffff'ffff << byte_off);
+    reg.u[t] = ((v << byte_off) & mask) | (reg.u[t] & (~mask));
     pc += 4;
   }
 
   void lwr(mips_reg t, mips_reg s, u32 i) {
-    u32 addr = reg.u[s] + i;
-    u32 v = bus.read32(addr & ~0b11);
-    switch (addr & 3) {
-      case 0:
-        reg.u[t] = v;
-        break;
-      case 1:
-        reg.u[t] = (reg.u[t] & 0xff00'0000) | (v >> 8);
-        break;
-      case 2:
-        reg.u[t] = (reg.u[t] & 0xffff'0000) | (v >> 16);
-        break;
-      case 3:
-        reg.u[t] = (reg.u[t] & 0xffff'ff00) | (v >> 24);
-        break;
-    }
+    const u32 addr = reg.u[s] + i;
+    const u32 v = bus.read32(addr & 0xFFFF'FFFC);
+    const u32 byte_off = (3 - (addr & 3)) << 3;
+    const u32 mask = (0xffff'ffff >> byte_off);
+    reg.u[t] = ((v >> byte_off) & mask) | (reg.u[t] & (~mask));
     pc += 4;
   }
 

@@ -110,6 +110,30 @@ static void load_bin_exe(BinLoader& bin) {
 }
 
 
+static void test_lwl(BinLoader& bin) {
+  u32* mem = (u32*) bin.mmu.memPoint(0, true);
+  mem[0] = 0x11223344;
+  mem[1] = 0x55667788;
+  bin.r.u[1] = 0xaabb'ccdd;
+  printf("u32: %x, %x\n", bin.r.u[1], ((u32*)(mem))[0]);
+
+  u8* p8 = (u8*) mem;
+  printf("u8: 0-4 > %x %x %x %x\n", p8[0], p8[1], p8[2], p8[3]);
+  eq(bin.r.u[1] & 0xff, u32(0xdd), "mem1");
+  eq(mem[0] & 0xff, u32(0x44), "mem2");
+
+  bin.t.lwl(1, 0, 0x01);
+  eq(bin.r.u[1], u32(0x223344dd), "lwl");
+  bin.t.lwr(1, 0, 0x04);
+  eq(bin.r.u[1], u32(0x22334455), "lwr");
+
+  bin.t.lwl(1, 0, 0x03);
+  eq(bin.r.u[1], u32(0x44334455), "lwl");
+  bin.t.lwr(1, 0, 0x06);
+  eq(bin.r.u[1], u32(0x44556677), "lwr");
+}
+
+
 static void test_instruction() {
   BinLoader bin;
   MipsReg& r = bin.r;
@@ -138,6 +162,7 @@ static void test_instruction() {
   bin.i(0x00644818); // mul $9 $3 $4
   bin.i(0x00645019); // mulu $10 $3 $4
 
+  test_lwl(bin);
   //bin.printMipsReg();
   load_bin_exe(bin);
 }
