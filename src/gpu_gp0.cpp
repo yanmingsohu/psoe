@@ -910,7 +910,7 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
 
     // 中断请求
     case 0x1F:
-      p.status.irq_on = 1;
+      p.s_irq = 1;
       return false;
 
     // 绘图模式设置 Texpage

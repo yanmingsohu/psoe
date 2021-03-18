@@ -35,7 +35,7 @@ void GPU::GP1::parseCommand(const GpuCommand c) {
 
     // 确认GPU中断（IRQ1）
     case 0x02:
-      p.status.irq_on = 0;
+      p.s_irq = 0;
       break;
 
     // 显示使能
@@ -129,13 +129,25 @@ void GPU::GP1::write(u32 v) {
 
 
 u32 GPU::GP1::read() {
-  p.status.r_dma = p.s_r_dma;
-  p.status.r_cpu = p.s_r_cpu;
-  // if == 0x02 || 0x03
-  if (p.status.dma_md & 0b10) {
-    p.status.dma_req = p.s_r_cpu | p.s_r_dma;
+  GpuStatus s = p.status;
+  s.irq_on = p.s_irq;
+  s.r_dma = p.s_r_dma;
+  s.r_cpu = p.s_r_cpu;
+  
+  switch (s.dma_md) {
+    case 0x02:
+      s.dma_req = p.s_r_dma;
+      break;
+    case 0x03:
+      s.dma_req = p.s_r_cpu;
+      break;
+    default:
+      s.dma_req = 0;
   }
-  return p.status.v;
+  /*printf("GP1 read status %x dma_md.%x dma_req.%x r_dma.%x r_cpu.%x irq.%x\n", 
+    s.v, s.dma_md, s.dma_req, s.r_dma, s.r_cpu, s.irq_on);
+  ps1e_t::ext_stop = 1;*/
+  return s.v;
 }
 
 

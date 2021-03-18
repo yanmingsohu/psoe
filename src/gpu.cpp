@@ -126,6 +126,10 @@ void GPU::gpu_thread() {
     glfwSwapBuffers(glwindow);
     timer.vblank(true);
     //debug("\r\t\t\t\t\t\t%d, %f\r", ++frames, glfwGetTime());
+
+    if (s_irq && s_r_dma && s_r_cpu) {
+      bus.send_irq(IrqDevMask::gpu);
+    }
   }
 }
 
@@ -134,9 +138,11 @@ void GPU::reset() {
   gp0.reset_fifo();
   status.v = 0x14802000;
   status.r_cmd = 1; 
-  status.dma_req = 1;
+  status.dma_req = 0;
+  status.dma_md = 0;
   s_r_cpu = 1;
   s_r_dma = 1;
+  s_irq = 0;
 }
 
 

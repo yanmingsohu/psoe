@@ -249,6 +249,7 @@ public:
   // 解决线程争用, 从 GpuStatus 中分离
   u8 s_r_dma; // cpu to gpu
   u8 s_r_cpu; // gpu to cpu
+  u8 s_irq;
 
 private:
   GP0 gp0;
