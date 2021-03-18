@@ -11,6 +11,7 @@ namespace ps1e {
 
 
 enum class IrqDevMask : u32 {
+  none    = 0,
   vblank  = 1,
   gpu     = 1 << 1,
   cdrom   = 1 << 2,
@@ -44,7 +45,7 @@ protected:
 public:
   virtual ~IrqReceiver() {}
 
-  // 发送方调用
+  // 发送方调用, 使用 0 调用, 表名外部中断已经关闭
   void send_irq(u32 m);
 
   // 接收方实现, 发送总线异常
@@ -75,7 +76,8 @@ private:
   std::atomic<u32> irq_mask;       // I_MASK
 
   // irq_status/irq_mask 寄存器状态改变必须调用方法, 
-  // 模拟硬件拉回引脚, 并把状态发送给 IrqReceiver.
+  void update_irq_status();
+  // 把状态发送给 IrqReceiver.
   void send_irq_to_reciver(IrqDevMask i);
 
 public:

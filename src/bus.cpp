@@ -70,11 +70,6 @@ void show_irq_msg(const char *msg, u32 v) {
 
 
 void IrqReceiver::ready_recv_irq() {
-  if (trigger == 0) {
-    clr_ext_int(CpuCauseInt::hardware);
-    return;
-  }
-
   if (trigger) {
     show_irq_curr(trigger);
     set_ext_int(CpuCauseInt::hardware);
@@ -84,7 +79,9 @@ void IrqReceiver::ready_recv_irq() {
 
 
 void IrqReceiver::send_irq(u32 i) {
-  if (i == trigger) return;
+  if (i == 0) {
+    clr_ext_int(CpuCauseInt::hardware);
+  }
   trigger = i;
 }
 
@@ -196,6 +193,13 @@ void Bus::send_irq_to_reciver(IrqDevMask i) {
 }
 
 
+void Bus::update_irq_status() {
+  if (!(irq_mask & irq_status)) {
+    send_irq_to_reciver(IrqDevMask::none);
+  }
+}
+
+
 bool Bus::check_running_state(DMADev* dd) {
   //debug("DMA mask (%d) %x %x %x\n", 
   //  dd->number(), dd->mask(), dma_dpcr.v, dd->mask() & dma_dpcr.v);
@@ -249,9 +253,18 @@ void Bus::__on_write(psmem addr, u32 v) {
   //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
   //  printf("BUS write SPU %x = %x\n", addr, v);
   //}
-  if (ps1e_t::ext_stop && (0xFFFF'F000 & addr) == 0x1F80'1000) {
+  // 写入了该地址值 0xf2 导致死循环, 8005616c 处的代码写入
+  /*if (addr == 0x800FBB44) {
+    ps1e_t::ext_stop = 1;
+    printf("Write %x = %x %u\n", addr, v, v);
+  }*/
+  if (ps1e_t::ext_stop && (0xFFFF'0000 & addr) == 0x1F80'0000) {
     printf("BUS Write IO %x %x\n", addr, v);
   }
+  /*if ((0xFFFF'f000 & addr) == 0x1F80'2000) {
+    printf("!!!!!!!!!!!!!!!!!!!!!!!!Bus write RE2 %x = %x %c\n", addr, v, v);
+    ps1e_t::ext_stop = 1;
+  }*/
 }
 
 
@@ -266,9 +279,13 @@ void Bus::__on_read(psmem addr) {
   //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
   //  printf("BUS read SPU %x\n", addr);
   //}
-  if (ps1e_t::ext_stop && (0xFFFF'F000 & addr) == 0x1F80'1000) {
+  if (ps1e_t::ext_stop && (0xFFFF'0000 & addr) == 0x1F80'0000) {
     printf("BUS read IO %x\n", addr);
   }
+  /*if ((0xFFFF'f000 & addr) == 0x1F80'2000) {
+    printf("!!!!!!!!!!!!!!!!!!!!!!!!Bus read RE2 %x\n", addr);
+    ps1e_t::ext_stop = 1;
+  }*/
 }
 
 
