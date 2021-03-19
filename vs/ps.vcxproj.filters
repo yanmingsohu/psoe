@@ -147,6 +147,9 @@
     <None Include="..\src\bus.inl">
       <Filter>header</Filter>
     </None>
+    <None Include="..\src\spu.inl">
+      <Filter>header</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\doc\gpu.txt">

@@ -269,22 +269,31 @@ public:
   virtual ~DeviceIO() {}
 
   // 应该重写这个方法, 默认 readX 方法是对这个方法的包装
-  virtual u32 read() { return 0xFFFF'FFFF; }
+  virtual u32 read() = 0;
 
   // 如果是 8/16 位总线, 必须重写这些方法, 以做出8/16位寄存器响应.
+  // 读 n+1 字节, 该读取内存不对齐, 只有 16bit 寄存器需要重写
   virtual u32 read1() { return read() >> 8; }
+  // 读取 n+2 字节, 从 32bit 寄存器中的半字读取高位, 
   virtual u32 read2() { return read() >> 16; }
+  // 读取 n+3 字节, 只有当一个 4 字节对齐中全部是 8bit 寄存器的时候适用.
   virtual u32 read3() { return read() >> 24; }
 
   // 应该重写这个方法, 默认其他 writeX 方法是对该方法的包装
-  virtual void write(u32 value) {}
+  virtual void write(u32 value) = 0;
 
   // 如果是 8/16 位总线, 必须重写这些方法, 以做出8/16位寄存器响应.
+  // 用 8bit 写入 n+0 地址
   virtual void write(u8 v)   { write(u32(v)); }
+  // 用 16bit 写入 n+0 地址, 只有 32bit 寄存器需要实现该方法
   virtual void write(u16 v)  { write(u32(v)); }
-  virtual void write1(u8 v)  { write((u32) u32(v)<<8); }
-  virtual void write2(u8 v)  { write((u32) u32(v)<<16); }
+  // 用 16bit 写入 n+2 地址, 只有 32bit 寄存器需要实现该方法
   virtual void write2(u16 v) { write((u32) u32(v)<<16); }
+  // 8bit 写入 n+1 地址, 只有当一个 4 字节对齐中全部是 8bit 寄存器的时候适用.
+  virtual void write1(u8 v)  { write((u32) u32(v)<<8); }
+  // 8bit 写入 n+2 地址, 只有当一个 4 字节对齐中全部是 8bit 寄存器的时候适用.
+  virtual void write2(u8 v)  { write((u32) u32(v)<<16); }
+  // 8bit 写入 n+3 地址, 只有当一个 4 字节对齐中全部是 8bit 寄存器的时候适用.
   virtual void write3(u8 v)  { write((u32) u32(v)<<24); }
   
   // mips 总线上不可能在这个地址写 32 位值, 这个错误会被 cpu 捕获不会发送到总线

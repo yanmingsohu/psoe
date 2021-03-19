@@ -66,6 +66,7 @@
     <None Include="..\README.md" />
     <None Include="..\src\bus.inl" />
     <None Include="..\src\makefile" />
+    <None Include="..\src\spu.inl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\doc\gpu.txt" />
