@@ -41,6 +41,7 @@ static void test_mips_inter() {
     "H:\\EMU-console\\PlayStation1\\bios\\SCPH5500.BIN", //3
     "H:\\EMU-console\\PlayStation1\\bios\\SCPH7001.BIN", //4
     "H:\\EMU-console\\PlayStation1\\bios\\SCPH7502.BIN", //5
+    "H:\\EMU-console\\PlayStation1\\bios\\PSXONPSP660.BIN", //6
   };
 
   MemJit mmjit;

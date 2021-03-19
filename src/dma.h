@@ -137,15 +137,15 @@ private:
     u32 base; // 目标内存基址
     DMADev* parent;
 
-    RegBase(DMADev* p) : parent(p) {}
+    RegBase(DMADev* p) : parent(p), base(0) {}
     void write(u32 value);
     u32 read();
   };
 
   class RegBlock : public DeviceIO {
   public:
-    u32 blocks;    // stream 模式数据包数量
-    u32 blocksize; // 一个数据包 u32 的数量
+    u32 blocks = 0;    // stream 模式数据包数量
+    u32 blocksize = 0; // 一个数据包 u32 的数量
     DMADev* parent;
 
     RegBlock(DMADev* p) : parent(p) {}

@@ -65,7 +65,7 @@ public:
 private:
   MMU& mmu;
   IrqReceiver* ir;
-  DeviceIO nullio;
+  DeviceIOLatch<NullReg> nullio;
   DeviceIO **io;
 
   DMADev* dmadev[DMA_LEN];

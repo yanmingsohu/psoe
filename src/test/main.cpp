@@ -29,7 +29,7 @@ void tsize(int s, int t, char const* msg) {
 int main() {
   log_level = LogLevel::all;
   if (!check_little_endian()) {
-    error("Cannot support little endian CPU\n");
+    error("Cannot support big endian CPU\n");
     return 1;
   }
   

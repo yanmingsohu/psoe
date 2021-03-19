@@ -224,7 +224,7 @@ void GPU::enableDrawScope(bool enable) {
 
 
 VirtualFrameBuffer::VirtualFrameBuffer(int _mul) : 
-    multiple(_mul), gsize{0, 0, Width * _mul, Height * _mul}, ds(0.03f)
+    multiple(_mul), gsize{0, 0, Width * _mul, Height * _mul}, ds(0.03f), shader(0)
 {
 }
 

@@ -99,10 +99,7 @@ public:
   }
 
   inline u32 has_exception() {
-    if (cop0.sr.ie) {
-      return (cop0.sr.im & cop0.cause.ip);
-    }
-    return 0;
+    return (cop0.sr.ie) && (cop0.sr.im & cop0.cause.ip);
   }
 
   void send_bus_exception() {

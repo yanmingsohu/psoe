@@ -149,6 +149,45 @@ static void test_lwl(BinLoader& bin) {
 }
 
 
+static void test_bit_order() {
+  // 小端模式有效
+  union {
+    u32 v;
+    struct {
+      u32 l : 16;
+      u32 h : 16;
+    };
+    struct {
+      u32 a1 : 1;
+      u32 a2 : 1;
+      u32 a3 : 1;
+      u32 a4 : 1;
+      u32 a5 : 1;
+      u32 a6 : 1;
+      u32 a7 : 1;
+      u32 a8 : 1;
+
+      u32 b1 : 1;
+      u32 b2 : 1;
+      u32 b3 : 1;
+      u32 b4 : 1;
+      u32 b5 : 1;
+      u32 b6 : 1;
+      u32 b7 : 1;
+      u32 b8 : 1;
+    };
+  } t;
+  t.v = 0xffee5511;
+  eq(t.l, u32(0x5511), "low");
+  eq(t.h, u32(0xffee), "low");
+  eq(t.a1, u32(1), "a1");
+  eq(t.a2, u32(0), "a2");
+  eq(t.a8, u32(0), "a8");
+  eq(t.b1, u32(1), "b1");
+  eq(t.b8, u32(0), "b8");
+}
+
+
 static void test_instruction() {
   BinLoader bin;
   MipsReg& r = bin.r;
@@ -186,6 +225,7 @@ static void test_instruction() {
 void test_cpu() {
   test_reg();
   test_instruction();
+  test_bit_order();
 }
 
 }

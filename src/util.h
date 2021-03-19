@@ -188,6 +188,7 @@ template<class T> inline T setbit_with_mask(T reserve, T set, T reserveMask) {
 }
 
 
+// 是小端模式返回 true
 bool    check_little_endian();
 void*   melloc_exec(size_t size, void* near = 0);
 bool    free_exec(void* p, size_t size = 0);
