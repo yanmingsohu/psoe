@@ -1,0 +1,51 @@
+XA Subheader Information
+========================
+
+XA subheader information is 8 bytes, 2 blocks of 4 bytes, each block being identical.
+
+Byte Offset
+0		file number
+1		channel number
+2		submode
+3		coding info
+4		file number
+5		channel number
+6		submode
+7		coding info
+
+Byte 0, File Number
+=============
+0		standard data file
+1-255		interleaved
+
+Byte 1, Channel Number
+======================
+0-15		ADPCM
+0-31		Data/Video
+ADPCM data can only be up to 16 channels, this would be reduced to 8 if the PlayStation didn't have double speed CD-ROM access
+
+Byte 2, Submode
+===============
+Split into 8 bits:
+Bit#		Field 			Description
+7		EOF			set at end of file
+6		Real time sector
+5		Form
+4		Trigger			for use with application
+3		Data			set if data sector
+2		Audio			set if audio sector
+1		Video			set if video sector
+0		EOR			end of record
+
+Byte 3, Coding Information
+==========================
+Split into 8 bits:
+Bit#		Field 			Description
+7		Reserved		0
+6		Emphasis		emphasis
+5,4		Bits per sample		00 = 4bit (level B/C)
+					01 = 8bit (level A)
+3,2		Sample rate		00 = 37.8kHz (level A/B)
+					01 = 18.9kHz (level C)
+1,0		mono/stereo		00 = mono
+					01 = stereo

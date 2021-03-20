@@ -15,7 +15,7 @@ set TARGET_VS_VERSION="Visual Studio 16 2019"
 set deps_home=%CD%
 pushd ..\bin
 set bin_home=%CD%
-goto build_glfw
+goto build_rtaudio
 
 :build_glfw
 cd %bin_home%
@@ -43,6 +43,17 @@ cmake --build . --config Release
 mv Release/*.lib %bin_home%/
 cd %bin_home%
 rm -rf ftxui
+if ERRORLEVEL 1 goto end
+goto end
+
+:build_rtaudio
+set rt_home=%deps_home%\rtaudio
+cd %bin_home%
+md rtaudio
+cd rtaudio
+cmake %rt_home%
+cmake --build . --config Release
+mv Release/rtaudio.* %bin_home%/
 if ERRORLEVEL 1 goto end
 goto end
 

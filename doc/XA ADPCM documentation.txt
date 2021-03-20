@@ -1,0 +1,230 @@
+The ADPCM format is defined in the Green Book, CD-i Specification
+
+
+If is stored in a 'real-time' file, that is a file is played back at 75 sectors
+per second (the single-speed transfer rate of CD-ROM/CD-i drives). The audio
+data for one particular channel is 16:1. In other words the audio for 16/75th
+second is stored in 1 sector that takes 1/75th seconds to read. The time to play
+this audio to the speaker is exactly the time to read the next 16 sectors at
+single speed, of which the last sector will contain the next for this channel.
+The 15 sectors in between can contain audio for the 15 other channels or other
+data, such as video, or they can be empty. If the audio is played in stereo
+mode, the interleaving is halved. It takes 8/75th second to play 1 stereo level
+C ADPCM sector. If the audio is stored in non-real-time mode, this interleaving
+is not used and the audio is stored in one long stream. Real-time mode is more
+common.
+
+ADPCM audio sectors shall be Form 2, with 2324 bytes of user data. The 2324 byte
+of ADPCM audio data consists of 18 sound groups. Each 128 byte sound group
+consists of two parts: 16 bytes of sound parameters followed by 112 bytes of
+sampled data.
+
+Anyway the RAW data of a CD sector is 2352 bytes per sector, this sector has the
+following structure:
+
+struct
+{
+	BYTE	sync[12]={ 0,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0  }; //
+the sync pattern is not decoded on all CD-ROM drives
+	struct
+	{
+		BYTE	minutes;	// timecode relative to start of disk
+		BYTE	seconds;	// timecode relative to start of disk
+		BYTE	sectors;	// timecode relative to start of disk
+		BYTE	mode;		// Form 2 for ADPCM audio sectors
+	} header;
+	struct
+	{
+		BYTE	file_number;	// used to identify sectors belonging to the same file
+		BYTE	channel;	// 0-15 for ADPCM audio
+		BYTE
+		{
+			bit 7: eof_marker;	// 0 for all sectors except last sector of file
+			bit 6: real_time;	// 1 for real time mode, see above description
+			bit 5: form;		// 1 for ADPCM sector (form 2, 0 for form 1)?
+			bit 4: trigger;		// used for application
+			bit 3: data;		// dependant on sector type, 0 for ADPCM sector
+			bit 2: audio;		// dependant on sector type, 1 for ADPCM sector
+			bit 1: video;		// dependant on sector type, 0 for ADPCM sector
+			bit 0: end_of_record;	// identifies end of audio frame
+		} submode;
+		BYTE
+		{
+			bit 7: reserved;		// =0 ?
+			bit 6: emphasis;
+			bit 5,4: bits_per_sample;	// 00=4bits (B,C format) 01=8bits
+			bit 3,2: sample_rate;		// 00=37.8kHz (A,B format) 01=18.9kHz
+			bit 1,0: mono_stereo;	// 00=mono 01=stereo, other values reserved
+		} coding_info;
+		BYTE	copy_of_file_number;	// =file_number
+		BYTE	copy_of_channel;	// =channel
+		BYTE	copy_of_submode;	// =submode
+		BYTE	copy_of_coding_info;	// =coding_info
+
+	} subheader;
+	struct
+	{
+		BYTE	sound_parameters[16];		// see below
+		BYTE	audio_sample_bytes[112];	// see below
+	} soundgroups[18];
+	BYTE	unused_for_adpcm[20];
+	BYTE	edc[4];				// error correction code or 0
+} adpcm_raw_sector;				// 2352 bytes total
+
+
+How to Read Sound Parameters and Sound Sample Bytes
+===================================================
+
+Level B and C sound groups (of which there are 18 in each sector) contain eight
+sound units (level A sound groups contain four sound units). Each sound unit
+consists of a sound parameter byte stored twice or four times in the
+sound_parameters array above and 28 sound data nibbles (4 bit) stored as 14
+bytes in the audio_sample_bytes array (level A stores 28 bytes too but they are
+not encoded as nibbles).
+
+The sound parameters are stored as follows. For level A the sound parameters are
+stored 4 times, for level B and C, the sound parameters are stored twice. All
+versions of the same parameter should be identical.
+
+sound_parameter array[16]	Level A		Level B
+offset
+0				SP0		SP0
+1				SP1		SP1
+2				SP2		SP2
+3				SP3		SP3
+4				SP0		SP0
+5				SP1		SP1
+6				SP2		SP2
+7				SP3		SP3
+8				SP0		SP4
+9				SP1		SP5
+10				SP2		SP6
+11				SP3		SP7
+12				SP0		SP4
+13				SP1		SP5
+14				SP2		SP6
+15				SP3		SP7
+
+The data for each sound unit is stored in an interleaved manner, so for level A
+the sound data is stored like this (SD1,2=sound data for sound unit 1,sample
+number 2 with the sound unit):
+
+audio_sample_bytes[]		Level A
+offset
+0				SD0,0
+1				SD1,0
+2				SD2,0
+3				SD3,0
+4				SD0,1
+5				SD1,1
+...
+110				SD2,27
+111				SD3,27
+
+For levels B and C the data is stored as nibbles: like this (SD1/0,2=sound data
+for sound unit 1 (bits 7,6,5,4) and sound unit 0 (bits 3,2,1,0), sample number 2
+within the sound unit):
+
+audio_sample_bytes[]		Level B/C
+offset
+0				SD1/0,0
+1				SD3/2,0
+2				SD5/4,0
+3				SD7/6,0
+4				SD1/0,1
+5				SD3/2,1
+6				SD5/4,1
+...
+110				SD5/4,27
+111				SD7/6,27
+
+So, to decode one sector, the folowing loop could be used:
+
+for(sg=0;sg<18;sg++)
+{
+	for(su=0;su<numberOfsu_s;su++)		// numberOfsu = 4 for level A, 8 for level B/C
+	{
+		for(sd=0;sd<27;sd++)
+		{
+			// decode sound data byte or nibble
+			// SD(su),(sd) using sound parameter SP(su)
+
+			// in stereo, su=0,2,4,6... for left
+			// channel, 1,3,5,7... for right channel
+		}
+	}
+}
+
+It may seem that all these numbers are strange, but the fact that there are 18
+sound groups in a sector, 8 sound units in a sound group and 28 samples in a
+sound unit, means that there are 18*8*28=4032 samples in each sector. At
+18.9kHz, that's 0.21333 seconds which is exactly 16/75th of a second. So, at 75
+sectors per second, the compression factor is exactly 16:1 for level C (for
+level B, the sample rate changes to 37.8kHz so the compression factor becomes
+8:1; for A level, the frequency is 37.8kHz and the number of sound units per
+sound group becomes 4 so the compression factor becomes 4:1. For stereo, the
+number of samples per channel become 14 so all compression ratios are halved.).
+
+So how do you decode ADPCM to PCM
+=================================
+
+The sound parameter of each sound unit is one byte, which holds 2 values: a
+range (bits 3,2,1,0) and a filter value (bits 7,6,5,4). The sound data is 2's
+complement (signed).
+
+The range indicates the number of bits that the data in the sound data byte or
+nibble should be shifted. This can be 0-12 for B and C level, or 0-8 for A
+level. Shifting is done to the right, so a nibble of 0xF is first extended to a
+word: 0xF00, then (arithmetically) shifted to the right, e.g. if range=11, the
+result would be 0xFFEE.
+
+The accuracy is further increased by another multiplication factor that makes
+each sample dependant on the outcome of the previous audio data. This is done
+with 2 factors that are used as multipliers K0 and K1 for the output of the
+previous sample word. The values K0 and K1 are selected by the filter value in
+the sound parameter from a table of real numbers. These real numbers are
+actually divisions of 256 so by using 32-bit arithmetic and an extra
+shift-operation, they can be defined as integers.
+
+So, to decode a sample sd (sign-extended to 16-bit integer so 0xC becomes 0xFFFC
+with sound parameter sp, use the following:
+
+INT16 pcm,prev1,prev2;
+
+INT16 ADPCMtoPCM(BYTE sp,INT16sd)
+{
+	static const int K0[4]={0,240,460,392};
+	static const int K1[4]={0,0,-208,-220};
+
+	INT32 result=sd*((levelA?8:12)-(sp & 0xF));	// shift sound data with range
+
+	result=(result + K0[sp>>4]*prev1 + K1[sp>>4]prev2)>>8;
+
+	// clipping
+	if(result>32767)
+		result=32767;
+	else if(result<-32768)
+		result-32768;
+
+	return (INT16) result;
+}
+
+prev1=prev2=0		// initialise at start of file or complete decoding routine
+
+// inside the decoding loop
+pcm=ADPCMtoPCM(currentSoundParameter,(INT16)currentSoundSample);
+prev2=prev1;
+prev1=pcm;
+outputPCMtoSoundDevice(pcm);		// remember this is 2's complement
+
+So that's all there is to making an ADPCM decoder for CD-ROM XA.
+
+Original document:
+
+Jac Goudsmit
+CD-i & PC Software Engineer
+Codim Interactive Media CV
+Eindhoven, The Netherlands
+http://www.codim.nl
+jac@codim.nl
+jacg@xs4all.nl
