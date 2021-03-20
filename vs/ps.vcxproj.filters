@@ -150,6 +150,9 @@
     <None Include="..\src\spu.inl">
       <Filter>header</Filter>
     </None>
+    <None Include="..\README.cn.md">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\doc\gpu.txt">

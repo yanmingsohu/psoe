@@ -4,16 +4,33 @@
 #include "io.h"
 #include "bus.h"
 
+class RtAudio;
+
 namespace ps1e {
 
 // 512K
-#define SPU_MEM_SIZE        0x8'0000 
+#define SPU_MEM_SIZE        0x8'0000
+#define SPU_MEM_MASK        (SPU_MEM_SIZE-1)
+// 32 个半字, 64个字节
 #define SPU_FIFO_SIZE       0x20
 #define SPU_FIFO_MASK       (SPU_FIFO_SIZE-1)
 #define SPU_FIFO_INDEX(x)   ((x) & SPU_FIFO_MASK)
+#define SPU_ADPCM_BLK_SZ    0x10
 #define not_aligned_nosupport(x) error("Cannot read SPU IO %u, Memory misalignment\n", u32(x))
 
+// 如果 begin 到 begin+size(不包含) 之间穿过了 point 则返回 true, size > 0
+#define ADDR_IN_SCOPE(begin, size, point) \
+    ( ((begin) <= (point)) && (((begin) + (size)) > (point)) )
 
+#define SPU_COMM_BIT(n) \
+  u32 n; \
+  struct { \
+    u32 _hw0 : 16; \
+    u32 _hw2 : 16; \
+  }
+
+
+typedef float PcmSample;
 class SoundProcessing;
 
 
@@ -54,20 +71,25 @@ struct AdpcmBlock {
 
 
 union SpuReg {
-  u32 v;
-  struct {
-    u32 low : 16;
-    u32 hi  : 16;
-  };
+  SPU_COMM_BIT(v);
+};
+
+
+union AddrReg {
+  SPU_COMM_BIT(v);
+
+  u32 address() {
+    return (0xFFFF & v) << 3; // *8
+  }
+
+  void saveAddr(u32 d) {
+    v = d >> 3;
+  }
 };
 
 
 union ADSRReg {
-  u32 v;
-  struct {
-    u32 low : 16; // 1F801C08h+N*10h
-    u32 hi  : 16; // 1F801C0Ah+N*10h
-  };
+  SPU_COMM_BIT(v);
   struct {
     u32 su_lv : 4; //00-03 延音 (0..0Fh)  ;Level=(N+1)*800h
     u32 de_sh : 4; //04-07 衰减 (0..0Fh = Fast..Slow) 固定 "-8", 总是指数
@@ -98,17 +120,13 @@ union VolData {
     u16 phase : 1; //12    (0=Positive, 1=Negative)
     u16 dir   : 1; //13    (0=Increase, 1=Decrease)
     u16 mode  : 1; //14    (0=Linear, 1=Exponential)
-    u16 _type : 1; //15
+    u16 _type : 1; //15    1 模式, 扫频
   };
 };
 
 
 union VolumnReg {
-  u32 v;
-  struct {
-    u32 low : 16;
-    u32 hi  : 16;
-  };
+  SPU_COMM_BIT(v);
   struct {
     VolData left;
     VolData right;
@@ -125,33 +143,25 @@ enum class SpuDmaDir : u8 {
 
 
 union SpuCntReg {
-  u32 v;
+  SPU_COMM_BIT(v);
   struct {
-    u32 low : 16;
-    u32 hi  : 16;
-  };
-  struct {
-    u32 cda_enb : 1; //00    (0=Off, 1=On) (for CD-DA and XA-ADPCM)
-    u32 exa_enb : 1; //01 
-    u32 cda_rev : 1; //02
-    u32 exa_rev : 1; //03
-    u32 dma_trs : 2; //04-05 (0=Stop, 1=ManualWrite, 2=DMAwrite, 3=DMAread)
+    u32 cda_enb : 1; //00    CD 使能(0=Off, 1=On) (for CD-DA and XA-ADPCM)
+    u32 exa_enb : 1; //01    外部音源使能
+    u32 cda_rev : 1; //02    CD 混响
+    u32 exa_rev : 1; //03    外部混响
+    u32 dma_trs : 2; //04-05 dma 传输模式(0=Stop, 1=ManualWrite, 2=DMAwrite, 3=DMAread)
     u32 irq_enb : 1; //06    IRQ9 Enable (0=关闭/应答, 1=启用; only when Bit15=1)
-    u32 mst_rev : 1; //07    (0=Disabled, 1=Enabled)
-    u32 nos_stp : 2; //08-09 (0..03h = Step "4,5,6,7")
-    u32 nos_shf : 4; //10-13 (0..0Fh = Low .. High Frequency)
-    u32 mute    : 1; //14    (0=Mute, 1=Unmute)  (Don't care for CD Audio)
-    u32 spu_enb : 1; //15    (0=Off, 1=On)       (Don't care for CD Audio)
+    u32 mst_rev : 1; //07    混响主使能 (0=Disabled, 1=Enabled)
+    u32 nos_stp : 2; //08-09 噪音 step (0..03h = Step "4,5,6,7")
+    u32 nos_shf : 4; //10-13 噪音 shift (0..0Fh = Low .. High Frequency)
+    u32 mute    : 1; //14    静音(0=Mute, 1=Unmute)  (Don't care for CD Audio)
+    u32 spu_enb : 1; //15    spu 使能 (0=Off, 1=On)       (Don't care for CD Audio)
   };
 };
 
 
 union SpuStatusReg {
-  u32 v;
-  struct {
-    u32 low : 16;
-    u32 hi  : 16;
-  };
+  SPU_COMM_BIT(v);
   struct {
     u32 mode   : 6; //00-05 (same as SPUCNT.Bit5-0, but, applied a bit delayed)
     u32 irq    : 1; //06    IRQ9 Flag (0=No, 1=发生)
@@ -235,13 +245,13 @@ protected:
 
 public:
   u32 read() { return r.v; }
-  u32 read2() { return r.hi; }
+  u32 read2() { return r._hw2; }
 
   void write(u32 v)  { if (ReadOnly) return; r.v   = v; }
-  void write(u16 v)  { if (ReadOnly) return; r.low = v; }
-  void write2(u16 v) { if (ReadOnly) return; r.hi  = v; }
-  void write(u8 v)   { if (ReadOnly) return; r.low = v; }
-  void write2(u8 v)  { if (ReadOnly) return; r.hi  = v; }
+  void write(u16 v)  { if (ReadOnly) return; r._hw0 = v; }
+  void write2(u16 v) { if (ReadOnly) return; r._hw2  = v; }
+  void write(u8 v)   { if (ReadOnly) return; r._hw0 = v; }
+  void write2(u8 v)  { if (ReadOnly) return; r._hw2  = v; }
 
 friend P;
 };
@@ -260,6 +270,18 @@ protected:
   u8 f[24];
 
   SpuBit24IO(P& parent, Bus& b) : SpuIOBase<P, N>(parent, b) {
+  }
+
+  void set(u8 bitIndex) {
+    f[bitIndex & 0x17] = 1;
+  }
+
+  void reset(u8 bitIndex) {
+    f[bitIndex & 0x17] = 0;
+  }
+
+  u8 get(u8 bitIndex) {
+    return f[bitIndex & 0x17];
   }
 
 public:
@@ -317,25 +339,45 @@ template<DeviceIOMapper t_vol, DeviceIOMapper t_sr,
          DeviceIOMapper t_sa,  DeviceIOMapper t_adsr,
          DeviceIOMapper t_acv, DeviceIOMapper t_ra,
          DeviceIOMapper t_cv,  int Number>
-class SPUChannel {
+class SPUChannel : public NonCopy {
 private:
   // 0x1F801Cn0
   SpuIO<SPUChannel, VolumnReg, t_vol> volume;  
   // 0x1F801Cn4 (0=stop, 4000h=fastest, 4001h..FFFFh == 4000h, 1000h=44100Hz)
   SpuIO<SPUChannel, SpuReg, t_sr> pcmSampleRate;
   // 0x1F801Cn6 声音开始地址, 样本由一个或多个16字节块组成
-  SpuIO<SPUChannel, SpuReg, t_sa> pcmStartAddr;
+  SpuIO<SPUChannel, AddrReg, t_sa> pcmStartAddr;
   // 0x1F801Cn8
   SpuIO<SPUChannel, ADSRReg, t_adsr> adsr;
   // 0x1F801CnC
   SpuIO<SPUChannel, SpuReg, t_acv> adsrVol;
   // 0x1F801CnE 声音重复地址, 播放时被adpcm数据更新
-  SpuIO<SPUChannel, SpuReg, t_ra> pcmRepeatAddr;
-  // 0x1F801E0n
+  SpuIO<SPUChannel, AddrReg, t_ra> pcmRepeatAddr;
+  // 0x1F801E0n These are internal registers, normally not used by software
   SpuIO<SPUChannel, SpuReg, t_cv> currVolume;
+
+  SoundProcessing& spu;
+  PcmSample hist1 = 0;
+  PcmSample hist2 = 0;
+
+  enum class AdsrState : u8 {
+    Wait    = 0,
+    Attack  = 1,
+    Decay   = 2,
+    Sustain = 3,
+    Release = 4,
+  } adsr_state = AdsrState::Wait;
 
 public:
   SPUChannel(SoundProcessing& parent, Bus& b);
+
+  // 从指定的通道中读取并解码采样数据到 buf, 读取结束会修改通道的声音地址,
+  // 必要时读取会触发 irq, 读取会检测出数据循环标记并修改循环地址,
+  // 如果进入了循环地址, 则执行循环; 应用全部音量包络.
+  // 1 个 blockcount 长度为 0x1C(28)
+  void read_sample(PcmSample *buf, u32 blockcount);
+  void apply_adsr(PcmSample *buf, u32 blockcount);
+  void resample(PcmSample *buf, u32 blockcount);
 };
 
 
@@ -350,36 +392,16 @@ public:
         func(name, 16) func(name, 17) func(name, 18) func(name, 19) \
         func(name, 20) func(name, 21) func(name, 22) func(name, 23) \
 
-class SoundProcessing {
+class SoundProcessing : public NonCopy, public DMADev {
 private:
-
-  template<DeviceIOMapper P>
-  class Reg32 : public InnerDeviceIO<SoundProcessing, U32Reg> {
-  public:
-    Reg32(SoundProcessing& parent, Bus& b) : InnerDeviceIO(parent) {
-      b.bind_io(P, this);
-    }
-  };
-
-  template<DeviceIOMapper P>
-  class Reg16 : public InnerDeviceIO<SoundProcessing, U16Reg> {
-  public:
-    Reg16(SoundProcessing& parent, Bus& b) : InnerDeviceIO(parent) {
-      b.bind_io(P, this);
-    }
-  };
-
   // 0x1F80'1D80 主音量
   SpuIO<SoundProcessing, VolumnReg, DeviceIOMapper::spu_main_vol> mainVol;
-
   // 0x1F80'1DB0 CD 音量, 包络操作取决于
   // Shift / Step / Mode / Direction
   SpuIO<SoundProcessing, VolumnReg, DeviceIOMapper::spu_cd_vol> cdVol;
-
   // 0x1F80'1DB4 外部音频输入音量, 
   // 包络操作取决于Shift / Step / Mode / Direction
   SpuIO<SoundProcessing, VolumnReg, DeviceIOMapper::spu_ext_vol> externVol;
-
   // 0x1F80'1DB8 这些是内部寄存器，通常不被软件使用
   SpuIO<SoundProcessing, VolumnReg, DeviceIOMapper::spu_curr_main_vol> mainCurrVol;
 
@@ -387,28 +409,23 @@ private:
   // 启动ADSR信封，并自动将ADSR音量初始化为零，并将
   // “语音开始地址”复制到“语音重复地址”。
   SpuBit24IO<SoundProcessing, DeviceIOMapper::spu_n_key_on> nKeyOn;
-
   // 0x1F80'1D8C（W）（bit0-23 1:开始释放)
-  // 对于完整的ADSR模式，通常会在持续时间段内发出OFF，
+  // 对于完整的ADSR模式，通常会在 '延音' 时间段内发出OFF，
   // 但是它可以在任何时候发出
   SpuBit24IO<SoundProcessing, DeviceIOMapper::spu_n_key_off> nKeyOff;
-
   // 0x1F80'1D90 使用前一个(-1)通道数据作为当前
   // 通道数据的的调制器 1-23位有效
   SpuBit24IO<SoundProcessing, DeviceIOMapper::spu_n_fm> nFM;
-
   // 0x1F80'1D94 (0=ADPCM, 1=Noise) 
   // bit0-23 1:启用噪音模式
   SpuBit24IO<SoundProcessing, DeviceIOMapper::spu_n_noise> nNoise;
-
   // 0x1F80'1D9C （R）(0=Newly Keyed On, 1=Reached LOOP-END)
   // 当设置相应的KEY ON位时，这些位将被清除 = 0
   // 当到达ADPCM标头.bit0中的LOOP-END标志时，这些位将置位 = 1
   SpuBit24IO<SoundProcessing, DeviceIOMapper::spu_n_status, true> endx;
 
   // 0x1F80'1DA4 声音RAM IRQ地址, 写入/读取都会发生中断 TODO
-  SpuIO<SoundProcessing, SpuCntReg, DeviceIOMapper::spu_ram_irq> ramIrqAdress;
-
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_ram_irq> ramIrqAdress;
   // 0x1F80'1DA6 声音RAM数据传输地址
   SpuIOFunction<SoundProcessing, DeviceIOMapper::spu_ram_trans_addr> ramTransferAddress;
   // 0x1F80'1DA8 声音RAM数据传输Fifo
@@ -421,43 +438,64 @@ private:
   // 0x1F80'1DAE（R）SPU状态寄存器
   SpuIO<SoundProcessing, SpuStatusReg, DeviceIOMapper::spu_status, true> status;
 
-  Reg32<DeviceIOMapper::spu_reverb_vol> reverbVol;
-  Reg32<DeviceIOMapper::spu_n_reverb> nReverb;
-  Reg16<DeviceIOMapper::spu_ram_rev_addr> ramReverbStartAddress;
+  // 1F801D98h 设置通道的混响。采样结束后，
+  // 该通道的混响就关闭了……很好，但是什么时候结束？
+  // 在混响模式下，声音似乎同时（正常）和通过混响（延迟）输出
+  SpuBit24IO<SoundProcessing, DeviceIOMapper::spu_n_reverb> nReverb;
+  // 0x1F80'1D84 混响输出音量
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_reverb_vol> reverbVol;
+  // 0x1F80'1DA2 混响工作内存起始地址
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_ram_rev_addr> ramReverbStartAddress;
 
-  Reg16<DeviceIOMapper::spu_unknow1> _un1;
-  Reg32<DeviceIOMapper::spu_unknow2> _un2;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_unknow1> _un1;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_unknow2> _un2;
 
-  Reg16<DeviceIOMapper::spu_rb_apf_off1>    dAPF1;
-  Reg16<DeviceIOMapper::spu_rb_apf_off2>    dAPF2;
-  Reg16<DeviceIOMapper::spu_rb_ref_vol1>    vIIR;
-  Reg16<DeviceIOMapper::spu_rb_comb_vol1>   vCOMB1;
-  Reg16<DeviceIOMapper::spu_rb_comb_vol2>   vCOMB2;
-  Reg16<DeviceIOMapper::spu_rb_comb_vol3>   vCOMB3;
-  Reg16<DeviceIOMapper::spu_rb_comb_vol4>   vCOMB4;
-  Reg16<DeviceIOMapper::spu_rb_ref_vol2>    vWALL;
-  Reg16<DeviceIOMapper::spu_rb_apf_vol1>    vAPF1;
-  Reg16<DeviceIOMapper::spu_rb_apf_vol2>    vAPF2;
-  Reg32<DeviceIOMapper::spu_rb_same_ref1>   mSAME;
-  Reg32<DeviceIOMapper::spu_rb_comb1>       mCOMB1;
-  Reg32<DeviceIOMapper::spu_rb_comb2>       mCOMB2;
-  Reg32<DeviceIOMapper::spu_rb_same_ref2>   dSAME;
-  Reg32<DeviceIOMapper::spu_rb_diff_ref1>   mDIFF;
-  Reg32<DeviceIOMapper::spu_rb_comb3>       mCOMB3;
-  Reg32<DeviceIOMapper::spu_rb_comb4>       mCOMB4;
-  Reg32<DeviceIOMapper::spu_rb_diff_ref2>   dDIFF;
-  Reg32<DeviceIOMapper::spu_rb_apf_addr1>   mAPF1;
-  Reg32<DeviceIOMapper::spu_rb_apf_addr2>   mAPF2;
-  Reg32<DeviceIOMapper::spu_rb_in_vol>      vIN;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_off1>    dAPF1;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_off2>    dAPF2;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_ref_vol1>     vIIR;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_comb_vol1>    vCOMB1;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_comb_vol2>    vCOMB2;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_comb_vol3>    vCOMB3;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_comb_vol4>    vCOMB4;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_ref_vol2>     vWALL;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_apf_vol1>     vAPF1;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_apf_vol2>     vAPF2;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref1l>  mSAMEl;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref1r>  mSAMEr;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb1l>      mCOMB1l;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb1r>      mCOMB1r;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb2l>      mCOMB2l;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb2r>      mCOMB2r;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref2l>  dSAMEl;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref2r>  dSAMEr;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref1l>  mDIFFl;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref1r>  mDIFFr;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb3l>      mCOMB3l;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb3r>      mCOMB3r;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb4l>      mCOMB4l;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb4r>      mCOMB4r;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref2l>  dDIFFl;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref2r>  dDIFFr;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr1l>  mAPF1l;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr1r>  mAPF1r;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr2l>  mAPF2l;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr2r>  mAPF2r;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_in_voll>      vINl;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_in_volr>      vINr;
 
   // ch0 ... ch23
   SPU_DEF_ALL_CHANNELS(ch, SPU_DEF_VAL)
 
 private:
+  const u32 sampleRate = 44100;
+  const u32 bufferFrames = 10 *28; // 必须是 28 的整数倍
+
+  Bus &bus;
   u8 mem[SPU_MEM_SIZE];
   u32 trans_point = 0;
   u16 fifo[SPU_FIFO_SIZE];
   u8 fifo_point = 0;
+  RtAudio* dac;
 
   void set_transfer_address(u32 a);
   void push_fifo(u32 a);
@@ -465,9 +503,31 @@ private:
   // dma/fifo 数据处理
   void process();
   void manual_write();
+  // 立即发送中断
+  void send_irq();
+  // 如果启用了中断, 并且中断地址位于 'beginAddr' 和 
+  // 'beginAddr+偏移'(不包含) 之间, 则发送中断并返回 true
+  bool check_irq(u32 beginAddr, u32 offset);
+  void init_dac();
+
+protected:
+  void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) override;
+  void dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) override;
 
 public:
   SoundProcessing(Bus&);
+  ~SoundProcessing();
+
+  void set_endx_flag(u8 channelIndex);
+  bool is_attack_on(u8 channelIndex);
+  bool is_release_on(u8 channelIndex);
+
+  // 从 spu 内存中的 readAddr 开始, 读取 1 个 SPU-ADPCM 块并解码.
+  // 必要时读取会触发 irq, 返回当前块的 flag, 解码后一个块长度为 28 个采样
+  AdpcmFlag read_adpcm_block(PcmSample *buf, u32 readAddr, PcmSample& h1, PcmSample& h2);
+  void request_audio_data(PcmSample *buf, u32 nframe, double time);
 };
 
+
+#undef SPU_COMM_BIT
 }

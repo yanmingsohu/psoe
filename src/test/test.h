@@ -28,6 +28,7 @@ void test_util();
 void test_gpu(ps1e::GPU& gpu, ps1e::Bus& bus);
 void test_dma();
 void test_cd();
+void test_spu();
 
 // 专门用于调试 cpu, 可在任何条件下调用
 void debug_system(ps1e::R3000A& cpu, ps1e::Bus& bus, ps1e::MMU&);

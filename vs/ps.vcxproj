@@ -63,6 +63,7 @@
     <ClCompile Include="..\src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\README.cn.md" />
     <None Include="..\README.md" />
     <None Include="..\src\bus.inl" />
     <None Include="..\src\makefile" />
@@ -137,7 +138,7 @@
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <IntDir>..\bin\$(Platform)\$(Configuration)\core</IntDir>
     <LibraryPath>..\bin;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)..\deps\glad\include;$(ProjectDir)..\deps\glfw\include;$(ProjectDir)..\deps\libcdio\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\deps\glad\include;$(ProjectDir)..\deps\glfw\include;$(ProjectDir)..\deps\libcdio\include;$(ProjectDir)..\deps;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

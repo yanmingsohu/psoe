@@ -72,18 +72,20 @@ void inner_window_on_console() {
 
 
 static u32 __t_io_read(DeviceIO**io, u32 addr) {
-  switch (addr) {
+  switch (SWITCH_IO_MIRROR(addr)) {
     IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_READ, io, NULL);
     default:
+      error("cannot read %x\n", addr);
       panic("bad read");
   }
 }
 
 
 static void __t_io_write(DeviceIO** io, u32 addr, u32 v) {
-  switch (addr) {
+  switch (SWITCH_IO_MIRROR(addr)) {
     IO_MIRRORS_STATEMENTS(CASE_IO_MIRROR_WRITE, io, v);
     default:
+      error("cannot write %x = %x\n", addr, v);
       panic("bad write");
   }
 }

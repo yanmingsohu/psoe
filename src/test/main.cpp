@@ -34,6 +34,7 @@ int main() {
   }
   
   OpenGLScope opengl;
+  test_spu();
   test_util();
   test_jit();
   test_dma();
