@@ -4,7 +4,9 @@
 
 namespace ps1e {
 
-#define CASE_IO_MIRROR(x) CASE_MEM_MIRROR(x)
+// old: CASE_MEM_MIRROR
+#define SWITCH_IO_MIRROR(x)    ((x) & 0x0000'FFFF)
+#define CASE_IO_MIRROR(x)      case SWITCH_IO_MIRROR(x)
 
 #define CASE_IO_MIRROR_WRITE(addr, io_enum, io_arr, v, wide) \
     CASE_IO_MIRROR_WRITE_##wide(addr, io_enum, io_arr, v)
@@ -152,27 +154,38 @@ namespace ps1e {
     rw(0x1F80'1DB8, spu_curr_main_vol   , a, v, 4) \
     rw(0x1F80'1DBC, spu_unknow2         , a, v, 4) \
                                                    \
-    rw(0x1F80'1DC0, spu_rb_apf_off1     , a, v, 2) \
-    rw(0x1F80'1DC2, spu_rb_apf_off2     , a, v, 2) \
-    rw(0x1F80'1DC4, spu_rb_ref_vol1     , a, v, 2) \
-    rw(0x1F80'1DC6, spu_rb_comb_vol1    , a, v, 2) \
-    rw(0x1F80'1DC8, spu_rb_comb_vol2    , a, v, 2) \
-    rw(0x1F80'1DCA, spu_rb_comb_vol3    , a, v, 2) \
-    rw(0x1F80'1DCC, spu_rb_comb_vol4    , a, v, 2) \
-    rw(0x1F80'1DCE, spu_rb_ref_vol2     , a, v, 2) \
-    rw(0x1F80'1DD0, spu_rb_apf_vol1     , a, v, 2) \
-    rw(0x1F80'1DD2, spu_rb_apf_vol2     , a, v, 2) \
-    rw(0x1F80'1DD4, spu_rb_same_ref1    , a, v, 4) \
-    rw(0x1F80'1DD8, spu_rb_comb1        , a, v, 4) \
-    rw(0x1F80'1DDC, spu_rb_comb2        , a, v, 4) \
-    rw(0x1F80'1DE0, spu_rb_same_ref2    , a, v, 4) \
-    rw(0x1F80'1DE4, spu_rb_diff_ref1    , a, v, 4) \
-    rw(0x1F80'1DE8, spu_rb_comb3        , a, v, 4) \
-    rw(0x1F80'1DEC, spu_rb_comb4        , a, v, 4) \
-    rw(0x1F80'1DF0, spu_rb_diff_ref2    , a, v, 4) \
-    rw(0x1F80'1DF4, spu_rb_apf_addr1    , a, v, 4) \
-    rw(0x1F80'1DF8, spu_rb_apf_addr2    , a, v, 4) \
-    rw(0x1F80'1DFC, spu_rb_in_vol       , a, v, 4) \
+    rw(0x1F80'1DC0, spu_rb_apf_off1     , a, v, 1) \
+    rw(0x1F80'1DC2, spu_rb_apf_off2     , a, v, 1) \
+    rw(0x1F80'1DC4, spu_rb_ref_vol1     , a, v, 1) \
+    rw(0x1F80'1DC6, spu_rb_comb_vol1    , a, v, 1) \
+    rw(0x1F80'1DC8, spu_rb_comb_vol2    , a, v, 1) \
+    rw(0x1F80'1DCA, spu_rb_comb_vol3    , a, v, 1) \
+    rw(0x1F80'1DCC, spu_rb_comb_vol4    , a, v, 1) \
+    rw(0x1F80'1DCE, spu_rb_ref_vol2     , a, v, 1) \
+    rw(0x1F80'1DD0, spu_rb_apf_vol1     , a, v, 1) \
+    rw(0x1F80'1DD2, spu_rb_apf_vol2     , a, v, 1) \
+    rw(0x1F80'1DD4, spu_rb_same_ref1l   , a, v, 1) \
+    rw(0x1F80'1DD6, spu_rb_same_ref1r   , a, v, 1) \
+    rw(0x1F80'1DD8, spu_rb_comb1l       , a, v, 1) \
+    rw(0x1F80'1DDA, spu_rb_comb1r       , a, v, 1) \
+    rw(0x1F80'1DDC, spu_rb_comb2l       , a, v, 1) \
+    rw(0x1F80'1DDE, spu_rb_comb2r       , a, v, 1) \
+    rw(0x1F80'1DE0, spu_rb_same_ref2l   , a, v, 1) \
+    rw(0x1F80'1DE2, spu_rb_same_ref2r   , a, v, 1) \
+    rw(0x1F80'1DE4, spu_rb_diff_ref1l   , a, v, 1) \
+    rw(0x1F80'1DE6, spu_rb_diff_ref1r   , a, v, 1) \
+    rw(0x1F80'1DE8, spu_rb_comb3l       , a, v, 1) \
+    rw(0x1F80'1DEA, spu_rb_comb3r       , a, v, 1) \
+    rw(0x1F80'1DEC, spu_rb_comb4l       , a, v, 1) \
+    rw(0x1F80'1DEE, spu_rb_comb4r       , a, v, 1) \
+    rw(0x1F80'1DF0, spu_rb_diff_ref2l   , a, v, 1) \
+    rw(0x1F80'1DF2, spu_rb_diff_ref2r   , a, v, 1) \
+    rw(0x1F80'1DF4, spu_rb_apf_addr1l   , a, v, 1) \
+    rw(0x1F80'1DF6, spu_rb_apf_addr1r   , a, v, 1) \
+    rw(0x1F80'1DF8, spu_rb_apf_addr2l   , a, v, 1) \
+    rw(0x1F80'1DFA, spu_rb_apf_addr2r   , a, v, 1) \
+    rw(0x1F80'1DFC, spu_rb_in_voll      , a, v, 1) \
+    rw(0x1F80'1DFE, spu_rb_in_volr      , a, v, 1) \
                                                    \
     IO_SPU_CHANNEL(rw, a, v,  0)                   \
     IO_SPU_CHANNEL(rw, a, v,  1)                   \
