@@ -260,12 +260,33 @@ void print_code(const char* src) {
 }
 
 
-void print_hex(const char* title, u8* data, u32 size) {
-  printf("%s", title);
-  for (u32 i=0; i < size; ++i) {
-    printf(" %02X", data[i]);
+void print_hex(const char* title, u8* data, u32 size, s32 addrOffset) {
+  PrintfBuf buf;
+  buf.printf("%s\n", title);
+  buf.printf("|----------|-");
+  for (u32 i=0; i<0x10; ++i) {
+    buf.printf(" -%X", (s32(data + i) + addrOffset) & 0x0F);
   }
-  printf("\n");
+  buf.printf(" | ----------------");
+
+  for (u8* i=data; i<data+size; i+=16) {
+    buf.printf("\n 0x%08X| ", s32(i) + addrOffset);
+
+    for (u8* j=i; j<i+16; ++j) {
+      buf.printf(" %02X", *j);
+    }
+    
+    buf.printf("   ");
+    for (u8* j=i; j<i+16; ++j) {
+      u8 c = *j;
+      if (c >= 32) {
+        buf.putchar(c);
+      } else {
+        buf.putchar('.');
+      }
+    }
+  }
+  buf.printf("\n|-over-----|- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- | ----------------\n");
 }
 
 
@@ -276,15 +297,6 @@ size_t this_thread_id() {
   return GetCurrentThreadId();
 #endif
 }
-
-
-#define warp_printf(fmt, color_prifix) \
-  char f[1000] = ""; \
-  sprintf(f, "%s%s\033[0m", color_prifix, fmt); \
-  va_list __args; \
-  va_start(__args, fmt); \
-  vprintf(f, __args); \
-  va_end(__args) \
 
 
 void debug(const char* format, ...) {
@@ -319,6 +331,52 @@ u32 add_us(u32 a, s32 b) {
     return a - u16(b);
   }
   return a + b;
+}
+
+
+// 写入的总长度不能超过 1000(内部缓冲区) 否则直接输出到 stdout
+void PrintfBuf::printf(const char* fmt, ...) {
+  va_list __args;
+  __crt_va_start(__args, fmt);
+  const int ls = sizeof(buf) - wc;
+  int cu = vsnprintf(buf + wc, ls, fmt, __args);
+
+  if (cu >= sizeof(buf)) {
+    buf[wc] = '\0';
+    flush();
+    printf(fmt, __args);
+  } else if (cu >= ls - 1) {
+    buf[wc] = '\0';
+    flush();
+    vsnprintf(buf, sizeof(buf), fmt, __args);
+  } if (cu < 0) {
+    error("bad format: %s", fmt);
+  } else {
+    wc += cu;
+  }
+  __crt_va_end(__args);
+}
+
+
+void PrintfBuf::flush() {
+  fputs(buf + offset, stdout);
+  reset();
+}
+
+
+void PrintfBuf::putchar(char c) {
+  if (wc >= sizeof(buf) - 2) {
+    flush();
+  }
+  buf[wc] = c;
+  buf[++wc] = '\0';
+}
+
+
+void PrintfBuf::reset() {
+  wc = 0;
+  offset = 0;
+  buf[0] = '\0';
 }
 
 }

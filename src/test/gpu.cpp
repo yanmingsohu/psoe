@@ -99,11 +99,6 @@ static int random(int max, int min = 0) {
 }
 
 
-static void sleep(int ms) {
-  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-}
-
-
 static void draw_p3_1(Bus& bus, int x, int y, int count, int cmd) {
   for (int i=0; i<count; ++i) {
     bus.write32(gp0, Color(cmd, random(0xff, 0x10), random(0xff, 0x10), 0x8*i).v);

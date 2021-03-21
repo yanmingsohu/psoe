@@ -1042,7 +1042,7 @@ public:
   void sh(mips_reg t, mips_reg s, s32 i) const {
     char buf[80];
     snprintf(buf, sizeof(buf), 
-      "addr16($%s[0x%x] + %d) = $%s[0x%x]", rname(s), reg.u[s], i, rname(t), 0xff & reg.u[t]);
+      "addr16($%s[0x%x] + %d) = $%s[0x%x]", rname(s), reg.u[s], i, rname(t), reg.u[t]);
     iw("SH", t, s, i, buf);
   }
 

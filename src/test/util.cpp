@@ -170,6 +170,18 @@ static void test_add() {
 }
 
 
+static void test_printf_buf() {
+  PrintfBuf p;
+  for (int i=0; i<10000; ++i) {
+    p.printf("%08d ", i);
+    if (3 == (i & 3)) {
+      p.putchar('\n');
+    }
+  }
+  p.putchar('\n');
+}
+
+
 void test_util() {
   //static StaticVar v;
   StaticInClass sic;
@@ -180,6 +192,7 @@ void test_util() {
   test_overflow();
   test_local();
   test_io_mirrors();
+  //test_printf_buf();
   //test_add(); // 该测试不正确
 }
 

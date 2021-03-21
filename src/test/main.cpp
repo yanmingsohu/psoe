@@ -15,6 +15,11 @@ void panic(char const* msg) {
 }
 
 
+void sleep(int ms) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
+
 void tsize(int s, int t, char const* msg) {
   if (s != t) {
     char tmsg[255];

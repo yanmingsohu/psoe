@@ -17,7 +17,7 @@ SPU_CHANNEL_DEF(CONSTRUCT)::SPUChannel(SoundProcessing& parent, Bus& b) :
   spu(parent),
   volume(*this, b), 
   pcmSampleRate(*this, b), 
-  pcmStartAddr(*this, b),
+  pcmStartAddr(*this, b, &SPUChannel::set_start_address),
   adsr(*this, b), 
   adsrVol(*this, b), 
   pcmRepeatAddr(*this, b), 
@@ -29,21 +29,21 @@ SPU_CHANNEL_DEF(CONSTRUCT)::SPUChannel(SoundProcessing& parent, Bus& b) :
 //TODO 双声道
 SPU_CHANNEL_DEF(void)::read_sample(PcmSample* buf, u32 blockcount) 
 {
-  u32 current = pcmStartAddr.r.address();
-  u32 repeat  = pcmRepeatAddr.r.address();
+  u32 repeat = pcmRepeatAddr.r.address();
+  PcmSample* pcmbuf = buf;
 
   for (u32 i=0; i<blockcount; ++i) {
-    AdpcmFlag flag = spu.read_adpcm_block(buf, current, hist1, hist2);
+    AdpcmFlag flag = spu.read_adpcm_block(pcmbuf, currentReadAddr, hist1, hist2);
 
-    //TODO: 扫频
-    //TODO: 噪声模式
-    resample(buf, blockcount);
-    apply_adsr(buf, blockcount);
+    resample(pcmbuf, blockcount);
+    apply_adsr(pcmbuf, blockcount);
     
     if (flag.loop_start) {
-      repeat = current;
-    } else if (flag.loop_end) {
-      current = repeat;
+      repeat = currentReadAddr;
+      pcmRepeatAddr.r.saveAddr(repeat);
+    } 
+    else if (flag.loop_end) {
+      currentReadAddr = repeat;
       spu.set_endx_flag(Number);
       
       if (!flag.loop_repeat) {
@@ -51,14 +51,14 @@ SPU_CHANNEL_DEF(void)::read_sample(PcmSample* buf, u32 blockcount)
         adsr_state = AdsrState::Release;
       }
     }
-
-    if (ADDR_IN_SCOPE(current, SPU_ADPCM_BLK_SZ, repeat)) {
-      current = repeat;
+    else if (ADDR_IN_SCOPE(currentReadAddr, SPU_ADPCM_BLK_SZ, repeat)) {
+      currentReadAddr = repeat;
     }
+    else {
+      currentReadAddr += SPU_ADPCM_BLK_SZ;
+    }
+    pcmbuf += SPU_PCM_BLK_SZ;
   }
-
-  pcmStartAddr.r.saveAddr(current);
-  pcmRepeatAddr.r.saveAddr(repeat);
 }
 
 
@@ -95,6 +95,12 @@ SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample* buf, u32 blockcount) {
 
 
 SPU_CHANNEL_DEF(void)::resample(PcmSample* buf, u32 blockcount) {
+}
+
+
+SPU_CHANNEL_DEF(void)::set_start_address(u32 v) {
+  currentReadAddr = v << 3;
+  spudbg("set channel %d start address %x (%x << 3)\n", Number, currentReadAddr, v);
 }
 
 

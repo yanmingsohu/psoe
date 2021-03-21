@@ -8,6 +8,7 @@ class RtAudio;
 
 namespace ps1e {
 
+#define SPU_DEBUG_INFO
 // 512K
 #define SPU_MEM_SIZE        0x8'0000
 #define SPU_MEM_MASK        (SPU_MEM_SIZE-1)
@@ -16,6 +17,7 @@ namespace ps1e {
 #define SPU_FIFO_MASK       (SPU_FIFO_SIZE-1)
 #define SPU_FIFO_INDEX(x)   ((x) & SPU_FIFO_MASK)
 #define SPU_ADPCM_BLK_SZ    0x10
+#define SPU_PCM_BLK_SZ      28
 #define not_aligned_nosupport(x) error("Cannot read SPU IO %u, Memory misalignment\n", u32(x))
 
 // 如果 begin 到 begin+size(不包含) 之间穿过了 point 则返回 true, size > 0
@@ -28,6 +30,13 @@ namespace ps1e {
     u32 _hw0 : 16; \
     u32 _hw2 : 16; \
   }
+
+#ifdef SPU_DEBUG_INFO
+  #define spudbg _spudbg
+  void _spudbg(const char* format, ...);
+#else
+  #define spudbg
+#endif
 
 
 typedef float PcmSample;
@@ -145,6 +154,9 @@ enum class SpuDmaDir : u8 {
 union SpuCntReg {
   SPU_COMM_BIT(v);
   struct {
+    u32 mode : 6; //00-05
+  };
+  struct {
     u32 cda_enb : 1; //00    CD 使能(0=Off, 1=On) (for CD-DA and XA-ADPCM)
     u32 exa_enb : 1; //01    外部音源使能
     u32 cda_rev : 1; //02    CD 混响
@@ -162,6 +174,14 @@ union SpuCntReg {
 
 union SpuStatusReg {
   SPU_COMM_BIT(v);
+  struct {
+    u32 cda_enb : 1; //00    CD 使能(0=Off, 1=On) (for CD-DA and XA-ADPCM)
+    u32 exa_enb : 1; //01    外部音源使能
+    u32 cda_rev : 1; //02    CD 混响
+    u32 exa_rev : 1; //03    外部混响
+    u32 dma_trs : 2; //04-05 dma 传输模式(0=Stop, 1=ManualWrite, 2=DMAwrite, 3=DMAread)
+    u32 _x      :10; //06-15
+  };
   struct {
     u32 mode   : 6; //00-05 (same as SPUCNT.Bit5-0, but, applied a bit delayed)
     u32 irq    : 1; //06    IRQ9 Flag (0=No, 1=发生)
@@ -198,14 +218,14 @@ friend Parent;
 };
 
 
-template<class P, DeviceIOMapper N>
+template<class P, DeviceIOMapper N, class Reg = SpuReg>
 class SpuIOFunction : public SpuIOBase<P, N> {
 public:
   typedef void (P::*OnWrite)(u32);
   typedef u32 (P::*OnRead)();
 
 protected:
-  SpuReg reg;
+  Reg reg;
   const OnWrite w;
   const OnRead r;
 
@@ -346,7 +366,7 @@ private:
   // 0x1F801Cn4 (0=stop, 4000h=fastest, 4001h..FFFFh == 4000h, 1000h=44100Hz)
   SpuIO<SPUChannel, SpuReg, t_sr> pcmSampleRate;
   // 0x1F801Cn6 声音开始地址, 样本由一个或多个16字节块组成
-  SpuIO<SPUChannel, AddrReg, t_sa> pcmStartAddr;
+  SpuIOFunction<SPUChannel, t_sa, AddrReg> pcmStartAddr;
   // 0x1F801Cn8
   SpuIO<SPUChannel, ADSRReg, t_adsr> adsr;
   // 0x1F801CnC
@@ -359,6 +379,7 @@ private:
   SoundProcessing& spu;
   PcmSample hist1 = 0;
   PcmSample hist2 = 0;
+  u32 currentReadAddr = 0;
 
   enum class AdsrState : u8 {
     Wait    = 0,
@@ -368,13 +389,15 @@ private:
     Release = 4,
   } adsr_state = AdsrState::Wait;
 
+  void set_start_address(u32 v);
+
 public:
   SPUChannel(SoundProcessing& parent, Bus& b);
 
   // 从指定的通道中读取并解码采样数据到 buf, 读取结束会修改通道的声音地址,
   // 必要时读取会触发 irq, 读取会检测出数据循环标记并修改循环地址,
   // 如果进入了循环地址, 则执行循环; 应用全部音量包络.
-  // 1 个 blockcount 长度为 0x1C(28)
+  // 1 个 blockcount 长度为 SPU_PCM_BLK_SZ(28)
   void read_sample(PcmSample *buf, u32 blockcount);
   void apply_adsr(PcmSample *buf, u32 blockcount);
   void resample(PcmSample *buf, u32 blockcount);
@@ -488,10 +511,10 @@ private:
 
 private:
   const u32 sampleRate = 44100;
-  const u32 bufferFrames = 10 *28; // 必须是 28 的整数倍
+  const u32 bufferFrames = 10 *SPU_PCM_BLK_SZ; // 必须是 28 的整数倍
 
   Bus &bus;
-  u8 mem[SPU_MEM_SIZE];
+  u8 *mem;
   u32 trans_point = 0;
   u16 fifo[SPU_FIFO_SIZE];
   u8 fifo_point = 0;
@@ -521,11 +544,15 @@ public:
   void set_endx_flag(u8 channelIndex);
   bool is_attack_on(u8 channelIndex);
   bool is_release_on(u8 channelIndex);
+  void print_fifo();
 
   // 从 spu 内存中的 readAddr 开始, 读取 1 个 SPU-ADPCM 块并解码.
-  // 必要时读取会触发 irq, 返回当前块的 flag, 解码后一个块长度为 28 个采样
+  // 必要时读取会触发 irq, 返回当前块的 flag, 解码后一个块长度为 28 个采样.
+  // 应用混音算法, 将采样与缓冲区中的声音快进行混音.
   AdpcmFlag read_adpcm_block(PcmSample *buf, u32 readAddr, PcmSample& h1, PcmSample& h2);
   void request_audio_data(PcmSample *buf, u32 nframe, double time);
+  // 仅用于测试
+  u8 *get_spu_mem();
 };
 
 

@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <list>
 #include <unordered_set>
+#include <stdarg.h>
 
 namespace ps1e_t {
   extern int ext_stop;
@@ -48,6 +49,14 @@ namespace ps1e {
     case ((d1 & 0x0FFF'FFFF) | 0x9000'0000): \
     case ((d1 & 0x0FFF'FFFF) | 0xB000'0000)
 
+#define warp_printf(fmt, color_prifix) \
+  char f[1000] = ""; \
+  sprintf(f, "%s%s\033[0m", color_prifix, fmt); \
+  va_list __args; \
+  va_start(__args, fmt); \
+  vprintf(f, __args); \
+  va_end(__args) 
+
 
 using s8  = int8_t;
 using u8  = uint8_t;
@@ -59,6 +68,7 @@ using s64 = int64_t;
 using u64 = uint64_t;
 
 typedef u32 psmem;
+
 
 enum class LogLevel {
   all,
@@ -175,6 +185,26 @@ public:
 };
 
 
+// 带缓冲区的格式化输出, 防止多线程输出碎片
+class PrintfBuf {
+private:
+  char buf[2000];
+  u32 offset;
+  u32 wc;
+
+public:
+  PrintfBuf() : wc(0), offset(0) { buf[0] = '\0'; }
+  ~PrintfBuf() { flush(); }
+
+  // 写入的总长度不能超过 1000
+  void printf(const char* fmt, ...);
+  void putchar(char c);
+  void flush();
+  // 不输出清除所有数据
+  void reset();
+};
+
+
 template<class F> FuncLocal<F> createFuncLocal(F f) {
   return FuncLocal<F> (f);
 }
@@ -194,7 +224,7 @@ void*   melloc_exec(size_t size, void* near = 0);
 bool    free_exec(void* p, size_t size = 0);
 size_t  get_page_size();
 void    print_code(const char* src);
-void    print_hex(const char* title, u8* data, u32 size);
+void    print_hex(const char* title, u8* data, u32 size, s32 addrOffset = 0);
 size_t  readFile(void *buf, size_t bufsize, char const* filename);
 size_t  this_thread_id();
 u32     add_us(u32, s32);

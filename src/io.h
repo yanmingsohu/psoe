@@ -68,11 +68,11 @@ namespace ps1e {
 
 #define IO_SPU_CHANNEL(rw, a, v, n) \
     rw(0x1F801C00 + (0x10 * n), spu_c_volume_ ## n      , a, v, 4) \
-    rw(0x1F801C04 + (0x10 * n), spu_c_samp_rate_ ## n   , a, v, 2) \
-    rw(0x1F801C06 + (0x10 * n), spu_c_start_addr_ ## n  , a, v, 2) \
+    rw(0x1F801C04 + (0x10 * n), spu_c_samp_rate_ ## n   , a, v, 1) \
+    rw(0x1F801C06 + (0x10 * n), spu_c_start_addr_ ## n  , a, v, 1) \
     rw(0x1F801C08 + (0x10 * n), spu_c_adsr_ ## n        , a, v, 4) \
-    rw(0x1F801C0C + (0x10 * n), spu_c_adsr_vol_ ## n    , a, v, 2) \
-    rw(0x1F801C0E + (0x10 * n), spu_c_repeat_addr_ ## n , a, v, 2) \
+    rw(0x1F801C0C + (0x10 * n), spu_c_adsr_vol_ ## n    , a, v, 1) \
+    rw(0x1F801C0E + (0x10 * n), spu_c_repeat_addr_ ## n , a, v, 1) \
     rw(0x1F801E00 + (0x04 * n), spu_c_curr_vol_ ## n    , a, v, 4) \
 
 //
