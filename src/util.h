@@ -175,6 +175,11 @@ public:
 };
 
 
+template<class F> FuncLocal<F> createFuncLocal(F f) {
+  return FuncLocal<F> (f);
+}
+
+
 class NonCopy {
 private:
   NonCopy(const NonCopy &) = delete;
@@ -205,11 +210,6 @@ public:
 };
 
 
-template<class F> FuncLocal<F> createFuncLocal(F f) {
-  return FuncLocal<F> (f);
-}
-
-
 // 返回 reserve 和 set 逐位运算的结果.
 // 该运算使 set 中的位复制到 reserve 中, 如果对应 reserveMask 位是 1,
 // 否则 reserve 中的位不变.
@@ -228,6 +228,7 @@ void    print_hex(const char* title, u8* data, u32 size, s32 addrOffset = 0);
 size_t  readFile(void *buf, size_t bufsize, char const* filename);
 size_t  this_thread_id();
 u32     add_us(u32, s32);
+void    sleep(int ms);
 
 void debug(const char* format, ...);
 void info(const char* format, ...);

@@ -4,6 +4,7 @@
 
 namespace ps1e {
 
+#define IS_BIT_PULL_UP(low, hi, mask)    ((((low) & (mask)) == 0) && (((hi) & (mask)) != 0))
 // old: CASE_MEM_MIRROR
 #define SWITCH_IO_MIRROR(x)    ((x) & 0x0000'FFFF)
 #define CASE_IO_MIRROR(x)      case SWITCH_IO_MIRROR(x)

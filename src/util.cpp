@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <list>
+#include <chrono>
+#include <thread>
 
 #if defined(LINUX) || defined(MACOS)
 #include <sys/mman.h>
@@ -287,6 +289,11 @@ void print_hex(const char* title, u8* data, u32 size, s32 addrOffset) {
     }
   }
   buf.printf("\n|-over-----|- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- | ----------------\n");
+}
+
+
+void sleep(int ms) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
 

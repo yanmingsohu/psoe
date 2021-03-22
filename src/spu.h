@@ -3,6 +3,7 @@
 #include "util.h"
 #include "io.h"
 #include "bus.h"
+#include <mutex>
 
 class RtAudio;
 
@@ -18,6 +19,7 @@ namespace ps1e {
 #define SPU_FIFO_INDEX(x)   ((x) & SPU_FIFO_MASK)
 #define SPU_ADPCM_BLK_SZ    0x10
 #define SPU_PCM_BLK_SZ      28
+#define SPU_CHANNEL_COUNT   24
 #define not_aligned_nosupport(x) error("Cannot read SPU IO %u, Memory misalignment\n", u32(x))
 
 // 如果 begin 到 begin+size(不包含) 之间穿过了 point 则返回 true, size > 0
@@ -102,8 +104,8 @@ union ADSRReg {
   struct {
     u32 su_lv : 4; //00-03 延音 (0..0Fh)  ;Level=(N+1)*800h
     u32 de_sh : 4; //04-07 衰减 (0..0Fh = Fast..Slow) 固定 "-8", 总是指数
-    u32 at_st : 2; //08-09 音头 step (0..3 = "-7,-6,-5,-4") 总是减
-    u32 at_sh : 5; //11-14 音头 (0..1Fh = Fast..Slow)
+    u32 at_st : 2; //08-09 音头 step (0..3 = "+7,+6,+5,+4") 总是加
+    u32 at_sh : 5; //10-14 音头 (0..1Fh = Fast..Slow)
     u32 at_md : 1; //15    音头 (0=Linear, 1=Exponential) 
     u32 re_sh : 5; //16-20 释放 (0..1Fh = Fast..Slow) 固定 -8 直到 0
     u32 re_md : 1; //21    释放 (0=Linear, 1=Exponential) 
@@ -218,32 +220,33 @@ friend Parent;
 };
 
 
-template<class P, DeviceIOMapper N, class Reg = SpuReg>
+template<class P, DeviceIOMapper N, class Reg = SpuReg, bool ReadOnly = false>
 class SpuIOFunction : public SpuIOBase<P, N> {
 public:
   typedef void (P::*OnWrite)(u32);
   typedef u32 (P::*OnRead)();
 
 protected:
-  Reg reg;
-  const OnWrite w;
-  const OnRead r;
+  Reg r;
+  const OnWrite writeFn;
+  const OnRead readFn;
 
   SpuIOFunction(P& p, Bus& b, OnWrite _w, OnRead _r = NULL) 
-  : SpuIOBase<P, N>(p, b), w(_w), r(_r)
+  : SpuIOBase<P, N>(p, b), writeFn(_w), readFn(_r)
   {
   }
 
 public:
   u32 read() { 
-    if (r) return (this->parent.*r)();
-    return reg.v; 
+    if (readFn) return (this->parent.*readFn)();
+    return r.v; 
   }
 
   void write(u32 v) {
-    reg.v = v;
-    if (w) {
-      (this->parent.*w)(v);
+    if (ReadOnly) return;
+    r.v = v;
+    if (writeFn) {
+      (this->parent.*writeFn)(v);
     }
   }
 
@@ -287,9 +290,12 @@ friend P;
 template<class P, DeviceIOMapper N, bool ReadOnly = 0>
 class SpuBit24IO : public SpuIOBase<P, N> {
 protected:
-  u8 f[24];
+  typedef void (P::*OnChange)();
+  volatile u8 f[SPU_CHANNEL_COUNT];
+  OnChange pchange;
 
-  SpuBit24IO(P& parent, Bus& b) : SpuIOBase<P, N>(parent, b) {
+  // 只有总线上的 write 操作会触发 OnChange 调用
+  SpuBit24IO(P& parent, Bus& b, OnChange c=0) : SpuIOBase<P, N>(parent, b), pchange(c) {
   }
 
   void set(u8 bitIndex) {
@@ -324,27 +330,32 @@ public:
     DO_ARR8(f, v,  0, 0, TO_BIT);
     DO_ARR8(f, v,  8, 0, TO_BIT);
     DO_ARR8(f, v, 16, 0, TO_BIT);
+    if (pchange) (this->parent.*pchange)();
   }
 
   void write(u16 v)  { 
     if (ReadOnly) return;
     DO_ARR8(f, v,  0, 0, TO_BIT);
     DO_ARR8(f, v,  8, 0, TO_BIT);
+    if (pchange) (this->parent.*pchange)();
   }
 
   void write2(u16 v) { 
     if (ReadOnly) return;
     DO_ARR8(f, v,  0, 16, TO_BIT);
+    if (pchange) (this->parent.*pchange)();
   }
 
   void write(u8 v) {
     if (ReadOnly) return;
     DO_ARR8(f, v,  0, 0, TO_BIT);
+    if (pchange) (this->parent.*pchange)();
   }
 
   void write2(u8 v) {
     if (ReadOnly) return;
     DO_ARR8(f, v, 0, 16, TO_BIT);
+    if (pchange) (this->parent.*pchange)();
   }
 
 friend P;
@@ -353,6 +364,55 @@ friend P;
 #undef DO_ARR8
 #undef TO_BIT
 #undef FROM_BIT
+
+
+class SpuAdsr {
+private:
+  bool isExponential;
+  bool isInc;
+  s32 step;
+  u32 initCyc;
+
+public:
+  void reset(u8 mode, u8 dir, u8 shift, u8 _step) {
+    this->isExponential = (mode == 1);
+    this->initCyc = 1 << std::max(0, shift-11);
+    this->isInc = dir == 0;
+    s32 rstep = isInc ? (7 - s32(_step)) : (-8 + s32(_step));
+    this->step = s32(rstep << std::max(0, 11-shift));
+  }
+
+  void next(s32& level, u32& cycles) {
+    cycles = initCyc;
+    if (isExponential) {
+      if (!isInc) {
+        float st = step * level / float(0x8000);
+        if (st < 0) {
+          cycles = initCyc * (step / st);
+        }
+      } else if (level > 0x6000) {
+        // 没有指数上升
+        cycles = initCyc * 4;
+      }
+    }
+    level += step;
+  }
+};
+
+
+struct PcmHeader {
+  PcmSample hist1 = 0;
+  PcmSample hist2 = 0;
+  u32 addr = 0;
+  bool changed = 0;
+
+  void set(u32 a, PcmSample h1, PcmSample h2, bool c = 0) {
+    addr = a;
+    hist1 = h1;
+    hist2 = h2;
+    changed = c;
+  }
+};
 
 
 template<DeviceIOMapper t_vol, DeviceIOMapper t_sr,
@@ -377,9 +437,10 @@ private:
   SpuIO<SPUChannel, SpuReg, t_cv> currVolume;
 
   SoundProcessing& spu;
-  PcmSample hist1 = 0;
-  PcmSample hist2 = 0;
-  u32 currentReadAddr = 0;
+  PcmHeader currentReadAddr;
+  PcmHeader repeatAddr;
+  SpuAdsr adsr_filter;
+  u32 adsr_cycles_remaining = 0;
 
   enum class AdsrState : u8 {
     Wait    = 0,
@@ -397,10 +458,10 @@ public:
   // 从指定的通道中读取并解码采样数据到 buf, 读取结束会修改通道的声音地址,
   // 必要时读取会触发 irq, 读取会检测出数据循环标记并修改循环地址,
   // 如果进入了循环地址, 则执行循环; 应用全部音量包络.
-  // 1 个 blockcount 长度为 SPU_PCM_BLK_SZ(28)
-  void read_sample(PcmSample *buf, u32 blockcount);
-  void apply_adsr(PcmSample *buf, u32 blockcount);
+  void read_sample(PcmSample *_in, PcmSample *_out, u32 sample_count);
+  void apply_adsr(PcmSample *buf, u32 sample_count);
   void resample(PcmSample *buf, u32 blockcount);
+  void copy_start_to_repeat();
 };
 
 
@@ -457,7 +518,7 @@ private:
   SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_ram_trans_ctrl> ramTransferCtrl;
 
   // 0x1F80'1DAA SPU控制寄存器
-  SpuIO<SoundProcessing, SpuCntReg, DeviceIOMapper::spu_ctrl> ctrl;
+  SpuIOFunction<SoundProcessing, DeviceIOMapper::spu_ctrl, SpuCntReg> ctrl;
   // 0x1F80'1DAE（R）SPU状态寄存器
   SpuIO<SoundProcessing, SpuStatusReg, DeviceIOMapper::spu_status, true> status;
 
@@ -510,22 +571,26 @@ private:
   SPU_DEF_ALL_CHANNELS(ch, SPU_DEF_VAL)
 
 private:
-  const u32 sampleRate = 44100;
+  const u32 sampleRate = 44100/2;
   const u32 bufferFrames = 10 *SPU_PCM_BLK_SZ; // 必须是 28 的整数倍
 
   Bus &bus;
   u8 *mem;
-  u32 trans_point = 0;
+  std::mutex for_copy_data;
+  u32 mem_write_addr = 0;
   u16 fifo[SPU_FIFO_SIZE];
   u8 fifo_point = 0;
   RtAudio* dac;
 
+  // 寄存器函数
   void set_transfer_address(u32 a);
   void push_fifo(u32 a);
+  void set_ctrl_req(u32 a);
+  void key_on_changed();
 
   // dma/fifo 数据处理
-  void process();
-  void manual_write();
+  void copy_fifo_to_mem();
+  void trigger_manual_write();
   // 立即发送中断
   void send_irq();
   // 如果启用了中断, 并且中断地址位于 'beginAddr' 和 
@@ -542,14 +607,15 @@ public:
   ~SoundProcessing();
 
   void set_endx_flag(u8 channelIndex);
+  // 查询后复位对应位
   bool is_attack_on(u8 channelIndex);
   bool is_release_on(u8 channelIndex);
   void print_fifo();
 
-  // 从 spu 内存中的 readAddr 开始, 读取 1 个 SPU-ADPCM 块并解码.
+  // 从 spu 内存中的 readAddr 开始, 读取 1 个 SPU-ADPCM 块并解码(块总是 16 字节对齐的).
   // 必要时读取会触发 irq, 返回当前块的 flag, 解码后一个块长度为 28 个采样.
   // 应用混音算法, 将采样与缓冲区中的声音快进行混音.
-  AdpcmFlag read_adpcm_block(PcmSample *buf, u32 readAddr, PcmSample& h1, PcmSample& h2);
+  AdpcmFlag read_adpcm_block(PcmSample *buf, PcmHeader& ph);
   void request_audio_data(PcmSample *buf, u32 nframe, double time);
   // 仅用于测试
   u8 *get_spu_mem();

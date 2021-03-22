@@ -10,7 +10,6 @@ namespace ps1e_t {
 
 void panic(char const* msg);
 void tsize(int s, int t, char const* msg);
-void sleep(int ms);
 extern int ext_stop;
 
 template<class T>

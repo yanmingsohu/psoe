@@ -59,10 +59,9 @@ static inline PcmSample mixer(PcmSample a, PcmSample b) {
 SoundProcessing::SoundProcessing(Bus& b) : 
   DMADev(b, DeviceIOMapper::dma_spu_base), bus(b), dac(0), mem(0),
   SPU_II(mainVol),  SPU_II(cdVol),    SPU_II(reverbVol),
-  SPU_II(externVol),SPU_II(nKeyOn),   SPU_II(mainCurrVol),
+  SPU_II(externVol),                  SPU_II(mainCurrVol),
   SPU_II(nKeyOff),  SPU_II(nFM),      SPU_II(nNoise),
-  SPU_II(nReverb),  SPU_II(endx),     SPU_II(ctrl),
-  SPU_II(status),
+  SPU_II(nReverb),  SPU_II(endx),     SPU_II(status),
   SPU_II(dAPF1),    SPU_II(dAPF2),    SPU_II(vIIR),
   SPU_II(vCOMB1),   SPU_II(vCOMB2),   SPU_II(vCOMB3),
   SPU_II(vCOMB4),   SPU_II(vWALL),    SPU_II(vAPF1),
@@ -77,7 +76,9 @@ SoundProcessing::SoundProcessing(Bus& b) :
   SPU_DEF_ALL_CHANNELS(ch, SPU_INIT_CHANNEL) _un1(*this, b), _un2(*this, b),
   SPU_II(ramReverbStartAddress), SPU_II(ramIrqAdress), SPU_II(ramTransferCtrl),
   ramTransferFifo(*this, b, &SoundProcessing::push_fifo),
-  ramTransferAddress(*this, b, &SoundProcessing::set_transfer_address)
+  ramTransferAddress(*this, b, &SoundProcessing::set_transfer_address),
+  ctrl(*this, b, &SoundProcessing::set_ctrl_req),
+  nKeyOn(*this, b, &SoundProcessing::key_on_changed)
 {
   mem = new u8[SPU_MEM_SIZE];
   memset(mem, 0, SPU_MEM_SIZE);
@@ -120,73 +121,83 @@ SoundProcessing::~SoundProcessing() {
 }
 
 
-#define CALL_READ_SAMPLE(name, n) name ## n.read_sample(buf, blockcount);
+static void setzero(PcmSample *buf, u32 nframe) {
+  for (u32 i=0; i<nframe; ++i) {
+    buf[i] = 0;
+  }
+}
+
+
+static void mix(PcmSample *dst, PcmSample *src, u32 nframe) {
+  for (u32 i=0; i<nframe; ++i) {
+    dst[i] = mixer(dst[i], src[i]);
+  }
+}
+
+
+#define CALL_READ_SAMPLE(name, n)   name ## n.read_sample(buf, blockcount);
+
 void SoundProcessing::request_audio_data(PcmSample *buf, u32 nframe, double time) {
   if (nframe != bufferFrames) {
     error("Cannot use %d buffer frames, set to %d\n", bufferFrames, nframe);
   }
   //spudbg("\r\t\t\t\tReQ audio data %d %f", nframe, time);
   u32 blockcount = nframe / SPU_PCM_BLK_SZ;
-  for (u32 i=0; i<nframe; ++i) {
-    buf[i] = 0;
-  }
-  process();
+  setzero(buf, nframe);
+
+  std::shared_ptr<PcmSample> p1(new PcmSample[nframe]);
+  std::shared_ptr<PcmSample> p2(new PcmSample[nframe]);
 
   //SPU_DEF_ALL_CHANNELS(ch, CALL_READ_SAMPLE)
-  ch0.read_sample(buf, blockcount);
-
-  if (false) {
-    PrintfBuf p;
-    p.printf("Pcm sample\n");
-    for (u32 i=0; i<nframe; ++i) {
-      p.printf(" %f\t", buf[i]);
-      if ((i & 0x3) == 3) p.putchar('\n');
-    }
-    p.putchar('\n');
-  }
+  ch0.read_sample(buf, p2.get(), blockcount);
+  mix(buf, p2.get(), nframe);
+  ch1.read_sample(p2.get(), p1.get(), blockcount);
+  mix(buf, p1.get(), nframe);
+  ch2.read_sample(p1.get(), p2.get(), blockcount);
+  mix(buf, p2.get(), nframe);
+  ch3.read_sample(p2.get(), p1.get(), blockcount);
+  mix(buf, p1.get(), nframe);
 }
+
 #undef CALL_READ_SAMPLE
 
 
 void SoundProcessing::set_transfer_address(u32 a) {
-  trans_point = a << 3; // * 8
-  //ps1e_t::ext_stop = 1;
-  spudbg("set transfer address %x (%x << 3)\n", trans_point, a);
+  mem_write_addr = a << 3; // * 8
+  spudbg("set transfer address %x (%x << 3)\n", mem_write_addr, a);
 }
 
 
 void SoundProcessing::push_fifo(u32 a) {
-  //ps1e_t::ext_stop = 1;
-  if (ps1e_t::ext_stop) printf("spu fifo %02x = %04x\n", fifo_point, a);
+  //if (ps1e_t::ext_stop) printf("spu fifo %02x = %04x\n", fifo_point, a);
   fifo[fifo_point & SPU_FIFO_MASK] = u16(a);
   ++fifo_point;
 }
 
-#define IS_BIT_PULL_UP(low, hi, mask) ((((low) & (mask)) == 0) && (((hi) & (mask)) != 0))
 
-void SoundProcessing::process() {
-  if (ctrl.r.dma_trs == u8(SpuDmaDir::ManualWrite)) {
-    if (IS_BIT_PULL_UP(status.r.v, ctrl.r.v, 1<<4)) {
-      status.r.busy = 1;
-      spudbg("Trigger spu data trans, start at %x, MODE %x\n", 
-             trans_point, 0B111 & (ramTransferCtrl.r.v >> 1));
-      if (ps1e_t::ext_stop) print_fifo();
-      manual_write();
-      status.r.dma_trs = ctrl.r.dma_trs;
-    }
+void SoundProcessing::trigger_manual_write() {
+  std::lock_guard<std::mutex> _lk(for_copy_data);
+  status.r.busy = 1;
+
+  if (ps1e_t::ext_stop) {
+    spudbg("\rTrigger spu data trans, start at %x, MODE %x", 
+            mem_write_addr, 0B111 & (ramTransferCtrl.r.v >> 1));
+    print_fifo();
   }
-
+      
+  copy_fifo_to_mem();
   ///// END
   // 当 irq 控制位为 关闭/应答(0) 的时候, 复位 irq 状态位
   if (!ctrl.r.irq_enb) {
     status.r.irq = 0;
   }
   status.r.busy = 0;
+  status.r.dma_trs = ctrl.r.dma_trs;
 }
 
 
-void SoundProcessing::manual_write() {
-  u16 *wbuf = (u16*)(&mem[trans_point]);
+void SoundProcessing::copy_fifo_to_mem() {
+  u16 *wbuf = (u16*)(&mem[mem_write_addr]);
   const u8 type = 0B111 & (ramTransferCtrl.r.v >> 1);
   u16 v;
 
@@ -223,11 +234,8 @@ void SoundProcessing::manual_write() {
       break;
   }
 
-  if (ps1e_t::ext_stop) {
-    print_hex("Spu Mem", (u8*)wbuf, SPU_FIFO_SIZE<<1, -s32(wbuf) + s32(trans_point));
-  }
-  check_irq(SPU_FIFO_INDEX(trans_point), (SPU_FIFO_SIZE << 1));
-  trans_point += (SPU_FIFO_SIZE << 1);
+  check_irq(SPU_FIFO_INDEX(mem_write_addr), (SPU_FIFO_SIZE << 1));
+  mem_write_addr += (SPU_FIFO_SIZE << 1);
 }
 
 
@@ -259,19 +267,17 @@ bool SoundProcessing::check_irq(u32 beginAddr, u32 offset) {
 }
 
 
-AdpcmFlag SoundProcessing::read_adpcm_block(PcmSample *buf, 
-                                            u32 readAddr, 
-                                            PcmSample& hist1, 
-                                            PcmSample& hist2) 
-{
-  check_irq(SPU_MEM_MASK & readAddr, SPU_MEM_SIZE);
-  AdpcmBlock* af = (AdpcmBlock*) &mem[ SPU_MEM_MASK & readAddr ];
-  printf("ADPCM %x\r", readAddr);
+AdpcmFlag SoundProcessing::read_adpcm_block(PcmSample *buf, PcmHeader& h) {
+  u32 readAddr = h.addr & SPU_MEM_MASK & 0xFFFF'FFF0;
+  check_irq(readAddr, SPU_MEM_SIZE);
+  AdpcmBlock* af = (AdpcmBlock*) &mem[readAddr];
+  //spudbg("ADPCM %x\n", readAddr);
 
   u8 coef_index   = (af->filter >> 4) & 0xf;
   u8 shift_factor = (af->filter >> 0) & 0xf;
   u8 nbit = 0;
   s32 nibble;
+  PcmSample sp;
 
   if (shift_factor > 12) shift_factor = 9; //?
   if (coef_index > 5) coef_index = 0; //?
@@ -286,18 +292,18 @@ AdpcmFlag SoundProcessing::read_adpcm_block(PcmSample *buf,
       nibble = nibble_dict[niindex & 0x0F];
     }
 
-    nibble = nibble << shift_factor;
-    nibble += ((adpcm_coefs_dict[coef_index][0]*hist1 
-              + adpcm_coefs_dict[coef_index][1]*hist2) * 256.0f);
-    nibble = nibble >> 8;
+    sp = nibble << shift_factor;
+    sp += ((adpcm_coefs_dict[coef_index][0]* h.hist1 
+          + adpcm_coefs_dict[coef_index][1]* h.hist2) * 256.0f);
+    sp = sp / 256.0f;
 
     // 一般很少出现
-    if (nibble > 32767) nibble = 32767;
-    else if (nibble < -32768) nibble = -32768;
+    if (sp > 32767) sp = 32767;
+    else if (sp < -32768) sp = -32768;
 
-    buf[i] = mixer(buf[i], nibble / 32768.0f);
-    hist2 = hist1;
-    hist1 = nibble;
+    buf[i] = sp / 32768.0f;
+    h.hist2 = h.hist1;
+    h.hist1 = sp;
   }
   return af->flag;
 }
@@ -309,7 +315,9 @@ void SoundProcessing::set_endx_flag(u8 channelIndex) {
 
 
 bool SoundProcessing::is_attack_on(u8 channelIndex) {
-  return nKeyOn.get(channelIndex);
+  bool v = nKeyOn.get(channelIndex);
+  nKeyOn.reset(channelIndex);
+  return v;
 }
 
 
@@ -335,6 +343,27 @@ void SoundProcessing::print_fifo() {
 
 u8* SoundProcessing::get_spu_mem() {
   return mem;
+}
+
+
+void SoundProcessing::set_ctrl_req(u32) {
+  if (ctrl.r.dma_trs == u8(SpuDmaDir::ManualWrite)) {
+    trigger_manual_write();
+  }
+}
+
+
+#define SPU_CASE_COPY(name, n)  case n: name ## n.copy_start_to_repeat();
+
+void SoundProcessing::key_on_changed() {
+  for (u8 i=0; i<SPU_CHANNEL_COUNT; ++i) {
+    if (nKeyOn.f[i]) {
+      endx.f[i] = 0;
+      switch (i) {
+        SPU_DEF_ALL_CHANNELS(ch, SPU_CASE_COPY)
+      }
+    }
+  }
 }
 
 
