@@ -43,7 +43,6 @@ If the simulator can be run, the following assumptions will be verified:
 
 # Dependents
 
-* [Sound ADSR](https://github.com/kylophone/libADSR) ?
 * [Sound API](https://github.com/thestk/rtaudio)
 * [Sound resampler](https://github.com/avaneev/r8brain-free-src)
 * [Graphics Mathematics](http://eigen.tuxfamily.org/index.php?title=Main_Page)

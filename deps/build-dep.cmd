@@ -15,7 +15,7 @@ set TARGET_VS_VERSION="Visual Studio 16 2019"
 set deps_home=%CD%
 pushd ..\bin
 set bin_home=%CD%
-goto build_rtaudio
+goto build_r8brain
 
 :build_glfw
 cd %bin_home%
@@ -55,6 +55,15 @@ cmake %rt_home%
 cmake --build . --config Release
 mv Release/rtaudio.* %bin_home%/
 if ERRORLEVEL 1 goto end
+goto end
+
+:build_r8brain
+set rt_home=%deps_home%\r8brain
+cd %bin_home%
+md r8brain
+cd r8brain
+cl /c /O2 /MD %rt_home%\r8bbase.cpp
+mv *.obj  %bin_home%/
 goto end
 
 :end

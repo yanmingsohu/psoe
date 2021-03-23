@@ -35,7 +35,6 @@ PS1 是我小时候最向往的游戏机, 我非常喜欢它. 我想要非常非
 
 # 依赖的项目
 
-* [Sound ADSR](https://github.com/kylophone/libADSR) ?
 * [Sound API](https://github.com/thestk/rtaudio)
 * [Sound resampler](https://github.com/avaneev/r8brain-free-src)
 * [Graphics Mathematics](http://eigen.tuxfamily.org/index.php?title=Main_Page)
