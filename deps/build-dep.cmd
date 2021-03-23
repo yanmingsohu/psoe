@@ -15,7 +15,7 @@ set TARGET_VS_VERSION="Visual Studio 16 2019"
 set deps_home=%CD%
 pushd ..\bin
 set bin_home=%CD%
-goto build_r8brain
+goto build_libsamplerate
 
 :build_glfw
 cd %bin_home%
@@ -49,21 +49,34 @@ goto end
 :build_rtaudio
 set rt_home=%deps_home%\rtaudio
 cd %bin_home%
+rm -rf rtaudio
 md rtaudio
 cd rtaudio
-cmake %rt_home%
-cmake --build . --config Release
+cmake -DBUILD_SHARED_LIBS=OFF -DRTAUDIO_BUILD_STATIC_LIBS=ON -DCMAKE_CXX_FLAGS=/MD -DMSVC=ON -DRTAUDIO_STATIC_MSVCRT=ON %rt_home%
+rem 需要打开 vs 修改为 /MD
+cmake --build . --config Release 
 mv Release/rtaudio.* %bin_home%/
 if ERRORLEVEL 1 goto end
 goto end
 
 :build_r8brain
+rem 这个库不工作, 导致 rtaudio 线程异常
 set rt_home=%deps_home%\r8brain
 cd %bin_home%
 md r8brain
 cd r8brain
 cl /c /O2 /MD %rt_home%\r8bbase.cpp
 mv *.obj  %bin_home%/
+goto end
+
+:build_libsamplerate
+set lib_home=%deps_home%\libsamplerate
+cd %bin_home%
+md libsamplerate
+cd libsamplerate
+cmake %lib_home%
+cmake --build . --config Release
+mv src/Release/*.lib  %bin_home%/
 goto end
 
 :end
