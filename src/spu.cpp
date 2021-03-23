@@ -1,4 +1,5 @@
 ﻿#include <rtaudio/RtAudio.h>
+#include <libsamplerate/include/samplerate.h>
 #include "spu.h"
 #include "spu.inl"
 
@@ -97,14 +98,13 @@ void SoundProcessing::init_dac() {
 
     RtAudio::DeviceInfo di = dac->getDeviceInfo(parameters.deviceId);
     info("Audio Device: %s - %dHz\n", di.name.c_str(), di.preferredSampleRate);
+    //devSampleRate = di.preferredSampleRate;
 
-    u32 bf = bufferFrames;
-    dac->openStream(&parameters, NULL, RTAUDIO_FLOAT32,
-                    sampleRate, &bf, &SpuRtAudioCallback, this);
+    const RtAudioFormat raf = sizeof(PcmSample)==4 ? RTAUDIO_FLOAT32 : RTAUDIO_FLOAT64;
+    dac->openStream(&parameters, NULL, raf,
+                    devSampleRate, &bufferFrames, &SpuRtAudioCallback, this);
 
-    if (bf != bufferFrames) {
-      error("Cannot use %d buffer frames, set to %d\n", bufferFrames, bf);
-    }
+    info("Audio Use %d buffer frames\n", bufferFrames);
     dac->startStream();
   } catch (RtAudioError& e) {
     error("No Sound! %s\n", e.getMessage().c_str());
@@ -135,31 +135,31 @@ static void mix(PcmSample *dst, PcmSample *src, u32 nframe) {
 }
 
 
-#define CALL_READ_SAMPLE(name, n)   name ## n.read_sample(buf, blockcount);
-
 void SoundProcessing::request_audio_data(PcmSample *buf, u32 nframe, double time) {
   if (nframe != bufferFrames) {
     error("Cannot use %d buffer frames, set to %d\n", bufferFrames, nframe);
   }
   //spudbg("\r\t\t\t\tReQ audio data %d %f", nframe, time);
-  u32 blockcount = nframe / SPU_PCM_BLK_SZ;
   setzero(buf, nframe);
+
+  if (ctrl.r.mute == 0) {
+    return;
+  }
 
   std::shared_ptr<PcmSample> p1(new PcmSample[nframe]);
   std::shared_ptr<PcmSample> p2(new PcmSample[nframe]);
+  setzero(p1.get(), nframe);
 
   //SPU_DEF_ALL_CHANNELS(ch, CALL_READ_SAMPLE)
-  ch0.read_sample(buf, p2.get(), blockcount);
+  ch0.read_sample_blocks(p1.get(), p2.get(), nframe);
   mix(buf, p2.get(), nframe);
-  ch1.read_sample(p2.get(), p1.get(), blockcount);
+  /*ch1.read_sample_blocks(p2.get(), p1.get(), nframe);
   mix(buf, p1.get(), nframe);
-  ch2.read_sample(p1.get(), p2.get(), blockcount);
+  ch2.read_sample_blocks(p1.get(), p2.get(), nframe);
   mix(buf, p2.get(), nframe);
-  ch3.read_sample(p2.get(), p1.get(), blockcount);
-  mix(buf, p1.get(), nframe);
+  ch3.read_sample_blocks(p2.get(), p1.get(), nframe);
+  mix(buf, p1.get(), nframe);*/
 }
-
-#undef CALL_READ_SAMPLE
 
 
 void SoundProcessing::set_transfer_address(u32 a) {
@@ -268,10 +268,9 @@ bool SoundProcessing::check_irq(u32 beginAddr, u32 offset) {
 
 
 AdpcmFlag SoundProcessing::read_adpcm_block(PcmSample *buf, PcmHeader& h) {
-  u32 readAddr = h.addr & SPU_MEM_MASK & 0xFFFF'FFF0;
+  const u32 readAddr = h.addr & SPU_MEM_MASK & 0xFFFF'FFF0;
   check_irq(readAddr, SPU_MEM_SIZE);
   AdpcmBlock* af = (AdpcmBlock*) &mem[readAddr];
-  //spudbg("ADPCM %x\n", readAddr);
 
   u8 coef_index   = (af->filter >> 4) & 0xf;
   u8 shift_factor = (af->filter >> 0) & 0xf;
@@ -305,6 +304,7 @@ AdpcmFlag SoundProcessing::read_adpcm_block(PcmSample *buf, PcmHeader& h) {
     h.hist2 = h.hist1;
     h.hist1 = sp;
   }
+  //spudbg("ADPCM %x %x\n", readAddr, af->flag);
   return af->flag;
 }
 
@@ -364,6 +364,99 @@ void SoundProcessing::key_on_changed() {
       }
     }
   }
+}
+
+
+u32 SoundProcessing::getOutputRate() {
+  return devSampleRate;
+}
+
+
+void SpuAdsr::reset(u8 mode, u8 dir, u8 shift, u8 _step) {
+  this->isExponential = (mode == 1);
+  this->initCyc = 1 << MaxT(0, s32(shift) - 11);
+  this->isInc = dir == 0;
+  s32 rstep = isInc ? (7 - s32(_step)) : (-8 + s32(_step));
+  this->step = s32(rstep << MaxT(0, 11 - s32(shift)));
+}
+
+
+void SpuAdsr::next(s32& level, u32& cycles) {
+  cycles = initCyc;
+  if (isExponential) {
+    if (!isInc) {
+      PcmSample st = step * PcmSample(level) / PcmSample(0x8000);
+      if (st < 0) {
+        cycles = initCyc * (step / st);
+      }
+    } else if (level > 0x6000) {
+      // 没有指数上升
+      cycles = initCyc * 4;
+    }
+  }
+  level += step;
+}
+
+
+void PcmHeader::set(u32 a, PcmSample h1, PcmSample h2, bool c) {
+  addr = a;
+  hist1 = h1;
+  hist2 = h2;
+  changed = c;
+}
+
+
+bool PcmHeader::same_addr(PcmHeader& o) {
+  return addr == o.addr;
+}
+
+
+static long resample_src_callback(void *cb_data, float **data) {
+  PcmResample *p = static_cast<PcmResample*>(cb_data);
+  return p->read_src(data);
+}
+
+
+PcmResample::PcmResample(PcmStreamer *p) : stage(0), stream(p) {
+  // SRC_SINC_MEDIUM_QUALITY SRC_SINC_FASTEST
+  int error;
+  stage = src_callback_new(resample_src_callback, SRC_SINC_MEDIUM_QUALITY, 1, &error, this);
+  check_error(error);
+  buf = new float[buf_size];
+}
+
+
+PcmResample::~PcmResample() {
+  src_delete(static_cast<SRC_STATE*>(stage));
+  delete[] buf;
+}
+
+
+void PcmResample::check_error(int error) {
+  if (error) {
+    std::string msg = "PCM resample error, ";
+    msg += src_strerror(error);
+    throw std::runtime_error(msg);
+  }
+}
+
+
+bool PcmResample::read(float* out, long frames, double ratio) {
+  //src_set_ratio(static_cast<SRC_STATE*>(stage), ratio);
+  if (0 == src_callback_read(static_cast<SRC_STATE*>(stage), ratio, frames, out)) {
+    //check_error(src_error(static_cast<SRC_STATE*>(stage)));
+    return 0;
+  }
+  return 1;
+}
+
+
+long PcmResample::read_src(float **out) {
+  for (u32 i=0; i<buf_size; ++i) {
+    buf[i] = stream->read_pcm_sample();
+  }
+  *out = buf;
+  return buf_size;
 }
 
 

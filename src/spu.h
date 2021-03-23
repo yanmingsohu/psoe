@@ -20,6 +20,8 @@ namespace ps1e {
 #define SPU_ADPCM_BLK_SZ    0x10
 #define SPU_PCM_BLK_SZ      28
 #define SPU_CHANNEL_COUNT   24
+#define SPU_WORK_FREQ       44100
+#define SPU_ADPCM_RETE      22050
 #define not_aligned_nosupport(x) error("Cannot read SPU IO %u, Memory misalignment\n", u32(x))
 
 // 如果 begin 到 begin+size(不包含) 之间穿过了 point 则返回 true, size > 0
@@ -51,6 +53,7 @@ class SoundProcessing;
 //  Code 1 = End+Mute   (jump to Loop-address, set ENDX flag, Release, Env=0000h)
 //  Code 2 = Ignored    (same as Code 0)
 //  Code 3 = End+Repeat (jump to Loop-address, set ENDX flag)
+//
 union AdpcmFlag {
   u8 v;
   struct {
@@ -71,9 +74,11 @@ union AdpcmData {
 };
 
 
+//
 // ADPCM 样本数据, 16字节一个块
 // 0x00         | 0x01      | 0x02-0x0F
 // Shift/Filter | Flag Bits | Compressed Data (LSBs=1st Sample, MSBs=2nd Sample)
+//
 struct AdpcmBlock {
   u8 filter;
   AdpcmFlag flag;
@@ -254,10 +259,12 @@ friend P;
 };
 
 
+//
 // SPU连接到16位数据总线。实现了8位/ 16位/ 32位
 // 读取和16位/ 32位写入。但是，未实现8位写操作：
 // 对ODD地址的8位写操作将被忽略（不会引起任何异常），
 // 对偶数地址的8位写操作将作为16位写操作执行??
+//
 template<class P, class R, DeviceIOMapper N, bool ReadOnly = false>
 class SpuIO : public SpuIOBase<P, N> {
 protected:
@@ -374,29 +381,10 @@ private:
   u32 initCyc;
 
 public:
-  void reset(u8 mode, u8 dir, u8 shift, u8 _step) {
-    this->isExponential = (mode == 1);
-    this->initCyc = 1 << std::max(0, shift-11);
-    this->isInc = dir == 0;
-    s32 rstep = isInc ? (7 - s32(_step)) : (-8 + s32(_step));
-    this->step = s32(rstep << std::max(0, 11-shift));
-  }
-
-  void next(s32& level, u32& cycles) {
-    cycles = initCyc;
-    if (isExponential) {
-      if (!isInc) {
-        float st = step * level / float(0x8000);
-        if (st < 0) {
-          cycles = initCyc * (step / st);
-        }
-      } else if (level > 0x6000) {
-        // 没有指数上升
-        cycles = initCyc * 4;
-      }
-    }
-    level += step;
-  }
+  // 重置内部状态
+  void reset(u8 mode, u8 dir, u8 shift, u8 _step);
+  // 计算并返回 level 和 cycles, 一个 cycles 是 1/44100
+  void next(s32& level, u32& cycles);
 };
 
 
@@ -406,12 +394,32 @@ struct PcmHeader {
   u32 addr = 0;
   bool changed = 0;
 
-  void set(u32 a, PcmSample h1, PcmSample h2, bool c = 0) {
-    addr = a;
-    hist1 = h1;
-    hist2 = h2;
-    changed = c;
-  }
+  void set(u32 a, PcmSample h1, PcmSample h2, bool c = 0);
+  bool same_addr(PcmHeader& o);
+};
+
+
+class PcmStreamer {
+public:
+  virtual ~PcmStreamer() {}
+  virtual PcmSample read_pcm_sample() = 0;
+};
+
+
+class PcmResample {
+private:
+  static const u32 buf_size = 64;
+  PcmStreamer* stream;
+  void *stage;
+  float *buf;
+  void check_error(int e);
+public:
+  PcmResample(PcmStreamer*);
+  ~PcmResample();
+  // 读取采样后的音频帧, 输出到 out 中
+  bool read(float* out, long frames, double ratio);
+  // 不要调用, 读取原始音频帧
+  long read_src(float **data);
 };
 
 
@@ -419,12 +427,12 @@ template<DeviceIOMapper t_vol, DeviceIOMapper t_sr,
          DeviceIOMapper t_sa,  DeviceIOMapper t_adsr,
          DeviceIOMapper t_acv, DeviceIOMapper t_ra,
          DeviceIOMapper t_cv,  int Number>
-class SPUChannel : public NonCopy {
+class SPUChannel : public NonCopy, public PcmStreamer {
 private:
   // 0x1F801Cn0
   SpuIO<SPUChannel, VolumnReg, t_vol> volume;  
   // 0x1F801Cn4 (0=stop, 4000h=fastest, 4001h..FFFFh == 4000h, 1000h=44100Hz)
-  SpuIO<SPUChannel, SpuReg, t_sr> pcmSampleRate;
+  SpuIOFunction<SPUChannel, t_sr, SpuReg> pcmSampleRate;
   // 0x1F801Cn6 声音开始地址, 样本由一个或多个16字节块组成
   SpuIOFunction<SPUChannel, t_sa, AddrReg> pcmStartAddr;
   // 0x1F801Cn8
@@ -432,7 +440,7 @@ private:
   // 0x1F801CnC
   SpuIO<SPUChannel, SpuReg, t_acv> adsrVol;
   // 0x1F801CnE 声音重复地址, 播放时被adpcm数据更新
-  SpuIO<SPUChannel, AddrReg, t_ra> pcmRepeatAddr;
+  SpuIOFunction<SPUChannel, t_ra, AddrReg> pcmRepeatAddr;
   // 0x1F801E0n These are internal registers, normally not used by software
   SpuIO<SPUChannel, SpuReg, t_cv> currVolume;
 
@@ -441,6 +449,11 @@ private:
   PcmHeader repeatAddr;
   SpuAdsr adsr_filter;
   u32 adsr_cycles_remaining = 0;
+  // 在缓冲区中存储一整块采样, 然后读取单个采样点
+  PcmSample pcm_read_buf[SPU_PCM_BLK_SZ];
+  s32 pcm_buf_remaining = 0;
+  double play_rate = 0;
+  PcmResample resample;
 
   enum class AdsrState : u8 {
     Wait    = 0,
@@ -451,6 +464,8 @@ private:
   } adsr_state = AdsrState::Wait;
 
   void set_start_address(u32 v);
+  void set_repeat_addr(u32);
+  void set_sample_rate(u32);
 
 public:
   SPUChannel(SoundProcessing& parent, Bus& b);
@@ -458,10 +473,12 @@ public:
   // 从指定的通道中读取并解码采样数据到 buf, 读取结束会修改通道的声音地址,
   // 必要时读取会触发 irq, 读取会检测出数据循环标记并修改循环地址,
   // 如果进入了循环地址, 则执行循环; 应用全部音量包络.
-  void read_sample(PcmSample *_in, PcmSample *_out, u32 sample_count);
-  void apply_adsr(PcmSample *buf, u32 sample_count);
-  void resample(PcmSample *buf, u32 blockcount);
+  // _in 通常是前一个通道的输出(FM模式使用) 该缓冲区不会用作其他, 可以随意写入.
+  void read_sample_blocks(PcmSample *_in, PcmSample *_out, u32 sample_count);
+  void apply_adsr(PcmSample *_in, PcmSample *out, u32 sample_count);
   void copy_start_to_repeat();
+  // 从 pcm 缓冲区读取一个采样, 保证效率
+  PcmSample read_pcm_sample();
 };
 
 
@@ -571,8 +588,8 @@ private:
   SPU_DEF_ALL_CHANNELS(ch, SPU_DEF_VAL)
 
 private:
-  const u32 sampleRate = 44100/2;
-  const u32 bufferFrames = 10 *SPU_PCM_BLK_SZ; // 必须是 28 的整数倍
+  u32 devSampleRate = SPU_WORK_FREQ;
+  u32 bufferFrames = 128; 
 
   Bus &bus;
   u8 *mem;
@@ -619,6 +636,7 @@ public:
   void request_audio_data(PcmSample *buf, u32 nframe, double time);
   // 仅用于测试
   u8 *get_spu_mem();
+  u32 getOutputRate();
 };
 
 

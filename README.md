@@ -44,9 +44,8 @@ If the simulator can be run, the following assumptions will be verified:
 # Dependents
 
 * [Sound API](https://github.com/thestk/rtaudio)
-* [Sound resampler](https://github.com/avaneev/r8brain-free-src)
+* [Sound resampler](https://github.com/libsndfile/libsamplerate)
 * [Graphics Mathematics](http://eigen.tuxfamily.org/index.php?title=Main_Page)
-* [Sound API](https://github.com/jarikomppa/soloud) %
 * [OpenGL GUI](https://github.com/wjakob/nanogui) %
 
   ? May be removed  

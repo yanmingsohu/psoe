@@ -4,6 +4,8 @@
 
 namespace ps1e {
 
+#define MinT(a,b)   (((a) < (b)) ? (a) : (b))
+#define MaxT(a,b)   (((a) > (b)) ? (a) : (b))
 #define CONSTRUCT
 #define SPU_CHANNEL_DEF(RET) \
   template<DeviceIOMapper t_vol, DeviceIOMapper t_sr, \
@@ -16,32 +18,35 @@ namespace ps1e {
 SPU_CHANNEL_DEF(CONSTRUCT)::SPUChannel(SoundProcessing& parent, Bus& b) :
   spu(parent),
   volume(*this, b), 
-  pcmSampleRate(*this, b), 
+  pcmSampleRate(*this, b, &SPUChannel::set_sample_rate), 
   pcmStartAddr(*this, b, &SPUChannel::set_start_address),
   adsr(*this, b), 
   adsrVol(*this, b), 
-  pcmRepeatAddr(*this, b), 
-  currVolume(*this, b) 
+  pcmRepeatAddr(*this, b, &SPUChannel::set_repeat_addr), 
+  currVolume(*this, b),
+  resample(this)
 {
 }
 
 
-//TODO 双声道
-SPU_CHANNEL_DEF(void)::read_sample(PcmSample *_in, PcmSample *_out, u32 blockcount) {
-  repeatAddr.addr = pcmRepeatAddr.r.address();
-  PcmSample* pcmbuf = _out;
+SPU_CHANNEL_DEF(PcmSample)::read_pcm_sample() {
+  if (pcm_buf_remaining <= 0) {
+    // read next block
+    if (currentReadAddr.changed) {
+      currentReadAddr.set(pcmStartAddr.r.address(), 0, 0);
+      pcm_buf_remaining = 0;
+    }
+    if (repeatAddr.changed) {
+      repeatAddr.set(pcmRepeatAddr.r.address(), 0, 0);
+    }
 
-  if (currentReadAddr.changed) {
-    currentReadAddr.set(pcmStartAddr.r.address(), 0, 0);
-  }
-
-  for (u32 i=0; i<blockcount; ++i) {
-    AdpcmFlag flag = spu.read_adpcm_block(pcmbuf, currentReadAddr);
-    resample(pcmbuf, SPU_PCM_BLK_SZ);
-    apply_adsr(pcmbuf, SPU_PCM_BLK_SZ);
+    PcmSample prevh1 = currentReadAddr.hist1;
+    PcmSample prevh2 = currentReadAddr.hist2;
+    AdpcmFlag flag = spu.read_adpcm_block(pcm_read_buf, currentReadAddr);
+    pcm_buf_remaining = SPU_PCM_BLK_SZ;
     
     if (flag.loop_start) {
-      repeatAddr = currentReadAddr;
+      repeatAddr.set(currentReadAddr.addr, prevh1, prevh2);
       pcmRepeatAddr.r.saveAddr(repeatAddr.addr);
     }
 
@@ -52,21 +57,40 @@ SPU_CHANNEL_DEF(void)::read_sample(PcmSample *_in, PcmSample *_out, u32 blockcou
         currentReadAddr = repeatAddr;
       } else {
         adsr_state = AdsrState::Release;
+        //TODO: Mute??
       }
-    }
-    else if (ADDR_IN_SCOPE(currentReadAddr.addr + 0x10, SPU_ADPCM_BLK_SZ, repeatAddr.addr)) {
-      // 预判下一个音块数据, 不解析循环区段
-      currentReadAddr = repeatAddr;
     } else {
       currentReadAddr.addr += SPU_ADPCM_BLK_SZ;
     }
-
-    pcmbuf += SPU_PCM_BLK_SZ;
   }
+
+  const s32 p = SPU_PCM_BLK_SZ - pcm_buf_remaining;
+  --pcm_buf_remaining;
+  return pcm_read_buf[p];
 }
 
 
-SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample* buf, u32 lsize) {
+//TODO 双声道
+SPU_CHANNEL_DEF(void)::read_sample_blocks(PcmSample *_in, PcmSample *out, u32 nframe) {
+  const double rate = play_rate;
+  bool direct = 0;
+
+  if (rate == 0 || rate == 1) {
+    direct = 1;
+  } else {
+    direct != resample.read(_in, nframe, rate);
+  }
+  if (direct) {
+    for (u32 i=0; i<nframe; ++i) {
+      _in[i] = read_pcm_sample();
+    }
+  }
+  //TODO 低通滤波
+  apply_adsr(_in, out, nframe);
+}
+
+
+SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample *_in, PcmSample *out, u32 lsize) {
   s32 decay_out = (adsr.r.su_lv +1) *0x800;
   s32 level = adsrVol.r.v;
   //const u32 lsize = blockcount * SPU_PCM_BLK_SZ;
@@ -87,9 +111,9 @@ SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample* buf, u32 lsize) {
 
     while (adsr_cycles_remaining > 0 && i <lsize) {
       if (level > 0) {
-        buf[i] *= float(level) / float(0x8000);
+        out[i] = _in[i] * (float(level) / float(0x8000));
       } else {
-        buf[i] = 0;
+        out[i] = 0;
       }
       --adsr_cycles_remaining;
       ++i;
@@ -139,18 +163,27 @@ SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample* buf, u32 lsize) {
 }
 
 
-SPU_CHANNEL_DEF(void)::resample(PcmSample* buf, u32 sample_count) {
-}
-
-
 SPU_CHANNEL_DEF(void)::copy_start_to_repeat() {
   pcmRepeatAddr.r.v = pcmStartAddr.r.v;
+  repeatAddr.changed = true;
 }
 
 
 SPU_CHANNEL_DEF(void)::set_start_address(u32 v) {
   currentReadAddr.changed = true;
   spudbg("set channel %d start address %x (%x << 3)\n", Number, v<<3, v);
+}
+
+
+SPU_CHANNEL_DEF(void)::set_repeat_addr(u32) {
+  repeatAddr.changed = true;
+}
+
+
+SPU_CHANNEL_DEF(void)::set_sample_rate(u32 v) {
+  double orate = spu.getOutputRate();
+  double irate = double(MinT(0x4000, v)) * (double(SPU_WORK_FREQ) / double(0x1000));
+  play_rate = orate/irate;
 }
 
 

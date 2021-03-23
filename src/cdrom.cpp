@@ -204,6 +204,7 @@ bool CdDrive::getTrackMsf(CDTrack t, CdMsf *r) {
 bool CdDrive::seek(const CdMsf* s) {
   // CDIO_INVALID_LSN
   offset = cdio_msf_to_lsn(reinterpret_cast<const msf_t*>(s));
+  return offset != CDIO_INVALID_LSN;
 }
 
 

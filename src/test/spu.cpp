@@ -60,8 +60,10 @@ static void spu_play_sound() {
   MMU mmu(mj);
   Bus b(mmu);
 
-  const bool use_io = 1;
-  const bool remove_loop_flag = 0;
+  // 调试开关
+  const bool use_io           = 1; // 用 bus 总线端口写数据
+  const bool remove_loop_flag = 0; // 移除重复标记
+  const bool multi_channel    = 0; // 使用多通道播放不同音色
 
   SoundProcessing spu(b);
   b.write16(0x1F80'1DA6, 0x200); // address
@@ -81,14 +83,15 @@ static void spu_play_sound() {
       for (u32 x=0; x<32; ++x) {
         if (((x & 0b111) == 0)) {
           if ((buf2[i] & 0xff00) == 0x300) {
-            printf("Repeat point %x\n", i + x*2);
-            //print_hex("\nspu mem", spu_mem, 256);
+            printf("\tRepeat point %x ", (i + x)<<1);
             if (fp < 26) {
-              font[fp++] = i + x*2 + 0x1000;
+              printf("save in %d", fp);
+              font[fp++] = ((i + x)<<1) + 0x1000 + 0x10;
             }
-            if (remove_loop_flag) {
-              buf2[i+x] = buf2[i+x] & 0x00ff;
-            }
+            putchar('\n');
+          }
+          if (remove_loop_flag) {
+            buf2[i+x] = buf2[i+x] & 0x00ff;
           }
         }
         b.write16(0x1F80'1DA8, buf2[i+x]);
@@ -121,6 +124,7 @@ static void spu_play_sound() {
     }
   }
   
+  b.write32(0x1F80'1DAA, 0x0000'C083); // Unmute
   print_hex("\nspu mem", spu_mem, 256);
   for (u32 i=0; i<1024; ++i) {
     if (spu_mem[i] != buf[i]) {
@@ -151,7 +155,9 @@ static void spu_play_sound() {
 
   // 必须移动到正确的位置才能发出正确音色
   b.write16(0x1F80'1C06, 0x200);
-  b.write16(0x1F80'1D88, 0xFFFF'ffff); // Kon
+  // 设定频率 1000h == 44100
+  b.write16(0x1F80'1C04, 0x1000);
+  if (!remove_loop_flag) b.write16(0x1F80'1D88, 0xFFFF'ffff); // Kon
   //b.write16(0x1F80'1C0E, 0x78C); // 重复地址
   puts("Wait play sound");
 
@@ -160,6 +166,9 @@ static void spu_play_sound() {
   }
 
   printf("Press 'a' ~ 'z': ");
+  int font_i = 0;
+  u16 pitch;
+
   for (;;) {
     int ch = _getch();
     _putch(ch);
@@ -168,11 +177,39 @@ static void spu_play_sound() {
       return;
     }
 
-    int font_i = 'z' - ch;
-    printf(" [%x]\n", (font[font_i] + 0x10));
+    if (ch > '0' && ch <= '9') {
+      pitch = 0x90 + (ch - '0') * 0x300;
+      goto change_pitch;
+    } 
+    else if (ch == '=') {
+      pitch += 0x10;
+      goto change_pitch;
+    } 
+    else if (ch == '-') {
+      pitch -= 0x10;
+      goto change_pitch;
+    } 
+    else if (ch == '0') {
+      pitch = 0x1000;
+      goto change_pitch;
+    }
+
+    font_i = 'z' - ch;
     if (font_i >= 0 && font_i < fp) {
+      printf(" %d -%x ", font_i, (font[font_i] + 0x10));
+      goto play_tone;
+    }
+
+change_pitch:
+    b.write16(0x1F80'1C04, pitch);
+play_tone:
+    printf(" pitch %d\n", pitch * (44100/0x1000));
+    if (multi_channel) {
       b.write16(0x1F80'1C06 + (0x10 * (font_i & 0xF)), (font[font_i]) >> 3);
       b.write16(0x1F80'1D88, 1 << font_i); // Kon
+    } else {
+      b.write16(0x1F80'1C06, (font[font_i]) >> 3);
+      b.write16(0x1F80'1D88, 1); // Kon
     }
   }
 }
@@ -186,7 +223,7 @@ static void test_adsr() {
 
   for (int i=0; i<100; ++i) {
     a.next(level, cycle);
-    printf("+ %d %f %d\n", i, level, cycle);
+    printf("+ %d %d %d\n", i, level, cycle);
   }
 
   level = 0x7fff;
@@ -194,7 +231,7 @@ static void test_adsr() {
 
   for (int i=0; i<100; ++i) {
     a.next(level, cycle);
-    printf("+ %d %f %d\n", i, level, cycle);
+    printf("+ %d %d %d\n", i, level, cycle);
   }
 
   panic("stop");
