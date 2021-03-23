@@ -1,5 +1,6 @@
 ﻿#include <rtaudio/RtAudio.h>
 #include <libsamplerate/include/samplerate.h>
+#include <iir1/Iir.h>
 #include "spu.h"
 #include "spu.inl"
 
@@ -150,7 +151,6 @@ void SoundProcessing::request_audio_data(PcmSample *buf, u32 nframe, double time
   std::shared_ptr<PcmSample> p2(new PcmSample[nframe]);
   setzero(p1.get(), nframe);
 
-  //SPU_DEF_ALL_CHANNELS(ch, CALL_READ_SAMPLE)
   ch0.read_sample_blocks(p1.get(), p2.get(), nframe);
   mix(buf, p2.get(), nframe);
   /*ch1.read_sample_blocks(p2.get(), p1.get(), nframe);
@@ -420,7 +420,7 @@ static long resample_src_callback(void *cb_data, float **data) {
 PcmResample::PcmResample(PcmStreamer *p) : stage(0), stream(p) {
   // SRC_SINC_MEDIUM_QUALITY SRC_SINC_FASTEST
   int error;
-  stage = src_callback_new(resample_src_callback, SRC_SINC_MEDIUM_QUALITY, 1, &error, this);
+  stage = src_callback_new(resample_src_callback, SRC_SINC_FASTEST, 1, &error, this);
   check_error(error);
   buf = new float[buf_size];
 }
@@ -457,6 +457,44 @@ long PcmResample::read_src(float **out) {
   }
   *out = buf;
   return buf_size;
+}
+
+
+class PcmLowpassInner {
+public:
+  static const int order = 1;
+  static const int cutoff_frequency = 4;
+
+  Iir::ChebyshevI::LowPass<order> f1;
+  Iir::ChebyshevI::LowPass<order> f2;
+
+  PcmLowpassInner(float samplingrate) {
+    f1.setup(samplingrate, 6000, cutoff_frequency);
+    f2.setup(samplingrate, 3000, cutoff_frequency);
+  }
+};
+
+
+PcmLowpass::PcmLowpass(float samplingrate) : inner(0) {
+  inner = new PcmLowpassInner(samplingrate);
+}
+
+
+PcmLowpass::~PcmLowpass() {
+  delete inner;
+}
+
+
+void PcmLowpass::filter(PcmSample *data, u32 frame, double freq) {
+  if (freq < 20000) {
+    for (u32 i = 0; i < frame; ++i) {
+      data[i] = inner->f2.filter(data[i]);
+    }
+  } else if (freq < 40000) {
+    for (u32 i = 0; i < frame; ++i) {
+      data[i] = inner->f1.filter(data[i]);
+    }
+  }
 }
 
 

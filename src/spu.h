@@ -45,6 +45,7 @@ namespace ps1e {
 
 typedef float PcmSample;
 class SoundProcessing;
+class PcmLowpassInner;
 
 
 //
@@ -423,6 +424,20 @@ public:
 };
 
 
+//if (pitch < 32640) then
+//低通滤波 3000.0 6bB
+//if (pitch < 20000) then
+//低通滤波 500.0 6bB
+class PcmLowpass {
+private:
+  PcmLowpassInner* inner;
+public:
+  PcmLowpass(float samplingrate = SPU_WORK_FREQ);
+  ~PcmLowpass();
+  void filter(PcmSample *data, u32 frame, double freq);
+};
+
+
 template<DeviceIOMapper t_vol, DeviceIOMapper t_sr,
          DeviceIOMapper t_sa,  DeviceIOMapper t_adsr,
          DeviceIOMapper t_acv, DeviceIOMapper t_ra,
@@ -454,6 +469,7 @@ private:
   s32 pcm_buf_remaining = 0;
   double play_rate = 0;
   PcmResample resample;
+  PcmLowpass lowpass;
 
   enum class AdsrState : u8 {
     Wait    = 0,
@@ -622,6 +638,9 @@ protected:
 public:
   SoundProcessing(Bus&);
   ~SoundProcessing();
+
+  // 通常为 true 用于对比测试
+  bool use_low_pass = true;
 
   void set_endx_flag(u8 channelIndex);
   // 查询后复位对应位

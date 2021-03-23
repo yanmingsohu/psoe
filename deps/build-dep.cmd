@@ -15,7 +15,7 @@ set TARGET_VS_VERSION="Visual Studio 16 2019"
 set deps_home=%CD%
 pushd ..\bin
 set bin_home=%CD%
-goto build_libsamplerate
+goto build_iir
 
 :build_glfw
 cd %bin_home%
@@ -77,6 +77,17 @@ cd libsamplerate
 cmake %lib_home%
 cmake --build . --config Release
 mv src/Release/*.lib  %bin_home%/
+goto end
+
+:build_iir
+set lib_home=%deps_home%\iir1
+cd %bin_home%
+rm -rf iir1 
+md iir1
+cd iir1
+cmake %lib_home%
+cmake --build . --config Release
+mv iir1/Release/iir_static.lib %bin_home%/
 goto end
 
 :end

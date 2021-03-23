@@ -24,7 +24,8 @@ SPU_CHANNEL_DEF(CONSTRUCT)::SPUChannel(SoundProcessing& parent, Bus& b) :
   adsrVol(*this, b), 
   pcmRepeatAddr(*this, b, &SPUChannel::set_repeat_addr), 
   currVolume(*this, b),
-  resample(this)
+  resample(this),
+  lowpass(/*parent.getOutputRate()*/)
 {
 }
 
@@ -73,19 +74,20 @@ SPU_CHANNEL_DEF(PcmSample)::read_pcm_sample() {
 //TODO 双声道
 SPU_CHANNEL_DEF(void)::read_sample_blocks(PcmSample *_in, PcmSample *out, u32 nframe) {
   const double rate = play_rate;
-  bool direct = 0;
+  bool direct = (rate == 0 || rate == 1);
 
-  if (rate == 0 || rate == 1) {
-    direct = 1;
-  } else {
-    direct != resample.read(_in, nframe, rate);
+  if (!direct) {
+    direct = !resample.read(_in, nframe, rate);
   }
+
   if (direct) {
     for (u32 i=0; i<nframe; ++i) {
       _in[i] = read_pcm_sample();
     }
+  } else if (spu.use_low_pass) {
+    //TODO 低通滤波 
+    lowpass.filter(_in, nframe, spu.getOutputRate() / rate);
   }
-  //TODO 低通滤波
   apply_adsr(_in, out, nframe);
 }
 
@@ -183,7 +185,12 @@ SPU_CHANNEL_DEF(void)::set_repeat_addr(u32) {
 SPU_CHANNEL_DEF(void)::set_sample_rate(u32 v) {
   double orate = spu.getOutputRate();
   double irate = double(MinT(0x4000, v)) * (double(SPU_WORK_FREQ) / double(0x1000));
-  play_rate = orate/irate;
+  double r = orate/irate;
+  if (r < (1.0 / 255.0) || r > 255) {
+    play_rate = 0;
+  } else {
+    play_rate = r;
+  }
 }
 
 

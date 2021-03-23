@@ -193,6 +193,11 @@ static void spu_play_sound() {
       pitch = 0x1000;
       goto change_pitch;
     }
+    else if (ch == '/') {
+      spu.use_low_pass = !spu.use_low_pass;
+      printf("use low pass %d\n", spu.use_low_pass);
+      continue;
+    }
 
     font_i = 'z' - ch;
     if (font_i >= 0 && font_i < fp) {
