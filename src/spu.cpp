@@ -47,7 +47,7 @@ int SpuRtAudioCallback( void *outputBuffer, void *inputBuffer,
 {
   try {
     auto p = static_cast<SoundProcessing*>(userData);
-    p->request_audio_data(static_cast<PcmSample*>(outputBuffer), nFrames, streamTime);
+    p->requestAudioData(static_cast<PcmSample*>(outputBuffer), nFrames, streamTime);
   } catch(...) {
     error("SpuRtAudioCallback has error\n");
   }
@@ -144,7 +144,7 @@ static void setzero(PcmSample *buf, u32 nframe) {
 
 static void process_channel(PcmStreamer* ps, PcmSample *dst, 
                             PcmSample *median, PcmSample* channelout, u32 nframe) {
-  if (ps->read_sample_blocks(median, channelout, nframe)) {
+  if (ps->readSampleBlocks(median, channelout, nframe)) {
     VolumeEnvelope* lve = ps->getVolumeEnvelope(true);
     VolumeEnvelope* rve = ps->getVolumeEnvelope(false);
     PcmSample left, right;
@@ -164,7 +164,7 @@ static void process_channel(PcmStreamer* ps, PcmSample *dst,
 
 
 // buf 实际长度 = 通道 * nframe, 通道数据交错存放
-void SoundProcessing::request_audio_data(PcmSample *buf, u32 nframe, double time) {
+void SoundProcessing::requestAudioData(PcmSample *buf, u32 nframe, double time) {
   //spudbg("\r\t\t\t\tReQ audio data %d %f", nframe, time);
   setzero(buf, nframe << 1);
   if (ctrl.r.mute == 0) {
@@ -319,7 +319,7 @@ bool SoundProcessing::check_irq(u32 beginAddr, u32 offset) {
 }
 
 
-AdpcmFlag SoundProcessing::read_adpcm_block(PcmSample *buf, PcmHeader& h) {
+AdpcmFlag SoundProcessing::readAdpcmBlock(PcmSample *buf, PcmHeader& h) {
   const u32 readAddr = h.addr & SPU_MEM_MASK & 0xFFFF'FFF0;
   check_irq(readAddr, SPU_MEM_SIZE);
   AdpcmBlock* af = (AdpcmBlock*) &mem[readAddr];
@@ -361,22 +361,32 @@ AdpcmFlag SoundProcessing::read_adpcm_block(PcmSample *buf, PcmHeader& h) {
 }
 
 
-void SoundProcessing::set_endx_flag(u8 channelIndex) {
+void SoundProcessing::readNoiseSampleBlocks(PcmSample* buf, u32 nframe) {
+  //todo
+}
+
+
+void SoundProcessing::setEndxFlag(u8 channelIndex) {
   endx.set(channelIndex);
 }
 
 
-bool SoundProcessing::is_attack_on(u8 channelIndex) {
+bool SoundProcessing::isAttackOn(u8 channelIndex) {
   bool v = nKeyOn.get(channelIndex);
   nKeyOn.reset(channelIndex);
   return v;
 }
 
 
-bool SoundProcessing::is_release_on(u8 channelIndex) {
+bool SoundProcessing::isReleaseOn(u8 channelIndex) {
   bool v = nKeyOff.get(channelIndex);
   nKeyOff.reset(channelIndex);
   return v;
+}
+
+
+bool SoundProcessing::isNoise(u8 channelIndex) {
+  return nNoise.get(channelIndex);
 }
 
 
@@ -411,7 +421,7 @@ void SoundProcessing::key_on_changed() {
   for (int i=0; i<SPU_CHANNEL_COUNT; ++i) {
     if (nKeyOn.f[i]) {
       endx.f[i] = 0;
-      channel_stream[i]->copy_start_to_repeat();
+      channel_stream[i]->copyStartToRepeat();
     }
   }
 }
@@ -456,14 +466,14 @@ void PcmHeader::set(u32 a, PcmSample h1, PcmSample h2, bool c) {
 }
 
 
-bool PcmHeader::same_addr(PcmHeader& o) {
+bool PcmHeader::sameAddr(PcmHeader& o) {
   return addr == o.addr;
 }
 
 
 static long resample_src_callback(void *cb_data, float **data) {
   PcmResample *p = static_cast<PcmResample*>(cb_data);
-  return p->read_src(data);
+  return p->readSrc(data);
 }
 
 
@@ -477,33 +487,37 @@ PcmResample::PcmResample(PcmStreamer *p) : stage(0), stream(p) {
 
 
 PcmResample::~PcmResample() {
-  src_delete(static_cast<SRC_STATE*>(stage));
+  src_delete(stage);
   delete[] buf;
 }
 
 
-void PcmResample::check_error(int error) {
+void PcmResample::check_error(int error, bool throwErr) {
   if (error) {
     std::string msg = "PCM resample error, ";
     msg += src_strerror(error);
-    throw std::runtime_error(msg);
+    if (throwErr) {
+      throw std::runtime_error(msg);
+    } else {
+      puts(msg.c_str());
+    }
   }
 }
 
 
 bool PcmResample::read(float* out, long frames, double ratio) {
   //src_set_ratio(static_cast<SRC_STATE*>(stage), ratio);
-  if (0 == src_callback_read(static_cast<SRC_STATE*>(stage), ratio, frames, out)) {
-    //check_error(src_error(static_cast<SRC_STATE*>(stage)));
+  if (0 == src_callback_read(stage, ratio, frames, out)) {
+    check_error(src_error(stage));
     return 0;
   }
   return 1;
 }
 
 
-long PcmResample::read_src(float **out) {
+long PcmResample::readSrc(float **out) {
   for (u32 i=0; i<buf_size; ++i) {
-    buf[i] = stream->read_pcm_sample();
+    buf[i] = stream->readPcmSample();
   }
   *out = buf;
   return buf_size;

@@ -6,6 +6,7 @@
 #include <mutex>
 
 class RtAudio;
+extern "C" struct SRC_STATE_tag;
 
 namespace ps1e {
 
@@ -398,7 +399,7 @@ struct PcmHeader {
   bool changed = 0;
 
   void set(u32 a, PcmSample h1, PcmSample h2, bool c = 0);
-  bool same_addr(PcmHeader& o);
+  bool sameAddr(PcmHeader& o);
 };
 
 
@@ -458,12 +459,12 @@ class PcmStreamer {
 public:
   virtual ~PcmStreamer() {}
   // 读取一个原始采样
-  virtual PcmSample read_pcm_sample() = 0;
+  virtual PcmSample readPcmSample() = 0;
   // 读取一个采样块, 经过 adsr/过滤器/重采样, 如果因为某种原因块被忽略(0采样等)返回 false.
-  virtual bool read_sample_blocks(PcmSample *_in, PcmSample *_out, u32 sample_count) = 0;
+  virtual bool readSampleBlocks(PcmSample *_in, PcmSample *_out, u32 sample_count) = 0;
   // 返回的 VolumeEnvelope 由当前 PcmStreamer 对象管理
   virtual VolumeEnvelope* getVolumeEnvelope(bool left) = 0;
-  virtual void copy_start_to_repeat() = 0;
+  virtual void copyStartToRepeat() = 0;
 };
 
 
@@ -471,16 +472,16 @@ class PcmResample {
 private:
   static const u32 buf_size = 64;
   PcmStreamer* stream;
-  void *stage;
+  SRC_STATE_tag *stage;
   float *buf;
-  void check_error(int e);
+  void check_error(int e, bool throwErr = false);
 public:
   PcmResample(PcmStreamer*);
   ~PcmResample();
   // 读取采样后的音频帧, 输出到 out 中
   bool read(float* out, long frames, double ratio);
   // 不要调用, 读取原始音频帧
-  long read_src(float **data);
+  long readSrc(float **data);
 };
 
 
@@ -552,11 +553,11 @@ public:
   // 必要时读取会触发 irq, 读取会检测出数据循环标记并修改循环地址,
   // 如果进入了循环地址, 则执行循环; 应用全部音量包络.
   // _in 通常是前一个通道的输出(FM模式使用) 该缓冲区不会用作其他, 可以随意写入.
-  bool read_sample_blocks(PcmSample *_in, PcmSample *_out, u32 sample_count);
-  void apply_adsr(PcmSample *_in, PcmSample *out, u32 sample_count);
-  void copy_start_to_repeat();
+  bool readSampleBlocks(PcmSample *_in, PcmSample *_out, u32 sample_count);
+  void applyADSR(PcmSample *_in, PcmSample *out, u32 sample_count);
+  void copyStartToRepeat();
   // 从 pcm 缓冲区读取一个采样, 保证效率
-  PcmSample read_pcm_sample();
+  PcmSample readPcmSample();
   VolumeEnvelope* getVolumeEnvelope(bool left);
 };
 
@@ -707,21 +708,21 @@ public:
 
   // 通常为 true 用于对比测试
   bool use_low_pass = true;
-
-  void set_endx_flag(u8 channelIndex);
-  // 查询后复位对应位
-  bool is_attack_on(u8 channelIndex);
-  bool is_release_on(u8 channelIndex);
   void print_fifo();
+  u8 *get_spu_mem();
 
+  void setEndxFlag(u8 channelIndex);
+  // 查询后复位对应位
+  bool isAttackOn(u8 channelIndex);
+  bool isReleaseOn(u8 channelIndex);
+  bool isNoise(u8 channelIndex);
   // 从 spu 内存中的 readAddr 开始, 读取 1 个 SPU-ADPCM 块并解码(块总是 16 字节对齐的).
   // 必要时读取会触发 irq, 返回当前块的 flag, 解码后一个块长度为 28 个采样.
   // 应用混音算法, 将采样与缓冲区中的声音快进行混音.
-  AdpcmFlag read_adpcm_block(PcmSample *buf, PcmHeader& ph);
-  void request_audio_data(PcmSample *buf, u32 nframe, double time);
-  // 仅用于测试
-  u8 *get_spu_mem();
+  AdpcmFlag readAdpcmBlock(PcmSample *buf, PcmHeader& ph);
+  void requestAudioData(PcmSample *buf, u32 nframe, double time);
   u32 getOutputRate();
+  void readNoiseSampleBlocks(PcmSample *buf, u32 nframe);
 };
 
 

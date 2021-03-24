@@ -32,7 +32,7 @@ SPU_CHANNEL_DEF(CONSTRUCT)::SPUChannel(SoundProcessing& parent, Bus& b) :
 }
 
 
-SPU_CHANNEL_DEF(PcmSample)::read_pcm_sample() {
+SPU_CHANNEL_DEF(PcmSample)::readPcmSample() {
   if (pcm_buf_remaining <= 0) {
     // read next block
     if (currentReadAddr.changed) {
@@ -45,7 +45,7 @@ SPU_CHANNEL_DEF(PcmSample)::read_pcm_sample() {
 
     PcmSample prevh1 = currentReadAddr.hist1;
     PcmSample prevh2 = currentReadAddr.hist2;
-    AdpcmFlag flag = spu.read_adpcm_block(pcm_read_buf, currentReadAddr);
+    AdpcmFlag flag = spu.readAdpcmBlock(pcm_read_buf, currentReadAddr);
     pcm_buf_remaining = SPU_PCM_BLK_SZ;
     
     if (flag.loop_start) {
@@ -54,7 +54,7 @@ SPU_CHANNEL_DEF(PcmSample)::read_pcm_sample() {
     }
 
     if (flag.loop_end) {
-      spu.set_endx_flag(Number);
+      spu.setEndxFlag(Number);
 
       if (flag.loop_repeat) {
         currentReadAddr = repeatAddr;
@@ -73,38 +73,36 @@ SPU_CHANNEL_DEF(PcmSample)::read_pcm_sample() {
 }
 
 
-SPU_CHANNEL_DEF(bool)::read_sample_blocks(PcmSample *_in, PcmSample *out, u32 nframe) {
+SPU_CHANNEL_DEF(bool)::readSampleBlocks(PcmSample *_in, PcmSample *out, u32 nframe) {
   const double rate = play_rate;
   if (rate == 0) return false; // 停止工作
-  bool direct = (rate == 1);
   
-  if (!direct) {
-    direct = !resample.read(_in, nframe, rate);
+  if (spu.isNoise(Number)) {
+    spu.readNoiseSampleBlocks(_in, nframe);
+  }
+  else if (!resample.read(_in, nframe, rate)) {
+    return false;
   }
 
-  if (direct) {
-    for (u32 i=0; i<nframe; ++i) {
-      _in[i] = read_pcm_sample();
-    }
-  } else if (spu.use_low_pass) {
+  if (spu.use_low_pass) {
     lowpass.filter(_in, nframe, spu.getOutputRate() / rate);
   }
-  apply_adsr(_in, out, nframe);
+  applyADSR(_in, out, nframe);
   return true;
 }
 
 
-SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample *_in, PcmSample *out, u32 lsize) {
+SPU_CHANNEL_DEF(void)::applyADSR(PcmSample *_in, PcmSample *out, u32 lsize) {
   s32 decay_out = (adsr.r.su_lv +1) *0x800;
   s32 level = adsrVol.r.v;
   
   for (u32 i=0; i<lsize;) {
-    if (spu.is_release_on(Number)) {
+    if (spu.isReleaseOn(Number)) {
       adsr_state = AdsrState::Release;
       adsr_filter.reset(adsr.r.re_md, 1, adsr.r.re_sh, 0);
       adsr_cycles_remaining = 0;
     }
-    else if (spu.is_attack_on(Number)) {
+    else if (spu.isAttackOn(Number)) {
       adsr_state = AdsrState::Attack;
       level = 0;
       adsr_filter.reset(adsr.r.at_md, 0, adsr.r.at_sh, adsr.r.at_st);
@@ -168,7 +166,7 @@ SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample *_in, PcmSample *out, u32 lsize) {
 }
 
 
-SPU_CHANNEL_DEF(void)::copy_start_to_repeat() {
+SPU_CHANNEL_DEF(void)::copyStartToRepeat() {
   pcmRepeatAddr.r.v = pcmStartAddr.r.v;
   repeatAddr.changed = true;
   spudbg("set %d start -> repeat, ken on, adsr %x\n", Number, adsr.r.v);
