@@ -5,6 +5,35 @@
 namespace ps1e_t {
 using namespace ps1e;
 
+static const u16 toneMap[] = {
+  /* a */ 11,
+  /* b */ 24,
+  /* c */ 22,
+  /* d */ 13,
+  /* e */ 3,
+  /* f */ 14,
+  /* g */ 15,
+  /* h */ 16,
+  /* i */ 8,
+  /* j */ 17,
+  /* k */ 18,
+  /* l */ 19,
+  /* m */ 26,
+  /* n */ 25,
+  /* o */ 9,
+  /* p */ 10,
+  /* q */ 1,
+  /* r */ 4,
+  /* s */ 12,
+  /* t */ 5,
+  /* u */ 7,
+  /* v */ 23,
+  /* w */ 2,
+  /* x */ 21,
+  /* y */ 6,
+  /* z */ 20, 
+};
+
 
 class EmuSpu {
 public:
@@ -46,6 +75,20 @@ static void test_spu_reg() {
 }
 
 
+static void print_adsr(u32 v) {
+  static const char* md[] = {"线性", "指数"};
+  static const char* di[] = {"增加", "减少"};
+  ADSRReg a;
+  a.v = v;
+  printf("ADSR %08X A[%s,H%d,T%d] D[H%d] S[%s,%s,H%d,T%d,L%d] R[%s,H%d]\n", 
+         v,
+         md[a.at_md], a.at_sh, a.at_st, 
+         a.de_sh, 
+         di[a.su_di], md[a.su_md], a.su_sh, a.su_st, a.su_lv,
+         md[a.re_md], a.re_sh);
+}
+
+
 // 该测试永不返回
 static void spu_play_sound() {
   const char *fname = "D:\\ps1e\\demo\\YarozeSDK\\PSX\\DATA\\SOUND\\STD0.VB";
@@ -61,9 +104,8 @@ static void spu_play_sound() {
   Bus b(mmu);
 
   // 调试开关
-  const bool use_io           = 1; // 用 bus 总线端口写数据
   const bool remove_loop_flag = 0; // 移除重复标记
-  const bool multi_channel    = 0; // 使用多通道播放不同音色
+  const u32  use_channel_n    = 24; // 使用的通道数量, 从 1-24
 
   SoundProcessing spu(b);
   b.write16(0x1F80'1DA6, 0x200); // address
@@ -73,55 +115,42 @@ static void spu_play_sound() {
   const u16 busy = 1<<10;
   u8* const spu_mem = spu.get_spu_mem() + 0x1000;
   u32 wait_count = 0;
+  u32 channelIdx = 0;
 
-  u32 font[26] = {0x1000};
+  u32 font[0xff] = {0x1000};
   u32 fp = 1;
+  u32 volume = 0;
 
-  if (use_io) {
-    u16 *buf2 = (u16*) buf;
-    for (u32 i = 0; i<(size >> 1); i+=32) {
-      for (u32 x=0; x<32; ++x) {
-        if (((x & 0b111) == 0)) {
-          if ((buf2[i] & 0xff00) == 0x300) {
-            printf("\tRepeat point %x ", (i + x)<<1);
-            if (fp < 26) {
-              printf("save in %d", fp);
-              font[fp++] = ((i + x)<<1) + 0x1000 + 0x10;
-            }
-            putchar('\n');
+  u16 *buf2 = (u16*) buf;
+  for (u32 i = 0; i<(size >> 1); i+=32) {
+    for (u32 x=0; x<32; ++x) {
+      if (((x & 0b111) == 0)) {
+        if ((buf2[i+x] & 0xff00) == 0x300) {
+          printf("\tRepeat point %x ", (i + x)<<1);
+          if (fp < (sizeof(font)/sizeof(u32))) {
+            printf("save in %d", fp);
+            font[fp++] = ((i + x)<<1) + 0x1000 + 0x10;
           }
-          if (remove_loop_flag) {
-            buf2[i+x] = buf2[i+x] & 0x00ff;
-          }
+          putchar('\n');
         }
-        b.write16(0x1F80'1DA8, buf2[i+x]);
+        if (remove_loop_flag) {
+          buf2[i+x] = buf2[i+x] & 0x00ff;
+        }
       }
-      b.write16(0x1F80'1DAA, write_mode);
+      b.write16(0x1F80'1DA8, buf2[i+x]);
+    }
+    b.write16(0x1F80'1DAA, write_mode);
    
-      // wait write
-      while ((b.read16(0x1F80'1DAE) & write_mode) == 0)
-        printf("\rwait write %u %u", i, ++wait_count);
+    // wait write
+    while ((b.read16(0x1F80'1DAE) & write_mode) == 0)
+      printf("\rwait write %u %u", i, ++wait_count);
 
-      // wait not busy
-      //sleep(1); // 必须硬等待到 busy = 1, 然后等待 busy=0
-      while (b.read16(0x1F80'1DAE) & busy)
-        printf("\rwait not busy %u %u", i, ++wait_count);
+    // wait not busy
+    //sleep(1); // 必须硬等待到 busy = 1, 然后等待 busy=0
+    while (b.read16(0x1F80'1DAE) & busy)
+      printf("\rwait not busy %u %u", i, ++wait_count);
 
-      printf("\r\t\t\tWrite %d", i);
-    }
-  } 
-  else {
-    for (u32 i = 0; i<size; i++) {
-      // 删除循环位
-      if (remove_loop_flag && ((i & 0x0F) == 1)) {
-        spu_mem[i] = 0;
-        if (buf[i] == 3) {
-          printf("Repeat point %x\n", i);
-        }
-      } else {
-        spu_mem[i] = buf[i];
-      }
-    }
+    //printf("\r\t\t\tWrite %d", i);
   }
   
   b.write32(0x1F80'1DAA, 0x0000'C083); // Unmute
@@ -135,6 +164,7 @@ static void spu_play_sound() {
     }
   }
 
+  u32 bios_adsr = 0xdfed'8c7a;
   ADSRReg a;
   a.v = 0;
   a.at_md = 1;
@@ -147,74 +177,89 @@ static void spu_play_sound() {
   a.su_md = 1;
   a.su_sh = 0x1f;
   a.su_st = 3;
+
+  printf("BIOS fail:");
+  print_adsr(bios_adsr);
+  printf("DIY succ:");
+  print_adsr(a.v);
   
-  b.write32(0x1F80'1C08, a.v); // adsr
-  b.write32(0x1F80'1C18, a.v); // adsr
-  b.write32(0x1F80'1C28, a.v); // adsr
-  b.write32(0x1F80'1C38, a.v); // adsr
-
-  // 必须移动到正确的位置才能发出正确音色
-  b.write16(0x1F80'1C06, 0x200);
-  // 设定频率 1000h == 44100
-  b.write16(0x1F80'1C04, 0x1000);
-  if (!remove_loop_flag) b.write16(0x1F80'1D88, 0xFFFF'ffff); // Kon
-  //b.write16(0x1F80'1C0E, 0x78C); // 重复地址
-  puts("Wait play sound");
-
-  while (!use_io) {
-    ps1e::sleep(1 * 1000);
+  for (u32 i=0; i<use_channel_n; ++i) {
+    u32 chi = 0x10 * i;
+    b.write32(0x1F80'1C08 +chi, bios_adsr); // adsr
+    b.write16(0x1F80'1C06 +chi, 0x200); // 必须移动到正确的位置才能发出正确音色
+    b.write16(0x1F80'1C04 +chi, 0x1000); // 设定频率 1000h == 44100
+    b.write32(0x1F80'1C00 +chi, volume); // 音量
   }
+  //if (!remove_loop_flag) b.write16(0x1F80'1D88, 0xFFFF'ffff); // Kon
 
-  printf("Press 'a' ~ 'z': ");
+  printf("Press a-z 0-9 [] ,. : ");
   int font_i = 0;
-  u16 pitch;
+  u16 pitch = 0x100;
+  u16 mpitch = 0;
 
   for (;;) {
     int ch = _getch();
-    _putch(ch);
-    if (ch == 0x1b) {// ESC
-      printf("exit sound test");
-      return;
-    }
 
     if (ch > '0' && ch <= '9') {
-      pitch = 0x90 + (ch - '0') * 0x300;
-      goto change_pitch;
+      pitch = 0x100 + (ch - '1') * 0x400;
     } 
-    else if (ch == '=') {
-      pitch += 0x10;
-      goto change_pitch;
-    } 
-    else if (ch == '-') {
-      pitch -= 0x10;
-      goto change_pitch;
-    } 
-    else if (ch == '0') {
-      pitch = 0x1000;
-      goto change_pitch;
+    else if (ch >= 'a' && ch <= 'z') {
+      mpitch = toneMap[ch - 'a'] * 0x90;
     }
-    else if (ch == '/') {
+    else switch (ch) {
+    case '\b':
+      channelIdx = 0;
+      b.write32(0x1F80'1D8C, 0xffff'ffff); // Koff
+      continue;
+    case 0x1b: // ESC
+      printf("exit sound test");
+      return;
+    case '=': case '+':
+      pitch += 0x10;
+      break;
+    case '-': case '_':
+      pitch -= 0x10;
+      break;
+    case '0':
+      pitch = 0x1000;
+      volume = 0x0000'0000;
+      break;
+    case '/':
       spu.use_low_pass = !spu.use_low_pass;
       printf("use low pass %d\n", spu.use_low_pass);
       continue;
+    case '[':
+      volume += 0x0010;
+      b.write32(0x1F80'1C00, volume);
+      break;
+    case ']':
+      volume += 0x0010'0000;
+      break;
+    case '}':
+      volume -= 0x0010'0000;
+      break;
+    case '{':
+      volume -= 0x0010;
+      break;
+    case ',':
+      --font_i;
+      if (font_i < 0) font_i = fp-1;
+      break;
+    case '.':
+      ++font_i;
+      if (font_i >= fp) font_i = 0;
+      break;
     }
 
-    font_i = 'z' - ch;
-    if (font_i >= 0 && font_i < fp) {
-      printf(" %d -%x ", font_i, (font[font_i] + 0x10));
-      goto play_tone;
-    }
+    b.write32(0x1F80'1C00 + (0x10 * channelIdx), volume); //音量
+    b.write16(0x1F80'1C04 + (0x10 * channelIdx), pitch + mpitch); //音高
+    b.write16(0x1F80'1C06 + (0x10 * channelIdx), (font[font_i]) >> 3); // 地址
+    b.write32(0x1F80'1D88, 1 << channelIdx); // Kon
+    printf(" channel %d pitch %d volume %x tone %x\n", 
+        channelIdx, (pitch + mpitch) * (44100/0x1000), volume, font_i);
 
-change_pitch:
-    b.write16(0x1F80'1C04, pitch);
-play_tone:
-    printf(" pitch %d\n", pitch * (44100/0x1000));
-    if (multi_channel) {
-      b.write16(0x1F80'1C06 + (0x10 * (font_i & 0xF)), (font[font_i]) >> 3);
-      b.write16(0x1F80'1D88, 1 << font_i); // Kon
-    } else {
-      b.write16(0x1F80'1C06, (font[font_i]) >> 3);
-      b.write16(0x1F80'1D88, 1); // Kon
+    if (++channelIdx >= use_channel_n) {
+      channelIdx = 0;
     }
   }
 }

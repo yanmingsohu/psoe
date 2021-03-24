@@ -22,6 +22,8 @@ namespace ps1e {
 #define SPU_CHANNEL_COUNT   24
 #define SPU_WORK_FREQ       44100
 #define SPU_ADPCM_RETE      22050
+// 转换 spu 整数音量到浮点值 x[-8000h..+7FFEh] 输出 -n ~ +n 倍, x==0 则没有变化
+#define SPU_F_VOLUME(x)     (1 + s16(x)/float(0x8000) * 2)
 #define not_aligned_nosupport(x) error("Cannot read SPU IO %u, Memory misalignment\n", u32(x))
 
 // 如果 begin 到 begin+size(不包含) 之间穿过了 point 则返回 true, size > 0
@@ -307,15 +309,15 @@ protected:
   }
 
   void set(u8 bitIndex) {
-    f[bitIndex & 0x17] = 1;
+    f[bitIndex & 0x1F] = 1;
   }
 
   void reset(u8 bitIndex) {
-    f[bitIndex & 0x17] = 0;
+    f[bitIndex & 0x1F] = 0;
   }
 
   u8 get(u8 bitIndex) {
-    return f[bitIndex & 0x17];
+    return f[bitIndex & 0x1F];
   }
 
 public:
@@ -400,10 +402,68 @@ struct PcmHeader {
 };
 
 
+// 可以安全的复制, 抽象类
+class VolumeEnvelope {
+public:
+  VolumeEnvelope() {}
+  virtual ~VolumeEnvelope() {};
+  virtual void apply(PcmSample& v) = 0;
+};
+
+
+class VolumeEnvelopeSet : public NonCopy {
+private:
+
+  class DoZero : public VolumeEnvelope {
+  public:
+    void apply(PcmSample& v);
+  };
+
+
+  class FixVol : public VolumeEnvelope {
+   public:
+    PcmSample vol;
+
+    void apply(PcmSample& v);
+    void reset(VolData& vd);
+  };
+
+
+  class Sweep : public VolumeEnvelope {
+   public:
+    SpuAdsr filter;
+    float phase;
+    s32 level;
+    u32 cycles;
+    VolData arg;
+    u8 dir;
+
+    void apply(PcmSample& v);
+    void reset(VolData& vd);
+  };
+
+private:
+  DoZero lz, rz;
+  FixVol lf, rf;
+  Sweep  ls, rs;
+
+public:
+  // 返回的 VolumeEnvelope 由 VolumeEnvelopeSet 管理
+  VolumeEnvelope* get(bool left, VolData& vd);
+  u32 getCurrentSweepVol();
+};
+
+
 class PcmStreamer {
 public:
   virtual ~PcmStreamer() {}
+  // 读取一个原始采样
   virtual PcmSample read_pcm_sample() = 0;
+  // 读取一个采样块, 经过 adsr/过滤器/重采样, 如果因为某种原因块被忽略(0采样等)返回 false.
+  virtual bool read_sample_blocks(PcmSample *_in, PcmSample *_out, u32 sample_count) = 0;
+  // 返回的 VolumeEnvelope 由当前 PcmStreamer 对象管理
+  virtual VolumeEnvelope* getVolumeEnvelope(bool left) = 0;
+  virtual void copy_start_to_repeat() = 0;
 };
 
 
@@ -457,7 +517,7 @@ private:
   // 0x1F801CnE 声音重复地址, 播放时被adpcm数据更新
   SpuIOFunction<SPUChannel, t_ra, AddrReg> pcmRepeatAddr;
   // 0x1F801E0n These are internal registers, normally not used by software
-  SpuIO<SPUChannel, SpuReg, t_cv> currVolume;
+  SpuIOFunction<SPUChannel, t_cv, SpuReg> currVolume;
 
   SoundProcessing& spu;
   PcmHeader currentReadAddr;
@@ -470,6 +530,7 @@ private:
   double play_rate = 0;
   PcmResample resample;
   PcmLowpass lowpass;
+  VolumeEnvelopeSet sweet_ve;
 
   enum class AdsrState : u8 {
     Wait    = 0,
@@ -482,6 +543,7 @@ private:
   void set_start_address(u32 v);
   void set_repeat_addr(u32);
   void set_sample_rate(u32);
+  u32 read_curr_volume();
 
 public:
   SPUChannel(SoundProcessing& parent, Bus& b);
@@ -490,11 +552,12 @@ public:
   // 必要时读取会触发 irq, 读取会检测出数据循环标记并修改循环地址,
   // 如果进入了循环地址, 则执行循环; 应用全部音量包络.
   // _in 通常是前一个通道的输出(FM模式使用) 该缓冲区不会用作其他, 可以随意写入.
-  void read_sample_blocks(PcmSample *_in, PcmSample *_out, u32 sample_count);
+  bool read_sample_blocks(PcmSample *_in, PcmSample *_out, u32 sample_count);
   void apply_adsr(PcmSample *_in, PcmSample *out, u32 sample_count);
   void copy_start_to_repeat();
   // 从 pcm 缓冲区读取一个采样, 保证效率
   PcmSample read_pcm_sample();
+  VolumeEnvelope* getVolumeEnvelope(bool left);
 };
 
 
@@ -602,6 +665,7 @@ private:
 
   // ch0 ... ch23
   SPU_DEF_ALL_CHANNELS(ch, SPU_DEF_VAL)
+  PcmStreamer* channel_stream[24];
 
 private:
   u32 devSampleRate = SPU_WORK_FREQ;
@@ -614,6 +678,8 @@ private:
   u16 fifo[SPU_FIFO_SIZE];
   u8 fifo_point = 0;
   RtAudio* dac;
+  SmallBuf<PcmSample> swap1;
+  SmallBuf<PcmSample> swap2;
 
   // 寄存器函数
   void set_transfer_address(u32 a);

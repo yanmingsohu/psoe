@@ -250,9 +250,11 @@ void Bus::__on_write(psmem addr, u32 v) {
   /*else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
     printf("BUS write JOY %x = %x\n", addr, v);
   }*/
-  //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
-  //  printf("BUS write SPU %x = %x\n", addr, v);
-  //}
+  /*if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
+    if (addr != 0x1F80'1DA8 && addr != 0x1f801daa) {
+      printf("BUS write SPU %x = %x\n", addr, v);
+    }
+  }*/
   // 写入了该地址值 0xf2 导致死循环, 8005616c 处的代码写入
   /*if (addr == 0x800FBB44) {
     ps1e_t::ext_stop = 1;

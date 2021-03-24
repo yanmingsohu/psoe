@@ -8,10 +8,11 @@ namespace ps1e {
 
 #define SPU_INIT_CHANNEL(name, n)  name ## n(*this, b),
 #define SPU_II(name) name(*this, b)
+#define SET_TO_STREAM_ARR(name, n)  channel_stream[n] = &name ## n;
 
 #ifdef SPU_DEBUG_INFO
   void _spudbg(const char* format, ...) {
-    warp_printf(format, "\x1b[32m\x1b[44mSPU: ");
+    warp_printf(format, "\x1b[32m\x1b[44m");
   }
 #endif
 
@@ -44,9 +45,18 @@ int SpuRtAudioCallback( void *outputBuffer, void *inputBuffer,
                         RtAudioStreamStatus status,
                         void *userData ) 
 {
-  auto p = static_cast<SoundProcessing*>(userData);
-  p->request_audio_data(static_cast<PcmSample*>(outputBuffer), nFrames, streamTime);
+  try {
+    auto p = static_cast<SoundProcessing*>(userData);
+    p->request_audio_data(static_cast<PcmSample*>(outputBuffer), nFrames, streamTime);
+  } catch(...) {
+    error("SpuRtAudioCallback has error\n");
+  }
   return 0;
+}
+
+
+void SpuRtErrorCallback(RtAudioError::Type type, const std::string &txt) {
+  error("SpuRtAudioCallback has error %s\n", txt.c_str());
 }
 
 
@@ -54,7 +64,8 @@ int SpuRtAudioCallback( void *outputBuffer, void *inputBuffer,
 // int32: C = A + B - (A * B >> 0x10)
 // float: C = A + B - (A * B)
 static inline PcmSample mixer(PcmSample a, PcmSample b) {
-  return (a + b) - (a * b);
+  //return (a + b) - (a * b);
+  return a + b * 0.1;
 }
   
 
@@ -85,6 +96,7 @@ SoundProcessing::SoundProcessing(Bus& b) :
   mem = new u8[SPU_MEM_SIZE];
   memset(mem, 0, SPU_MEM_SIZE);
   memset(fifo, 0, SPU_FIFO_SIZE << 1);
+  SPU_DEF_ALL_CHANNELS(ch, SET_TO_STREAM_ARR);
   init_dac();
 }
 
@@ -94,7 +106,7 @@ void SoundProcessing::init_dac() {
     dac = new RtAudio();
     RtAudio::StreamParameters parameters;
     parameters.deviceId = dac->getDefaultOutputDevice();
-    parameters.nChannels = 1;
+    parameters.nChannels = 2;
     parameters.firstChannel = 0;
 
     RtAudio::DeviceInfo di = dac->getDeviceInfo(parameters.deviceId);
@@ -102,10 +114,11 @@ void SoundProcessing::init_dac() {
     //devSampleRate = di.preferredSampleRate;
 
     const RtAudioFormat raf = sizeof(PcmSample)==4 ? RTAUDIO_FLOAT32 : RTAUDIO_FLOAT64;
-    dac->openStream(&parameters, NULL, raf,
-                    devSampleRate, &bufferFrames, &SpuRtAudioCallback, this);
+    dac->openStream(&parameters, NULL, raf, devSampleRate, &bufferFrames, 
+                    &SpuRtAudioCallback, this, 0, &SpuRtErrorCallback);
 
-    info("Audio Use %d buffer frames\n", bufferFrames);
+    info("Audio Use %d buffer frames, delay %f ms\n", 
+        bufferFrames, float(bufferFrames)/devSampleRate*1000.0);
     dac->startStream();
   } catch (RtAudioError& e) {
     error("No Sound! %s\n", e.getMessage().c_str());
@@ -129,36 +142,75 @@ static void setzero(PcmSample *buf, u32 nframe) {
 }
 
 
-static void mix(PcmSample *dst, PcmSample *src, u32 nframe) {
-  for (u32 i=0; i<nframe; ++i) {
-    dst[i] = mixer(dst[i], src[i]);
+static void process_channel(PcmStreamer* ps, PcmSample *dst, 
+                            PcmSample *median, PcmSample* channelout, u32 nframe) {
+  if (ps->read_sample_blocks(median, channelout, nframe)) {
+    VolumeEnvelope* lve = ps->getVolumeEnvelope(true);
+    VolumeEnvelope* rve = ps->getVolumeEnvelope(false);
+    PcmSample left, right;
+
+    for (u32 i=0; i < (nframe << 1); i += 2) {
+      left  = channelout[i>>1];
+      right = channelout[i>>1];
+      lve->apply(left);
+      rve->apply(right);
+      dst[i+0] = mixer(dst[i+0], left);
+      dst[i+1] = mixer(dst[i+1], right);
+    }
+  } else {
+    setzero(channelout, nframe);
   }
 }
 
 
+// buf 实际长度 = 通道 * nframe, 通道数据交错存放
 void SoundProcessing::request_audio_data(PcmSample *buf, u32 nframe, double time) {
-  if (nframe != bufferFrames) {
-    error("Cannot use %d buffer frames, set to %d\n", bufferFrames, nframe);
-  }
   //spudbg("\r\t\t\t\tReQ audio data %d %f", nframe, time);
-  setzero(buf, nframe);
-
+  setzero(buf, nframe << 1);
   if (ctrl.r.mute == 0) {
     return;
   }
 
-  std::shared_ptr<PcmSample> p1(new PcmSample[nframe]);
-  std::shared_ptr<PcmSample> p2(new PcmSample[nframe]);
-  setzero(p1.get(), nframe);
+  PcmSample* p1 = swap1.get(nframe);
+  PcmSample* p2 = swap2.get(nframe);
+  setzero(p1, nframe);
 
-  ch0.read_sample_blocks(p1.get(), p2.get(), nframe);
-  mix(buf, p2.get(), nframe);
-  /*ch1.read_sample_blocks(p2.get(), p1.get(), nframe);
-  mix(buf, p1.get(), nframe);
-  ch2.read_sample_blocks(p1.get(), p2.get(), nframe);
-  mix(buf, p2.get(), nframe);
-  ch3.read_sample_blocks(p2.get(), p1.get(), nframe);
-  mix(buf, p1.get(), nframe);*/
+  process_channel( &ch0, buf, p1, p2, nframe);
+  process_channel( &ch1, buf, p2, p1, nframe);
+  process_channel( &ch2, buf, p1, p2, nframe);
+  process_channel( &ch3, buf, p2, p1, nframe);
+  process_channel( &ch4, buf, p1, p2, nframe);
+  process_channel( &ch5, buf, p2, p1, nframe);
+  process_channel( &ch6, buf, p1, p2, nframe);
+  process_channel( &ch7, buf, p2, p1, nframe);
+
+  process_channel( &ch8, buf, p1, p2, nframe);
+  process_channel( &ch9, buf, p2, p1, nframe);
+  process_channel(&ch10, buf, p1, p2, nframe);
+  process_channel(&ch11, buf, p2, p1, nframe);
+  process_channel(&ch12, buf, p1, p2, nframe);
+  process_channel(&ch13, buf, p2, p1, nframe);
+  process_channel(&ch14, buf, p1, p2, nframe);
+  process_channel(&ch15, buf, p2, p1, nframe);
+
+  process_channel(&ch16, buf, p1, p2, nframe);
+  process_channel(&ch17, buf, p2, p1, nframe);
+  process_channel(&ch18, buf, p1, p2, nframe);
+  process_channel(&ch19, buf, p2, p1, nframe);
+  process_channel(&ch20, buf, p1, p2, nframe);
+  process_channel(&ch21, buf, p2, p1, nframe);
+  process_channel(&ch22, buf, p1, p2, nframe);
+  process_channel(&ch23, buf, p2, p1, nframe);
+
+  //TODO 混合CD/混响/外部音源
+  if (mainVol.r.v != 0) {
+    PcmSample main_left  = SPU_F_VOLUME(mainVol.r.v & 0xFFFF);
+    PcmSample main_right = SPU_F_VOLUME(mainVol.r.v >> 16);
+    for (u32 i = 0; i < (nframe<<1); i+=2) {
+      buf[i+0] = buf[i+0] * main_left;
+      buf[i+1] = buf[i+1] * main_right;
+    }
+  }
 }
 
 
@@ -322,7 +374,9 @@ bool SoundProcessing::is_attack_on(u8 channelIndex) {
 
 
 bool SoundProcessing::is_release_on(u8 channelIndex) {
-  return nKeyOff.get(channelIndex);
+  bool v = nKeyOff.get(channelIndex);
+  nKeyOff.reset(channelIndex);
+  return v;
 }
 
 
@@ -353,15 +407,11 @@ void SoundProcessing::set_ctrl_req(u32) {
 }
 
 
-#define SPU_CASE_COPY(name, n)  case n: name ## n.copy_start_to_repeat();
-
 void SoundProcessing::key_on_changed() {
-  for (u8 i=0; i<SPU_CHANNEL_COUNT; ++i) {
+  for (int i=0; i<SPU_CHANNEL_COUNT; ++i) {
     if (nKeyOn.f[i]) {
       endx.f[i] = 0;
-      switch (i) {
-        SPU_DEF_ALL_CHANNELS(ch, SPU_CASE_COPY)
-      }
+      channel_stream[i]->copy_start_to_repeat();
     }
   }
 }
@@ -497,5 +547,77 @@ void PcmLowpass::filter(PcmSample *data, u32 frame, double freq) {
   }
 }
 
+
+VolumeEnvelope* VolumeEnvelopeSet::get(bool left, VolData& vd) {
+  if (vd.mode == 0) {
+    if (vd.vol == 0) {
+      return left ? &lz : &rz;
+    } else {
+      FixVol* f = left ? &lf : &rf;
+      f->reset(vd);
+      return f;
+    }
+  }
+
+  Sweep* s = left ? &ls : &rs;
+  s->reset(vd);
+  return s;
+}
+
+
+void VolumeEnvelopeSet::Sweep::apply(PcmSample& v) {
+  if (cycles <= 0) {
+    if (dir == 0 && level > 0x7fff) {
+      dir = 1;
+      level = 0x7fff;
+      filter.reset(arg.mode, dir, arg.shift, arg.step);
+    }
+    else if (dir == 1 && level < 0) {
+      dir = 0;
+      level = 0;
+      filter.reset(arg.mode, dir, arg.shift, arg.step);  
+    }
+    filter.next(level, cycles);
+  }
+  --cycles;
+  //当前音量将增加到+ 7FFFh，或减少到0000h
+  v *= (float(level) / float(0x8000)) * phase;
+}
+
+
+void VolumeEnvelopeSet::Sweep::reset(VolData& vd) {
+  if (vd.v != arg.v) {
+    filter.reset(vd.mode, vd.dir, vd.shift, vd.step);
+    arg = vd;
+    dir = vd.dir;
+    cycles = 0;
+    level = 0;//??
+    if (vd.phase == 0 || vd.mode == 0) {
+      phase = 1;
+    } else if (vd.phase == 1) {
+      phase = -1;
+    }
+  }
+}
+
+
+void VolumeEnvelopeSet::FixVol::apply(PcmSample& v) {
+  v *= vol;
+}
+
+
+void VolumeEnvelopeSet::FixVol::reset(VolData& vd) {
+  vol = SPU_F_VOLUME(vd.vol << 1);
+}
+
+
+void VolumeEnvelopeSet::DoZero::apply(PcmSample& v) {
+  //Do nothing
+}
+
+
+u32 VolumeEnvelopeSet::getCurrentSweepVol() {
+  return ls.level & (rs.level << 16);
+}
 
 }

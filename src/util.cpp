@@ -292,6 +292,23 @@ void print_hex(const char* title, u8* data, u32 size, s32 addrOffset) {
 }
 
 
+void print_binary(u32 v) {
+  PrintfBuf buf;
+  for (int i=31; i>=0; --i) {
+    buf.printf("%02d ", i);
+  }
+  buf.putchar('\n');
+  for (int i=31; i>=0; --i) {
+    if (((1<<i) & v) == 0) {
+      buf.printf("__ ");
+    } else {
+      buf.printf(".1 ");
+    }
+  }
+  buf.putchar('\n');
+}
+
+
 void sleep(int ms) {
   std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }

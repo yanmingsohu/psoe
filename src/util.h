@@ -6,6 +6,7 @@
 #include <list>
 #include <unordered_set>
 #include <stdarg.h>
+#include <memory>
 
 namespace ps1e_t {
   extern int ext_stop;
@@ -210,6 +211,26 @@ public:
 };
 
 
+// 一小块循环利用的缓存, 线程不安全, 可以动态增大缓冲区的尺寸
+template<class T>
+class SmallBuf {
+private:
+  std::shared_ptr<T> buf;
+  u32 size;
+public:
+  SmallBuf() : size(0) {}
+  // 获取缓冲区, 必要时重新分配内存, 缓冲区所有者为 SmallBuf,
+  // 返回的指针声明期不能超过 SmallBuf.
+  T* get(u32 nsize) {
+    if (nsize > size) {
+      buf.reset(new T[nsize]);
+      size = nsize;
+    }
+    return buf.get();
+  }
+};
+
+
 // 返回 reserve 和 set 逐位运算的结果.
 // 该运算使 set 中的位复制到 reserve 中, 如果对应 reserveMask 位是 1,
 // 否则 reserve 中的位不变.
@@ -225,6 +246,7 @@ bool    free_exec(void* p, size_t size = 0);
 size_t  get_page_size();
 void    print_code(const char* src);
 void    print_hex(const char* title, u8* data, u32 size, s32 addrOffset = 0);
+void    print_binary(u32 v);
 size_t  readFile(void *buf, size_t bufsize, char const* filename);
 size_t  this_thread_id();
 u32     add_us(u32, s32);

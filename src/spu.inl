@@ -23,10 +23,12 @@ SPU_CHANNEL_DEF(CONSTRUCT)::SPUChannel(SoundProcessing& parent, Bus& b) :
   adsr(*this, b), 
   adsrVol(*this, b), 
   pcmRepeatAddr(*this, b, &SPUChannel::set_repeat_addr), 
-  currVolume(*this, b),
+  currVolume(*this, b, 0, &SPUChannel::read_curr_volume),
   resample(this),
   lowpass(/*parent.getOutputRate()*/)
 {
+  /*printf("InitCH %d vol.%x rate.%x addr.%x adsrvol.%x repeat.%x cval.%x\n", 
+         Number, t_vol, t_sr, t_sa, t_adsr, t_acv, t_ra, t_cv);*/
 }
 
 
@@ -71,11 +73,11 @@ SPU_CHANNEL_DEF(PcmSample)::read_pcm_sample() {
 }
 
 
-//TODO 双声道
-SPU_CHANNEL_DEF(void)::read_sample_blocks(PcmSample *_in, PcmSample *out, u32 nframe) {
+SPU_CHANNEL_DEF(bool)::read_sample_blocks(PcmSample *_in, PcmSample *out, u32 nframe) {
   const double rate = play_rate;
-  bool direct = (rate == 0 || rate == 1);
-
+  if (rate == 0) return false; // 停止工作
+  bool direct = (rate == 1);
+  
   if (!direct) {
     direct = !resample.read(_in, nframe, rate);
   }
@@ -85,28 +87,26 @@ SPU_CHANNEL_DEF(void)::read_sample_blocks(PcmSample *_in, PcmSample *out, u32 nf
       _in[i] = read_pcm_sample();
     }
   } else if (spu.use_low_pass) {
-    //TODO 低通滤波 
     lowpass.filter(_in, nframe, spu.getOutputRate() / rate);
   }
   apply_adsr(_in, out, nframe);
+  return true;
 }
 
 
 SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample *_in, PcmSample *out, u32 lsize) {
   s32 decay_out = (adsr.r.su_lv +1) *0x800;
   s32 level = adsrVol.r.v;
-  //const u32 lsize = blockcount * SPU_PCM_BLK_SZ;
-
+  
   for (u32 i=0; i<lsize;) {
     if (spu.is_release_on(Number)) {
-      //TODO 不知道是否应该复位 nKeyOff
       adsr_state = AdsrState::Release;
       adsr_filter.reset(adsr.r.re_md, 1, adsr.r.re_sh, 0);
       adsr_cycles_remaining = 0;
     }
     else if (spu.is_attack_on(Number)) {
       adsr_state = AdsrState::Attack;
-      adsrVol.r.v = 0;
+      level = 0;
       adsr_filter.reset(adsr.r.at_md, 0, adsr.r.at_sh, adsr.r.at_st);
       adsr_cycles_remaining = 0;
     }
@@ -128,10 +128,14 @@ SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample *_in, PcmSample *out, u32 lsize) {
         level = 0;
         adsr_state = AdsrState::Wait;
       }
-      //break; no break;
+      break;
 
     case AdsrState::Wait:
-      return;
+      while (i < lsize) {
+        out[i] = 0;
+        ++i;
+      }
+      break;
 
     case AdsrState::Attack:
       adsr_filter.next(level, adsr_cycles_remaining);
@@ -158,9 +162,8 @@ SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample *_in, PcmSample *out, u32 lsize) {
       else if (level > 0x7fff) level = 0x7fff;
       break;
     }
-    //printf("%d %d \n", adsr_state, level);
   }
-
+  //printf("\r%d %d", Number, level);
   adsrVol.r.v = u32(level) & 0x07FFF;
 }
 
@@ -168,6 +171,7 @@ SPU_CHANNEL_DEF(void)::apply_adsr(PcmSample *_in, PcmSample *out, u32 lsize) {
 SPU_CHANNEL_DEF(void)::copy_start_to_repeat() {
   pcmRepeatAddr.r.v = pcmStartAddr.r.v;
   repeatAddr.changed = true;
+  spudbg("set %d start -> repeat, ken on, adsr %x\n", Number, adsr.r.v);
 }
 
 
@@ -191,6 +195,19 @@ SPU_CHANNEL_DEF(void)::set_sample_rate(u32 v) {
   } else {
     play_rate = r;
   }
+  spudbg("set channel %d sample rate %f\n", Number, r);
+}
+
+
+SPU_CHANNEL_DEF(VolumeEnvelope*)::getVolumeEnvelope(bool left) {
+  VolData vd = (left ? volume.r.left : volume.r.right);
+  return sweet_ve.get(left, vd);
+}
+
+
+SPU_CHANNEL_DEF(u32)::read_curr_volume() {
+  // 只返回了扫频音量, 不知道是否应该在普通模式返回 volume
+  return sweet_ve.getCurrentSweepVol();
 }
 
 
