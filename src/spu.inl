@@ -78,7 +78,7 @@ SPU_CHANNEL_DEF(bool)::readSampleBlocks(PcmSample *_in, PcmSample *out, u32 nfra
   
   if (spu.isNoise(Number)) {
     spu.readNoiseSampleBlocks(_in, nframe);
-    // 扫描模式是否启用adsr?
+    //TODO: 扫描/噪音模式是否启用adsr?
     applyADSR(_in, out, nframe);
     return true;
   }

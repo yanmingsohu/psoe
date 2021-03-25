@@ -754,6 +754,10 @@ public:
   bool isReleaseOn(u8 channelIndex); // 查询后复位对应位
   bool isNoise(u8 channelIndex);
   bool usePrevChannelFM(u8 channelIndex);
+  bool isEnableEcho(u8 channelIndex);
+  bool isEnableCDEcho();
+  bool isEnableExternalEcho();
+  bool isEnableCDVolume();
   // 从 spu 内存中的 readAddr 开始, 读取 1 个 SPU-ADPCM 块并解码(块总是 16 字节对齐的).
   // 必要时读取会触发 irq, 返回当前块的 flag, 解码后一个块长度为 28 个采样.
   // 应用混音算法, 将采样与缓冲区中的声音快进行混音.

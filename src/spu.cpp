@@ -301,13 +301,49 @@ void SoundProcessing::copy_fifo_to_mem() {
 }
 
 
+//TODO: DMA 应用FIFO, 待测试
 void SoundProcessing::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
-  throw std::runtime_error("not implement DMA RAM to Device"); 
+  std::lock_guard<std::mutex> _lk(for_copy_data);
+  if (SpuDmaDir(ctrl.r.dma_trs) != SpuDmaDir::DMAwrite) return;
+  status.r.busy = 1;
+
+  u32 waddr = mem_write_addr;
+  u32 *m32  = (u32*) mem;
+  const int step = inc << 2;
+  const int len = bytesize >> 2;
+
+  for (int i=0; i < len; ++i) {
+    m32[i + waddr] = bus.read32(addr);
+    addr += step;
+  }
+
+  check_irq(waddr, bytesize);
+  status.r.busy = 0;
+  status.r.dma_w = 0;
+  status.r.dma_rw = 0;
 }
 
 
+//TODO: DMA 应用FIFO, 待测试
 void SoundProcessing::dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) {
-  throw std::runtime_error("not implement DMA Device to RAM");
+  std::lock_guard<std::mutex> _lk(for_copy_data);
+  if (SpuDmaDir(ctrl.r.dma_trs) != SpuDmaDir::DMAread) return;
+  status.r.busy = 1;
+
+  u32 waddr = mem_write_addr;
+  u32 *m32  = (u32*) mem;
+  const int step = inc << 2;
+  const int len = bytesize >> 2;
+
+  for (int i=0; i < len; ++i) {
+    bus.write32(addr, m32[i + waddr]);
+    addr += step;
+  }
+
+  check_irq(waddr, bytesize);
+  status.r.busy = 0;
+  status.r.dma_r = 0;
+  status.r.dma_rw = 0;
 }
 
 
@@ -415,6 +451,26 @@ bool SoundProcessing::usePrevChannelFM(u8 channelIndex) {
 }
 
 
+bool SoundProcessing::isEnableEcho(u8 channelIndex) {
+  return ctrl.r.mst_rev && nReverb.get(channelIndex);
+}
+
+
+bool SoundProcessing::isEnableCDEcho() {
+  return ctrl.r.mst_rev && ctrl.r.cda_rev;
+}
+
+
+bool SoundProcessing::isEnableCDVolume() {
+  return ctrl.r.cda_enb;
+}
+
+
+bool SoundProcessing::isEnableExternalEcho() {
+  return ctrl.r.mst_rev && ctrl.r.exa_rev;
+}
+
+
 void SoundProcessing::print_fifo() {
   PrintfBuf buf;
   buf.printf("FIFO point %x\n", fifo_point);
@@ -464,8 +520,22 @@ u32 SoundProcessing::get_var(SpuChVarFlag f, int c) {
 
 
 void SoundProcessing::set_ctrl_req(u32, u32) {
-  if (ctrl.r.dma_trs == u8(SpuDmaDir::ManualWrite)) {
-    trigger_manual_write();
+  switch (SpuDmaDir(ctrl.r.dma_trs)) {
+    case SpuDmaDir::ManualWrite:
+      trigger_manual_write();
+      break;
+
+    case SpuDmaDir::DMAread:
+      status.r.dma_trs = ctrl.r.dma_trs;
+      status.r.dma_r = 1;
+      status.r.dma_rw = 1;
+      break;
+
+    case SpuDmaDir::DMAwrite:
+      status.r.dma_trs = ctrl.r.dma_trs;
+      status.r.dma_w = 1;
+      status.r.dma_rw = 1;
+      break;
   }
 }
 
