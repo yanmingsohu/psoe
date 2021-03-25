@@ -74,25 +74,35 @@ SPU_CHANNEL_DEF(PcmSample)::readPcmSample() {
 
 
 SPU_CHANNEL_DEF(bool)::readSampleBlocks(PcmSample *_in, PcmSample *out, u32 nframe) {
-  const double rate = play_rate;
-  if (rate == 0) return false; //TODO 停止工作, 噪音模式?
   if (adsr.r.v == 0) return false; //TODO: 待验证 ADSR 为0停止工作??
   
   if (spu.isNoise(Number)) {
     spu.readNoiseSampleBlocks(_in, nframe);
+    // 扫描模式是否启用adsr?
+    applyADSR(_in, out, nframe);
+    return true;
   }
-  else if (resample.read(_in, nframe, rate)) {
+  
+  double rate;
+  if (Number>0 && spu.usePrevChannelFM(Number)) {
+    //TODO: 每个音频帧改变
+    double orate = spu.getOutputRate();
+    double irate = (1.0+ _in[0]) * double(0x1000) * (double(SPU_WORK_FREQ) / double(0x1000));
+    rate = orate/irate;
+  } else {
+    rate = play_rate;
+  }
+  // 停止工作, 跳过一个音频块
+  if (rate == 0) return false;
+
+  if (resample.read(_in, nframe, rate)) {
     if (spu.use_low_pass) {
       lowpass.filter(_in, nframe, spu.getOutputRate() / rate);
     }
+    applyADSR(_in, out, nframe);
+    return true;
   }
-  else {
-    return false;
-  }
-
-  // 扫描模式是否启用adsr?
-  applyADSR(_in, out, nframe);
-  return true;
+  return false;
 }
 
 

@@ -138,6 +138,19 @@ static void print_register(SoundProcessing& spu) {
 }
 
 
+static void print_switch(SoundProcessing& spu) {
+  PrintfBuf b;
+  b.printf("ECHO\n");
+  b.bit(spu.get_var(SpuChVarFlag::echo, -1), "|");
+  b.printf("FM\n");
+  b.bit(spu.get_var(SpuChVarFlag::fm, -1), "|");
+  b.printf("NOISE\n");
+  b.bit(spu.get_var(SpuChVarFlag::noise, -1), "|");
+  b.printf("END\n");
+  b.bit(spu.get_var(SpuChVarFlag::endx, -1), "|");
+}
+
+
 static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag) {
   u32 bufsize = 512*1024;
   u8 *buf = new u8[bufsize];
@@ -185,15 +198,14 @@ static void scan_loop_point(SoundProcessing& spu, u32 *font, u32& size) {
   u8* const spu_mem = spu.get_spu_mem();
   u32 fp = 0;
   PrintfBuf pb;
-  pb.printf("Repeat point:\n");
+  pb.printf("\nRepeat point:\n");
 
   for (u32 i=1; i<SPU_MEM_SIZE; i+= 0x10) {
     if ((spu_mem[i] & 0x03) == 0x03) {
-      pb.printf(" %6x", i);
-
       if (fp < size) {
-        pb.printf(" -> %4d\t", fp);
+        pb.printf(BLUE("  %05x->%3d"), i, fp);
         font[fp] = (i) + 0x10;
+        if ((fp & 3)==3) pb.putchar('\n');
         ++fp;
       } else {
         warn("Insufficient font point space\n");
@@ -206,7 +218,7 @@ static void scan_loop_point(SoundProcessing& spu, u32 *font, u32& size) {
 }
 
 
-void play_spu_current_font(SoundProcessing& spu, Bus& b, bool use_channel_n) {
+void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
   u32 font[0xff] = {0x1000};
   u32 fp = sizeof(font) / sizeof(u32);
   u32 volume = 0;
@@ -215,9 +227,10 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, bool use_channel_n) {
   u16 mpitch = 0;
   u32 channelIdx = 0;
   u32 noise = 0;
+  u32 nfm = 0;
   
-  printf(YELLOW("\nSpu Play Mode Press ? to help > "));
   scan_loop_point(spu, font, fp);
+  printf(YELLOW("Spu Play Mode Press ? to help > "));
 
   for (;;) {
     int ch = _getch();
@@ -232,20 +245,26 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, bool use_channel_n) {
     else switch (ch) {
     case '?': {
       PrintfBuf b;
-      b.printf("\tpress `a-z` play note\n");
-      b.printf("\tpress [ ] up left/right volume\n");
-      b.printf("\tpress { } down left/right volume, maybe change to sweet mode\n");
-      b.printf("\tpress BS stop all note\n");
-      b.printf("\tpress ESC exit\n");
-      b.printf("\tpress = - 123456789 chang pitch\n");
-      b.printf("\tpress 0 reset pitch and volume\n");
-      b.printf("\tpress / switch low pass filter\n");
-      b.printf("\tpress ,. change timbre\n");
-      b.printf("\tpreee ` switch channel 0 noise\n");
-      b.printf("\tpreee ENTER show spu register.\n");
-      b.printf("\tpreee ? show help\n");
+      b.printf("\tpress =-123456789   chang pitch\n");
+      b.printf("\tpress a-z           play note\n");
+      b.printf("\tpress [ ]           up left/right volume\n");
+      b.printf("\tpress { }           down left/right volume, maybe change to sweet mode\n");
+      b.printf("\tpress BS            stop all note\n");
+      b.printf("\tpress 0             reset pitch and volume\n");
+      b.printf("\tpress /             switch low pass filter\n");
+      b.printf("\tpress ,.            change timbre\n");
+      b.printf("\tpreee `             switch channel 0 noise\n");
+      b.printf("\tpreee TAB           switch channel 1 Pitch Modulation\n");
+      b.printf("\tpreee ENTER         show spu register.\n");
+      b.printf("\tpreee \\             show spu channel switch.\n");
+      b.printf("\tpress ESC           exit\n");
+      b.printf("\tpreee ?             show help\n");
       continue;
       }
+
+    case '\\':
+      print_switch(spu);
+      continue;
 
     case '\b':
       channelIdx = 0;
@@ -309,6 +328,16 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, bool use_channel_n) {
         printf("Open ch0 noise\n");
       }
       b.write32(0x1F80'1D94, noise);
+
+    case '\t':
+      if (nfm) {
+        nfm = 0;
+        printf("Close ch1 fm\n");
+      } else {
+        nfm = 1<<1;
+        printf("Open ch1 fm\n");
+      }
+      b.write32(0x1F80'1D90, nfm);
       continue;
 
     case '\r':

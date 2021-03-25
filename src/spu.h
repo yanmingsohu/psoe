@@ -11,6 +11,8 @@ extern "C" struct SRC_STATE_tag;
 namespace ps1e {
 
 #define SPU_DEBUG_INFO
+// 自动压限会影响性能
+#define SPU_AUTO_LIMIT_VOLUME
 // 512K
 #define SPU_MEM_SIZE        0x8'0000
 #define SPU_MEM_MASK        (SPU_MEM_SIZE-1)
@@ -74,6 +76,7 @@ enum class SpuChVarFlag : u32 {
   endx,
   fm,
   noise,
+  echo,
   __end_core__,
 };
 
@@ -750,6 +753,7 @@ public:
   bool isAttackOn(u8 channelIndex); // 查询后复位对应位
   bool isReleaseOn(u8 channelIndex); // 查询后复位对应位
   bool isNoise(u8 channelIndex);
+  bool usePrevChannelFM(u8 channelIndex);
   // 从 spu 内存中的 readAddr 开始, 读取 1 个 SPU-ADPCM 块并解码(块总是 16 字节对齐的).
   // 必要时读取会触发 irq, 返回当前块的 flag, 解码后一个块长度为 28 个采样.
   // 应用混音算法, 将采样与缓冲区中的声音快进行混音.

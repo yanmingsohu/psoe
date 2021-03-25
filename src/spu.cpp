@@ -38,13 +38,21 @@ static const PcmSample adpcm_coefs_dict[16][2] = {
     { 0.109375  , -0.9375    }, //{   7.0 / 64.0 , -60.0 / 64.0 },
 };
 
+static PcmSample fix_volume_overload = 0.18;
 
 // 混音算法 
 // int32: C = A + B - (A * B >> 0x10)
 // float: C = A + B - (A * B)
 static inline PcmSample mixer(PcmSample a, PcmSample b) {
   //return (a + b) - (a * b);
-  return a + b * 0.3;
+  PcmSample r = a + b * fix_volume_overload;
+#ifdef SPU_AUTO_LIMIT_VOLUME
+  if (r > 1.0 || r < -1.0) {
+    fix_volume_overload -= 0.001;
+    warn("Volume overload %f\n", fix_volume_overload);
+  }
+#endif
+  return r;
 }
 
 
@@ -402,6 +410,11 @@ bool SoundProcessing::isNoise(u8 channelIndex) {
 }
 
 
+bool SoundProcessing::usePrevChannelFM(u8 channelIndex) {
+  return nFM.get(channelIndex);
+}
+
+
 void SoundProcessing::print_fifo() {
   PrintfBuf buf;
   buf.printf("FIFO point %x\n", fifo_point);
@@ -442,6 +455,9 @@ u32 SoundProcessing::get_var(SpuChVarFlag f, int c) {
 
     case SpuChVarFlag::noise:
       return nNoise.read();
+
+    case SpuChVarFlag::echo:
+      return nReverb.read();
   }
   return 0;
 }
