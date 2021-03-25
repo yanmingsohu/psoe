@@ -39,6 +39,15 @@ static const PcmSample adpcm_coefs_dict[16][2] = {
 };
 
 
+// 混音算法 
+// int32: C = A + B - (A * B >> 0x10)
+// float: C = A + B - (A * B)
+static inline PcmSample mixer(PcmSample a, PcmSample b) {
+  //return (a + b) - (a * b);
+  return a + b * 0.3;
+}
+
+
 int SpuRtAudioCallback( void *outputBuffer, void *inputBuffer,
                         unsigned int nFrames,
                         double streamTime,
@@ -57,15 +66,6 @@ int SpuRtAudioCallback( void *outputBuffer, void *inputBuffer,
 
 void SpuRtErrorCallback(RtAudioError::Type type, const std::string &txt) {
   error("SpuRtAudioCallback has error %s\n", txt.c_str());
-}
-
-
-// 混音算法 
-// int32: C = A + B - (A * B >> 0x10)
-// float: C = A + B - (A * B)
-static inline PcmSample mixer(PcmSample a, PcmSample b) {
-  //return (a + b) - (a * b);
-  return a + b * 0.1;
 }
   
 
@@ -419,6 +419,46 @@ void SoundProcessing::print_fifo() {
 
 u8* SoundProcessing::get_spu_mem() {
   return mem;
+}
+
+
+void SoundProcessing::print_var(SpuChVarFlag f) {
+#define CALL_GET_VAR(name, n)  b.printf(" %4x", name ## n.getVar(f)); if (n == 11) b.put('\n');
+  static const char* space = "  ";
+  PrintfBuf b;
+  switch (f) {
+    case SpuChVarFlag::volume:
+      b.printf(" VOL"); break;
+    case SpuChVarFlag::work_volume:
+      b.printf("Wvol"); break;
+    case SpuChVarFlag::sample_rate:
+      b.printf("RATE"); break;
+    case SpuChVarFlag::start_address:
+      b.printf("Sadr"); break;
+    case SpuChVarFlag::repeat_address:
+      b.printf("Radr"); break;
+    case SpuChVarFlag::adsr:
+      b.printf("ADSR"); break;
+    case SpuChVarFlag::adsr_volume:
+      b.printf("Avol"); break;
+    case SpuChVarFlag::adsr_state:
+      b.printf("Aste"); break;
+    default: 
+      b.printf("Key On\n");
+      b.bit(nKeyOn.read(), space);
+      b.printf("Key Off\n");
+      b.bit(nKeyOff.read(), space);
+      b.printf("ENDx\n");
+      b.bit(endx.read(), space);
+      b.printf("FM\n");
+      b.bit(nFM.read(), space);
+      b.printf("Noise\n");
+      b.bit(nNoise.read(), space);
+      return;
+  }
+  b.putchar('\n');
+  SPU_DEF_ALL_CHANNELS(ch, CALL_GET_VAR);
+  b.putchar('\n');
 }
 
 

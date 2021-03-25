@@ -294,18 +294,7 @@ void print_hex(const char* title, u8* data, u32 size, s32 addrOffset) {
 
 void print_binary(u32 v) {
   PrintfBuf buf;
-  for (int i=31; i>=0; --i) {
-    buf.printf("%02d ", i);
-  }
-  buf.putchar('\n');
-  for (int i=31; i>=0; --i) {
-    if (((1<<i) & v) == 0) {
-      buf.printf("__ ");
-    } else {
-      buf.printf(".1 ");
-    }
-  }
-  buf.putchar('\n');
+  buf.bit(v);
 }
 
 
@@ -379,6 +368,24 @@ void PrintfBuf::printf(const char* fmt, ...) {
     wc += cu;
   }
   __crt_va_end(__args);
+}
+
+
+void PrintfBuf::bit(u32 v, const char* prefix) {
+  if (prefix) printf("%s", prefix);
+  for (int i=31; i>=0; --i) {
+    printf("%02d ", i);
+  }
+  putchar('\n');
+  if (prefix) printf("%s", prefix);
+  for (int i=31; i>=0; --i) {
+    if (((1<<i) & v) == 0) {
+      printf("__ ");
+    } else {
+      printf(".1 ");
+    }
+  }
+  putchar('\n');
 }
 
 

@@ -51,6 +51,27 @@ class SoundProcessing;
 class PcmLowpassInner;
 
 
+enum class SpuDmaDir : u8 {
+  Stop = 0,
+  ManualWrite = 1,
+  DMAwrite = 2,
+  DMAread = 3,
+};
+
+
+enum class SpuChVarFlag : u32 {
+  volume = 1,
+  work_volume,
+  sample_rate,
+  start_address,
+  repeat_address,
+  adsr,
+  adsr_volume,
+  adsr_state,
+  __end,
+};
+
+
 //
 // Bit0-1的可能组合为:
 //  Code 0 = Normal     (continue at next 16-byte block)
@@ -151,14 +172,6 @@ union VolumnReg {
     VolData left;
     VolData right;
   };
-};
-
-
-enum class SpuDmaDir : u8 {
-  Stop = 0,
-  ManualWrite = 1,
-  DMAwrite = 2,
-  DMAread = 3,
 };
 
 
@@ -473,6 +486,8 @@ public:
   virtual void copyStartToRepeat() = 0;
   // 同步音量, 在 apply 的时候音量可能更改, 将更改的音量同步回寄存器
   virtual void syncVol(VolumeEnvelope* left, VolumeEnvelope *right) = 0;
+  // 用于测试目的, 返回内部变量的值
+  virtual u32 getVar(SpuChVarFlag) = 0;
 };
 
 
@@ -569,6 +584,7 @@ public:
   PcmSample readPcmSample();
   VolumeEnvelope* getVolumeEnvelope(bool left);
   void syncVol(VolumeEnvelope* left, VolumeEnvelope *right);
+  u32 getVar(SpuChVarFlag);
 };
 
 
@@ -722,11 +738,11 @@ public:
   bool use_low_pass = true;
   void print_fifo();
   u8 *get_spu_mem();
+  void print_var(SpuChVarFlag);
 
   void setEndxFlag(u8 channelIndex);
-  // 查询后复位对应位
-  bool isAttackOn(u8 channelIndex);
-  bool isReleaseOn(u8 channelIndex);
+  bool isAttackOn(u8 channelIndex); // 查询后复位对应位
+  bool isReleaseOn(u8 channelIndex); // 查询后复位对应位
   bool isNoise(u8 channelIndex);
   // 从 spu 内存中的 readAddr 开始, 读取 1 个 SPU-ADPCM 块并解码(块总是 16 字节对齐的).
   // 必要时读取会触发 irq, 返回当前块的 flag, 解码后一个块长度为 28 个采样.

@@ -205,6 +205,9 @@ public:
   // 写入的总长度不能超过 1000
   void printf(const char* fmt, ...);
   void putchar(char c);
+  // 打印 32 bit 状态
+  void bit(u32, const char* prefix = 0);
+  void put(char c) { putchar(c); }
   void flush();
   // 不输出清除所有数据
   void reset();

@@ -64,7 +64,7 @@ static void test_mips_inter() {
   bus.bind_irq_receiver(&cpu);
   cpu.reset();
   //test_gpu(gpu, bus); //!!
-  debug_system(cpu, bus, mmu);
+  debug_system(cpu, bus, mmu, spu);
 
   //cdrom.CmdInit();
   //cdrom.CmdMotorOn();
@@ -84,7 +84,7 @@ static bool inputHexVal(const char* msg, u32& d) {
 }
 
 
-void debug_system(R3000A& cpu, Bus& bus, MMU& mmu) {
+void debug_system(R3000A& cpu, Bus& bus, MMU& mmu, SoundProcessing& spu) {
   DisassemblyMips disa(cpu);
   int ext_count = 0;
   int show_code = 10;
@@ -205,14 +205,33 @@ wait_input:
           }
           goto wait_input;
 
-        case 'h':
-          printf("\n'r' show reg.       'x' run, hide debug.  \n");
-          printf("'1' debug 100.      'a' show address value.\n");
-          printf("'2' debug 10000.    '3' debug 1000000.\n");
-          printf("'0' Reset.          'w' write memory.\n");
-          printf("'b' set break.      'Enter' next op\n");
-          printf("'h' show help.      'ESC' Exit.\n");
+        case 's':
+          if (inputHexVal("Address HEX:", address)) {
+            print_hex("SPU MEM", spu.get_spu_mem()+address, 128, address-s32(spu.get_spu_mem()));
+          }
           goto wait_input;
+
+        case 'd':
+          for (u32 i=1; i<=u32(SpuChVarFlag::__end); ++i) {
+            spu.print_var(SpuChVarFlag(i));
+          }
+          goto wait_input;
+
+        case 'm':
+          bus.write32(0x1F80'1D8C, 0xffff'ffff); // Koff
+          goto wait_input;
+
+        case 'h': {
+          PrintfBuf pb;
+          pb.putchar('\n');
+          pb.printf("'r' show reg     'x' run, hide debug     's' dump spu memory\n");
+          pb.printf("'1' debug 100    'a' show address value  'm' stop all sound\n");
+          pb.printf("'2' debug 10000  '3' debug 1000000       'd' show spu register\n");
+          pb.printf("'0' Reset        'w' write memory        \n");
+          pb.printf("'b' set break    'Enter' next op         \n");
+          pb.printf("'h' show help    'ESC' Exit              \n");
+          goto wait_input;
+          }
 
         case 'q':
         case 0x1b: // ESC

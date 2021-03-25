@@ -75,7 +75,8 @@ SPU_CHANNEL_DEF(PcmSample)::readPcmSample() {
 
 SPU_CHANNEL_DEF(bool)::readSampleBlocks(PcmSample *_in, PcmSample *out, u32 nframe) {
   const double rate = play_rate;
-  if (rate == 0) return false; // 停止工作, 噪音模式?
+  if (rate == 0) return false; //TODO 停止工作, 噪音模式?
+  if (adsr.r.v == 0) return false; //TODO: 待验证 ADSR 为0停止工作??
   
   if (spu.isNoise(Number)) {
     spu.readNoiseSampleBlocks(_in, nframe);
@@ -172,13 +173,15 @@ SPU_CHANNEL_DEF(void)::applyADSR(PcmSample *_in, PcmSample *out, u32 lsize) {
 SPU_CHANNEL_DEF(void)::copyStartToRepeat() {
   pcmRepeatAddr.r.v = pcmStartAddr.r.v;
   repeatAddr.changed = true;
-  spudbg("set %d start -> repeat, ken on, adsr %x\n", Number, adsr.r.v);
+  spudbg("set %d start -> repeat, ken on, adsr %x vol %x\n", 
+         Number, adsr.r.v, adsrVol.r.v);
 }
 
 
 SPU_CHANNEL_DEF(void)::set_start_address(u32 v, u32) {
   currentReadAddr.changed = true;
-  spudbg("set channel %d start address %x (%x << 3)\n", Number, v<<3, v);
+  spudbg("set channel %d start address %x (%x << 3) adsr %x vol %x\n", 
+         Number, v<<3, adsr.r.v, adsrVol.r.v);
 }
 
 
@@ -224,6 +227,29 @@ SPU_CHANNEL_DEF(VolumeEnvelope*)::getVolumeEnvelope(bool left) {
 
 SPU_CHANNEL_DEF(void)::syncVol(VolumeEnvelope* l, VolumeEnvelope* r) {
   currVolume.r.v = l->getVol() | (r->getVol() << 16);
+}
+
+
+SPU_CHANNEL_DEF(u32)::getVar(SpuChVarFlag f) {
+  switch (f) {
+    case SpuChVarFlag::volume:
+      return volume.r.v;
+    case SpuChVarFlag::work_volume:
+      return currVolume.r.v;
+    case SpuChVarFlag::sample_rate:
+      return pcmSampleRate.r.v;
+    case SpuChVarFlag::start_address:
+      return currentReadAddr.addr;
+    case SpuChVarFlag::repeat_address:
+      return repeatAddr.addr;
+    case SpuChVarFlag::adsr:
+      return adsr.r.v;
+    case SpuChVarFlag::adsr_volume:
+      return adsrVol.r.v;
+    case SpuChVarFlag::adsr_state:
+      return u32(adsr_state);
+    default: return 0;
+  }
 }
 
 

@@ -1,5 +1,5 @@
 ﻿#include "test.h"
-#include "../spu.inl"
+#include "../spu.h"
 #include <conio.h>
 
 namespace ps1e_t {
@@ -89,15 +89,14 @@ static void print_adsr(u32 v) {
 }
 
 
-static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag
-                           ,u32 *font, u32& font_size) {
-  const char *fname = "D:\\ps1e\\demo\\YarozeSDK\\PSX\\DATA\\SOUND\\STD0.VB";
-  u32 bufsize = 1024*1024;
+static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag,
+                            u32 *font, u32& font_size) {
+  u32 bufsize = 512*1024;
   u8 *buf = new u8[bufsize];
   std::shared_ptr<u8> ps(buf);
-  u32 size = readFile(buf, bufsize, fname);
+  u32 size = readFile(buf, bufsize, filename);
   if (!size) return false;
-  printf("Read %s, size %dB\n", fname, size);
+  printf("Read %s, size %dB\n", filename, size);
 
   b.write16(0x1F80'1DA6, 0x200); // address
   b.write16(0x1F80'1DAC, 2 << 1); // mode 2
@@ -107,11 +106,14 @@ static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag
   u32 wait_count = 0;
   u32 fp = 0;
 
+  font[fp++] = 0x1000;
+
   u16 *buf2 = (u16*) buf;
   for (u32 i = 0; i<(size >> 1); i+=32) {
     for (u32 x=0; x<32; ++x) {
       if (((x & 0b111) == 0)) {
-        if ((buf2[i+x] & 0xff00) == 0x300) {
+        //printf("%x %x\t", x, buf2[i+x]);
+        if ((buf2[i+x] & 0x0300) == 0x300) {
           printf("Repeat point %x\t", (i + x)<<1);
 
           if (fp < font_size) {
@@ -146,12 +148,22 @@ static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag
 }
 
 
+static void scan_loop_point() {
+
+}
+
+
 // 该测试永不返回
 static void spu_play_sound() {
+  const char *font_files[] = {
+    "D:\\ps1e\\demo\\YarozeSDK\\PSX\\DATA\\SOUND\\STD0.VB",
+    "D:\\game\\bio2\\Pl0\\Rdt\\room1000\\snd0.vb",
+  };
+
   // 调试开关
   const bool remove_loop_flag = 0; // 移除重复标记
   const u32  use_channel_n    = 24; // 使用的通道数量, 从 1-24
-  const char *fname = "D:\\ps1e\\demo\\YarozeSDK\\PSX\\DATA\\SOUND\\STD0.VB";
+  const char *fname           = font_files[0];
 
   const u16 write_mode = 1<<4;
   const u16 busy = 1<<10;
