@@ -33,5 +33,7 @@ void test_spu();
 
 // 专门用于调试 cpu, 可在任何条件下调用
 void debug_system(ps1e::R3000A& cpu, ps1e::Bus& bus, ps1e::MMU&, ps1e::SoundProcessing&);
+// 进入 spu 调试模式, 使用当前音频内存
+void play_spu_current_font(ps1e::SoundProcessing& spu, ps1e::Bus& b, bool use_channel_n = true);
 
 }

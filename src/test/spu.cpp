@@ -89,8 +89,7 @@ static void print_adsr(u32 v) {
 }
 
 
-static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag,
-                            u32 *font, u32& font_size) {
+static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag) {
   u32 bufsize = 512*1024;
   u8 *buf = new u8[bufsize];
   std::shared_ptr<u8> ps(buf);
@@ -104,26 +103,11 @@ static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag,
   const u16 write_mode = 1<<4;
   const u16 busy = 1<<10;
   u32 wait_count = 0;
-  u32 fp = 0;
-
-  font[fp++] = 0x1000;
 
   u16 *buf2 = (u16*) buf;
   for (u32 i = 0; i<(size >> 1); i+=32) {
     for (u32 x=0; x<32; ++x) {
       if (((x & 0b111) == 0)) {
-        //printf("%x %x\t", x, buf2[i+x]);
-        if ((buf2[i+x] & 0x0300) == 0x300) {
-          printf("Repeat point %x\t", (i + x)<<1);
-
-          if (fp < font_size) {
-            printf("save in %d", fp);
-            font[fp] = ((i + x)<<1) + 0x1000 + 0x10;
-            ++fp;
-          }
-          putchar('\n');
-        }
-
         if (remove_loop_flag) {
           buf2[i+x] = buf2[i+x] & 0x00ff;
         }
@@ -143,13 +127,161 @@ static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag,
 
     //printf("\r\t\t\tWrite %d", i);
   }
-  font_size = fp;
   return true;
 }
 
 
-static void scan_loop_point() {
+// 在音频内存中寻找循环点, size 入参表示 font 的数量, size 出参表示找到的数量
+static void scan_loop_point(SoundProcessing& spu, u32 *font, u32& size) {
+  u8* const spu_mem = spu.get_spu_mem();
+  u32 fp = 0;
+  PrintfBuf pb;
+  pb.printf("Repeat point:\n");
 
+  for (u32 i=1; i<SPU_MEM_SIZE; i+= 0x10) {
+    if ((spu_mem[i] & 0x03) == 0x03) {
+      pb.printf(" %6x", i);
+
+      if (fp < size) {
+        pb.printf(" -> %4d\t", fp);
+        font[fp] = (i) + 0x10;
+        ++fp;
+      } else {
+        warn("Insufficient font point space\n");
+        break;
+      }
+    }
+  }
+  pb.putchar('\n');
+  size = fp;
+}
+
+
+void play_spu_current_font(SoundProcessing& spu, Bus& b, bool use_channel_n) {
+  u32 font[0xff] = {0x1000};
+  u32 fp = sizeof(font) / sizeof(u32);
+  u32 volume = 0;
+  int font_i = 0;
+  u16 pitch = 0x100;
+  u16 mpitch = 0;
+  u32 channelIdx = 0;
+  u32 noise = 0;
+  
+  printf(YELLOW("\nSpu Play Mode Press ? to help > "));
+  scan_loop_point(spu, font, fp);
+
+  for (;;) {
+    int ch = _getch();
+
+    if (ch > '0' && ch <= '9') {
+      pitch = 0x100 + (ch - '1') * 0x400;
+    } 
+    else if (ch >= 'a' && ch <= 'z') {
+      mpitch = toneMap[ch - 'a'] * 0x90;
+    }
+    else switch (ch) {
+    case '?': {
+      PrintfBuf b;
+      b.printf("\tpress `a-z` play note\n");
+      b.printf("\tpress [ ] up left/right volume\n");
+      b.printf("\tpress { } down left/right volume, maybe change to sweet mode\n");
+      b.printf("\tpress BS stop all note\n");
+      b.printf("\tpress ESC exit\n");
+      b.printf("\tpress = - 123456789 chang pitch\n");
+      b.printf("\tpress 0 reset pitch and volume\n");
+      b.printf("\tpress / switch low pass filter\n");
+      b.printf("\tpress ,. change timbre\n");
+      b.printf("\tpreee ` switch channel 0 noise\n");
+      b.printf("\tpreee ENTER show spu register.\n");
+      b.printf("\tpreee ? show help\n");
+      continue;
+      }
+
+    case '\b':
+      channelIdx = 0;
+      b.write32(0x1F80'1D8C, 0xffff'ffff); // Koff
+      continue;
+
+    case 0x1b: // ESC
+      printf(" Exit sound play.\n");
+      return;
+
+    case '=': case '+':
+      pitch += 0x10;
+      break;
+
+    case '-': case '_':
+      pitch -= 0x10;
+      break;
+
+    case '0':
+      pitch = 0x1000;
+      volume = 0x0000'0000;
+      break;
+
+    case '/':
+      spu.use_low_pass = !spu.use_low_pass;
+      printf("use low pass %d\n", spu.use_low_pass);
+      continue;
+
+    case '[':
+      volume += 0x0010;
+      break;
+
+    case ']':
+      volume += 0x0010'0000;
+      break;
+
+    case '}':
+      volume -= 0x0010'0000;
+      break;
+
+    case '{':
+      volume -= 0x0010;
+      break;
+
+    case ',':
+      --font_i;
+      if (font_i < 0) font_i = fp-1;
+      break;
+
+    case '.':
+      ++font_i;
+      if (font_i >= fp) font_i = 0;
+      break;
+
+    case '`':
+      if (noise) {
+        noise = 0;
+        printf("Close ch0 noise\n");
+      } else {
+        noise = 1;
+        printf("Open ch0 noise\n");
+      }
+      b.write32(0x1F80'1D94, noise);
+      continue;
+
+    case '\n':
+      for (u32 i=1; i<=u32(SpuChVarFlag::__end); ++i) {
+        spu.print_var(SpuChVarFlag(i));
+      }
+      continue;
+
+    default:
+      continue;
+    }
+
+    b.write32(0x1F80'1C00 + (0x10 * channelIdx), volume); //音量
+    b.write16(0x1F80'1C04 + (0x10 * channelIdx), pitch + mpitch); //音高
+    b.write16(0x1F80'1C06 + (0x10 * channelIdx), (font[font_i]) >> 3); // 地址
+    b.write32(0x1F80'1D88, 1 << channelIdx); // Kon
+    printf(" channel %d pitch %d volume %x tone %d\n", 
+        channelIdx, (pitch + mpitch) * (44100/0x1000), volume, font_i);
+
+    if (++channelIdx >= use_channel_n) {
+      channelIdx = 0;
+    }
+  }
 }
 
 
@@ -165,26 +297,11 @@ static void spu_play_sound() {
   const u32  use_channel_n    = 24; // 使用的通道数量, 从 1-24
   const char *fname           = font_files[0];
 
-  const u16 write_mode = 1<<4;
-  const u16 busy = 1<<10;
-  u32 wait_count = 0;
-  u32 channelIdx = 0;
-  u32 font[0xff] = {0x1000};
-  u32 fp = sizeof(font) / sizeof(u32);
-  u32 volume = 0;
-  int font_i = 0;
-  u16 pitch = 0x100;
-  u16 mpitch = 0;
-  u32 noise = 0;
-
   MemJit mj;
   MMU mmu(mj);
   Bus b(mmu);
   SoundProcessing spu(b);
-  load_sound_font(b, fname, remove_loop_flag, font, fp);
-  
-  /*u8* const spu_mem = spu.get_spu_mem() + 0x1000;
-  print_hex("\nspu mem", spu_mem, 256);*/
+  load_sound_font(b, fname, remove_loop_flag);
 
   u32 bios_adsr = 0xdfed'8c7a;
   ADSRReg a;
@@ -200,98 +317,21 @@ static void spu_play_sound() {
   a.su_sh = 0x1f;
   a.su_st = 3;
 
-  printf("BIOS fail:");
+  printf("BIOS:");
   print_adsr(bios_adsr);
-  printf("DIY succ:");
+  printf("ADSR:");
   print_adsr(a.v);
   
   for (u32 i=0; i<use_channel_n; ++i) {
     u32 chi = 0x10 * i;
-    b.write32(0x1F80'1C08 +chi, bios_adsr); // adsr
+    b.write32(0x1F80'1C08 +chi, a.v); // adsr
     b.write16(0x1F80'1C06 +chi, 0x200); // 必须移动到正确的位置才能发出正确音色
     b.write16(0x1F80'1C04 +chi, 0x1000); // 设定频率 1000h == 44100
-    b.write32(0x1F80'1C00 +chi, volume); // 音量
+    b.write32(0x1F80'1C00 +chi, 0); // 音量
   }
   
   b.write32(0x1F80'1DAA, 0x0000'F083); // SPUCNT, Unmute
-  printf("Press a-z 0-9 [] ,. : ");
-
-  for (;;) {
-    int ch = _getch();
-
-    if (ch > '0' && ch <= '9') {
-      pitch = 0x100 + (ch - '1') * 0x400;
-    } 
-    else if (ch >= 'a' && ch <= 'z') {
-      mpitch = toneMap[ch - 'a'] * 0x90;
-    }
-    else switch (ch) {
-    case '\b':
-      channelIdx = 0;
-      b.write32(0x1F80'1D8C, 0xffff'ffff); // Koff
-      continue;
-    case 0x1b: // ESC
-      printf("exit sound test");
-      return;
-    case '=': case '+':
-      pitch += 0x10;
-      break;
-    case '-': case '_':
-      pitch -= 0x10;
-      break;
-    case '0':
-      pitch = 0x1000;
-      volume = 0x0000'0000;
-      break;
-    case '/':
-      spu.use_low_pass = !spu.use_low_pass;
-      printf("use low pass %d\n", spu.use_low_pass);
-      continue;
-    case '[':
-      volume += 0x0010;
-      break;
-    case ']':
-      volume += 0x0010'0000;
-      break;
-    case '}':
-      volume -= 0x0010'0000;
-      break;
-    case '{':
-      volume -= 0x0010;
-      break;
-    case ',':
-      --font_i;
-      if (font_i < 0) font_i = fp-1;
-      break;
-    case '.':
-      ++font_i;
-      if (font_i >= fp) font_i = 0;
-      break;
-    case '`':
-      if (noise) {
-        noise = 0;
-        printf("Close ch0 noise\n");
-      } else {
-        noise = 1;
-        printf("Open ch0 noise\n");
-      }
-      b.write32(0x1F80'1D94, noise);
-      continue;
-    default:
-      continue;
-    }
-
-    b.write32(0x1F80'1C00 + (0x10 * channelIdx), volume); //音量
-    b.write16(0x1F80'1C04 + (0x10 * channelIdx), pitch + mpitch); //音高
-    b.write16(0x1F80'1C06 + (0x10 * channelIdx), (font[font_i]) >> 3); // 地址
-    b.write32(0x1F80'1D88, 1 << channelIdx); // Kon
-    printf(" channel %d pitch %d volume %x tone %x\n", 
-        channelIdx, (pitch + mpitch) * (44100/0x1000), volume, font_i);
-
-    if (++channelIdx >= use_channel_n) {
-      channelIdx = 0;
-    }
-  }
+  play_spu_current_font(spu, b, use_channel_n);
 }
 
 
@@ -321,7 +361,7 @@ static void test_adsr() {
 void test_spu() {
   test_spu_reg();
   //test_adsr();
-  spu_play_sound();
+  //spu_play_sound();
 }
 
 }
