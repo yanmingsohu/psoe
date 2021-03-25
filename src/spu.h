@@ -232,7 +232,7 @@ friend Parent;
 template<class P, DeviceIOMapper N, class Reg = SpuReg, bool ReadOnly = false>
 class SpuIOFunction : public SpuIOBase<P, N> {
 public:
-  typedef void (P::*OnWrite)(u32);
+  typedef void (P::*OnWrite)(u32 _new, u32 _old);
   typedef u32 (P::*OnRead)();
 
 protected:
@@ -253,9 +253,10 @@ public:
 
   void write(u32 v) {
     if (ReadOnly) return;
+    u32 old = r.v;
     r.v = v;
     if (writeFn) {
-      (this->parent.*writeFn)(v);
+      (this->parent.*writeFn)(v, old);
     }
   }
 
@@ -408,7 +409,10 @@ class VolumeEnvelope {
 public:
   VolumeEnvelope() {}
   virtual ~VolumeEnvelope() {};
+  // 应用音量包络
   virtual void apply(PcmSample& v) = 0;
+  // 同步音量, 在 apply 的时候音量可能更改, 将更改的音量同步回寄存器
+  virtual s16 getVol() = 0;
 };
 
 
@@ -418,6 +422,7 @@ private:
   class DoZero : public VolumeEnvelope {
   public:
     void apply(PcmSample& v);
+    s16 getVol();
   };
 
 
@@ -427,6 +432,7 @@ private:
 
     void apply(PcmSample& v);
     void reset(VolData& vd);
+    s16 getVol();
   };
 
 
@@ -440,7 +446,8 @@ private:
     u8 dir;
 
     void apply(PcmSample& v);
-    void reset(VolData& vd);
+    void reset(VolData& vd, s32 nlevel);
+    s16 getVol();
   };
 
 private:
@@ -450,8 +457,7 @@ private:
 
 public:
   // 返回的 VolumeEnvelope 由 VolumeEnvelopeSet 管理
-  VolumeEnvelope* get(bool left, VolData& vd);
-  u32 getCurrentSweepVol();
+  VolumeEnvelope* get(bool left, VolData& vd, s32 clevel);
 };
 
 
@@ -465,6 +471,8 @@ public:
   // 返回的 VolumeEnvelope 由当前 PcmStreamer 对象管理
   virtual VolumeEnvelope* getVolumeEnvelope(bool left) = 0;
   virtual void copyStartToRepeat() = 0;
+  // 同步音量, 在 apply 的时候音量可能更改, 将更改的音量同步回寄存器
+  virtual void syncVol(VolumeEnvelope* left, VolumeEnvelope *right) = 0;
 };
 
 
@@ -506,7 +514,7 @@ template<DeviceIOMapper t_vol, DeviceIOMapper t_sr,
 class SPUChannel : public NonCopy, public PcmStreamer {
 private:
   // 0x1F801Cn0
-  SpuIO<SPUChannel, VolumnReg, t_vol> volume;  
+  SpuIOFunction<SPUChannel, t_vol, VolumnReg> volume;  
   // 0x1F801Cn4 (0=stop, 4000h=fastest, 4001h..FFFFh == 4000h, 1000h=44100Hz)
   SpuIOFunction<SPUChannel, t_sr, SpuReg> pcmSampleRate;
   // 0x1F801Cn6 声音开始地址, 样本由一个或多个16字节块组成
@@ -518,7 +526,7 @@ private:
   // 0x1F801CnE 声音重复地址, 播放时被adpcm数据更新
   SpuIOFunction<SPUChannel, t_ra, AddrReg> pcmRepeatAddr;
   // 0x1F801E0n These are internal registers, normally not used by software
-  SpuIOFunction<SPUChannel, t_cv, SpuReg> currVolume;
+  SpuIO<SPUChannel, SpuReg, t_cv> currVolume;
 
   SoundProcessing& spu;
   PcmHeader currentReadAddr;
@@ -541,9 +549,10 @@ private:
     Release = 4,
   } adsr_state = AdsrState::Wait;
 
-  void set_start_address(u32 v);
-  void set_repeat_addr(u32);
-  void set_sample_rate(u32);
+  void set_start_address(u32, u32);
+  void set_repeat_addr(u32, u32);
+  void set_sample_rate(u32, u32);
+  void set_volume(u32, u32);
   u32 read_curr_volume();
 
 public:
@@ -559,6 +568,7 @@ public:
   // 从 pcm 缓冲区读取一个采样, 保证效率
   PcmSample readPcmSample();
   VolumeEnvelope* getVolumeEnvelope(bool left);
+  void syncVol(VolumeEnvelope* left, VolumeEnvelope *right);
 };
 
 
@@ -679,13 +689,15 @@ private:
   u16 fifo[SPU_FIFO_SIZE];
   u8 fifo_point = 0;
   RtAudio* dac;
+  s32 noiseTimer;
+  s16 nsLevel;
   SmallBuf<PcmSample> swap1;
   SmallBuf<PcmSample> swap2;
 
   // 寄存器函数
-  void set_transfer_address(u32 a);
-  void push_fifo(u32 a);
-  void set_ctrl_req(u32 a);
+  void set_transfer_address(u32 a, u32);
+  void push_fifo(u32 a, u32);
+  void set_ctrl_req(u32 a, u32);
   void key_on_changed();
 
   // dma/fifo 数据处理

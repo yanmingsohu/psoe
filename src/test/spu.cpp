@@ -89,50 +89,39 @@ static void print_adsr(u32 v) {
 }
 
 
-// 该测试永不返回
-static void spu_play_sound() {
+static bool load_sound_font(Bus& b, const char* filename, bool remove_loop_flag
+                           ,u32 *font, u32& font_size) {
   const char *fname = "D:\\ps1e\\demo\\YarozeSDK\\PSX\\DATA\\SOUND\\STD0.VB";
   u32 bufsize = 1024*1024;
   u8 *buf = new u8[bufsize];
   std::shared_ptr<u8> ps(buf);
   u32 size = readFile(buf, bufsize, fname);
-  if (!size) return;
+  if (!size) return false;
   printf("Read %s, size %dB\n", fname, size);
-  
-  MemJit mj;
-  MMU mmu(mj);
-  Bus b(mmu);
 
-  // 调试开关
-  const bool remove_loop_flag = 0; // 移除重复标记
-  const u32  use_channel_n    = 24; // 使用的通道数量, 从 1-24
-
-  SoundProcessing spu(b);
   b.write16(0x1F80'1DA6, 0x200); // address
   b.write16(0x1F80'1DAC, 2 << 1); // mode 2
   b.write16(0x1F80'1DAA, 0); //stop
   const u16 write_mode = 1<<4;
   const u16 busy = 1<<10;
-  u8* const spu_mem = spu.get_spu_mem() + 0x1000;
   u32 wait_count = 0;
-  u32 channelIdx = 0;
-
-  u32 font[0xff] = {0x1000};
-  u32 fp = 1;
-  u32 volume = 0;
+  u32 fp = 0;
 
   u16 *buf2 = (u16*) buf;
   for (u32 i = 0; i<(size >> 1); i+=32) {
     for (u32 x=0; x<32; ++x) {
       if (((x & 0b111) == 0)) {
         if ((buf2[i+x] & 0xff00) == 0x300) {
-          printf("\tRepeat point %x ", (i + x)<<1);
-          if (fp < (sizeof(font)/sizeof(u32))) {
+          printf("Repeat point %x\t", (i + x)<<1);
+
+          if (fp < font_size) {
             printf("save in %d", fp);
-            font[fp++] = ((i + x)<<1) + 0x1000 + 0x10;
+            font[fp] = ((i + x)<<1) + 0x1000 + 0x10;
+            ++fp;
           }
           putchar('\n');
         }
+
         if (remove_loop_flag) {
           buf2[i+x] = buf2[i+x] & 0x00ff;
         }
@@ -152,17 +141,38 @@ static void spu_play_sound() {
 
     //printf("\r\t\t\tWrite %d", i);
   }
+  font_size = fp;
+  return true;
+}
+
+
+// 该测试永不返回
+static void spu_play_sound() {
+  // 调试开关
+  const bool remove_loop_flag = 0; // 移除重复标记
+  const u32  use_channel_n    = 24; // 使用的通道数量, 从 1-24
+  const char *fname = "D:\\ps1e\\demo\\YarozeSDK\\PSX\\DATA\\SOUND\\STD0.VB";
+
+  const u16 write_mode = 1<<4;
+  const u16 busy = 1<<10;
+  u32 wait_count = 0;
+  u32 channelIdx = 0;
+  u32 font[0xff] = {0x1000};
+  u32 fp = sizeof(font) / sizeof(u32);
+  u32 volume = 0;
+  int font_i = 0;
+  u16 pitch = 0x100;
+  u16 mpitch = 0;
+  u32 noise = 0;
+
+  MemJit mj;
+  MMU mmu(mj);
+  Bus b(mmu);
+  SoundProcessing spu(b);
+  load_sound_font(b, fname, remove_loop_flag, font, fp);
   
-  b.write32(0x1F80'1DAA, 0x0000'C083); // Unmute
-  print_hex("\nspu mem", spu_mem, 256);
-  for (u32 i=0; i<1024; ++i) {
-    if (spu_mem[i] != buf[i]) {
-      if (remove_loop_flag && ((i & 0x0F) == 1)) {
-        continue;
-      }
-      error("Write SPU memory bad %x\n", i);
-    }
-  }
+  /*u8* const spu_mem = spu.get_spu_mem() + 0x1000;
+  print_hex("\nspu mem", spu_mem, 256);*/
 
   u32 bios_adsr = 0xdfed'8c7a;
   ADSRReg a;
@@ -190,12 +200,9 @@ static void spu_play_sound() {
     b.write16(0x1F80'1C04 +chi, 0x1000); // 设定频率 1000h == 44100
     b.write32(0x1F80'1C00 +chi, volume); // 音量
   }
-  //if (!remove_loop_flag) b.write16(0x1F80'1D88, 0xFFFF'ffff); // Kon
-
+  
+  b.write32(0x1F80'1DAA, 0x0000'F083); // SPUCNT, Unmute
   printf("Press a-z 0-9 [] ,. : ");
-  int font_i = 0;
-  u16 pitch = 0x100;
-  u16 mpitch = 0;
 
   for (;;) {
     int ch = _getch();
@@ -230,7 +237,6 @@ static void spu_play_sound() {
       continue;
     case '[':
       volume += 0x0010;
-      b.write32(0x1F80'1C00, volume);
       break;
     case ']':
       volume += 0x0010'0000;
@@ -249,6 +255,18 @@ static void spu_play_sound() {
       ++font_i;
       if (font_i >= fp) font_i = 0;
       break;
+    case '`':
+      if (noise) {
+        noise = 0;
+        printf("Close ch0 noise\n");
+      } else {
+        noise = 1;
+        printf("Open ch0 noise\n");
+      }
+      b.write32(0x1F80'1D94, noise);
+      continue;
+    default:
+      continue;
     }
 
     b.write32(0x1F80'1C00 + (0x10 * channelIdx), volume); //音量

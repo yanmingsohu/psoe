@@ -17,13 +17,13 @@ namespace ps1e {
 
 SPU_CHANNEL_DEF(CONSTRUCT)::SPUChannel(SoundProcessing& parent, Bus& b) :
   spu(parent),
-  volume(*this, b), 
+  volume(*this, b, &SPUChannel::set_volume), 
   pcmSampleRate(*this, b, &SPUChannel::set_sample_rate), 
   pcmStartAddr(*this, b, &SPUChannel::set_start_address),
   adsr(*this, b), 
   adsrVol(*this, b), 
   pcmRepeatAddr(*this, b, &SPUChannel::set_repeat_addr), 
-  currVolume(*this, b, 0, &SPUChannel::read_curr_volume),
+  currVolume(*this, b),
   resample(this),
   lowpass(/*parent.getOutputRate()*/)
 {
@@ -75,18 +75,21 @@ SPU_CHANNEL_DEF(PcmSample)::readPcmSample() {
 
 SPU_CHANNEL_DEF(bool)::readSampleBlocks(PcmSample *_in, PcmSample *out, u32 nframe) {
   const double rate = play_rate;
-  if (rate == 0) return false; // 停止工作
+  if (rate == 0) return false; // 停止工作, 噪音模式?
   
   if (spu.isNoise(Number)) {
     spu.readNoiseSampleBlocks(_in, nframe);
   }
-  else if (!resample.read(_in, nframe, rate)) {
+  else if (resample.read(_in, nframe, rate)) {
+    if (spu.use_low_pass) {
+      lowpass.filter(_in, nframe, spu.getOutputRate() / rate);
+    }
+  }
+  else {
     return false;
   }
 
-  if (spu.use_low_pass) {
-    lowpass.filter(_in, nframe, spu.getOutputRate() / rate);
-  }
+  // 扫描模式是否启用adsr?
   applyADSR(_in, out, nframe);
   return true;
 }
@@ -173,18 +176,18 @@ SPU_CHANNEL_DEF(void)::copyStartToRepeat() {
 }
 
 
-SPU_CHANNEL_DEF(void)::set_start_address(u32 v) {
+SPU_CHANNEL_DEF(void)::set_start_address(u32 v, u32) {
   currentReadAddr.changed = true;
   spudbg("set channel %d start address %x (%x << 3)\n", Number, v<<3, v);
 }
 
 
-SPU_CHANNEL_DEF(void)::set_repeat_addr(u32) {
+SPU_CHANNEL_DEF(void)::set_repeat_addr(u32, u32) {
   repeatAddr.changed = true;
 }
 
 
-SPU_CHANNEL_DEF(void)::set_sample_rate(u32 v) {
+SPU_CHANNEL_DEF(void)::set_sample_rate(u32 v, u32) {
   double orate = spu.getOutputRate();
   double irate = double(MinT(0x4000, v)) * (double(SPU_WORK_FREQ) / double(0x1000));
   double r = orate/irate;
@@ -197,15 +200,30 @@ SPU_CHANNEL_DEF(void)::set_sample_rate(u32 v) {
 }
 
 
-SPU_CHANNEL_DEF(VolumeEnvelope*)::getVolumeEnvelope(bool left) {
-  VolData vd = (left ? volume.r.left : volume.r.right);
-  return sweet_ve.get(left, vd);
+// 当音量变为扫描模式时, 需要同步 currVolume 寄存器
+SPU_CHANNEL_DEF(void)::set_volume(u32 v, u32 old) {
+  const u32 lmask = 1<<15;
+  u32 curr = currVolume.r.v;
+  if (((v & lmask) == 1) && ((old & lmask) == 0)) {
+    curr = (curr & 0xffff'0000) | ((old & 0x0000'7fff) << 1);
+  }
+  const u32 rmask = 1<<31;
+  if (((v & rmask) == 1) && ((old & rmask) == 0)) {
+    curr = (curr & 0x0000'ffff) | ((old & 0x7fff'0000) << 1);
+  }
+  currVolume.r.v = curr;
 }
 
 
-SPU_CHANNEL_DEF(u32)::read_curr_volume() {
-  // 只返回了扫频音量, 不知道是否应该在普通模式返回 volume
-  return sweet_ve.getCurrentSweepVol();
+SPU_CHANNEL_DEF(VolumeEnvelope*)::getVolumeEnvelope(bool left) {
+  VolData vd = (left ? volume.r.left : volume.r.right);
+  s32 clevel = (left ? s16(currVolume.r.v & 0xffff) : s16(currVolume.r.v >> 16));
+  return sweet_ve.get(left, vd, clevel);
+}
+
+
+SPU_CHANNEL_DEF(void)::syncVol(VolumeEnvelope* l, VolumeEnvelope* r) {
+  currVolume.r.v = l->getVol() | (r->getVol() << 16);
 }
 
 

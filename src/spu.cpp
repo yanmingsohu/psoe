@@ -157,6 +157,7 @@ static void process_channel(PcmStreamer* ps, PcmSample *dst,
       dst[i+0] = mixer(dst[i+0], left);
       dst[i+1] = mixer(dst[i+1], right);
     }
+    ps->syncVol(lve, rve);
   } else {
     setzero(channelout, nframe);
   }
@@ -166,6 +167,7 @@ static void process_channel(PcmStreamer* ps, PcmSample *dst,
 // buf 实际长度 = 通道 * nframe, 通道数据交错存放
 void SoundProcessing::requestAudioData(PcmSample *buf, u32 nframe, double time) {
   //spudbg("\r\t\t\t\tReQ audio data %d %f", nframe, time);
+  noiseTimer -= nframe;
   setzero(buf, nframe << 1);
   if (ctrl.r.mute == 0) {
     return;
@@ -214,13 +216,13 @@ void SoundProcessing::requestAudioData(PcmSample *buf, u32 nframe, double time) 
 }
 
 
-void SoundProcessing::set_transfer_address(u32 a) {
+void SoundProcessing::set_transfer_address(u32 a, u32) {
   mem_write_addr = a << 3; // * 8
   spudbg("set transfer address %x (%x << 3)\n", mem_write_addr, a);
 }
 
 
-void SoundProcessing::push_fifo(u32 a) {
+void SoundProcessing::push_fifo(u32 a, u32) {
   //if (ps1e_t::ext_stop) printf("spu fifo %02x = %04x\n", fifo_point, a);
   fifo[fifo_point & SPU_FIFO_MASK] = u16(a);
   ++fifo_point;
@@ -361,8 +363,18 @@ AdpcmFlag SoundProcessing::readAdpcmBlock(PcmSample *buf, PcmHeader& h) {
 }
 
 
+// 每个通道生成的噪声不同
 void SoundProcessing::readNoiseSampleBlocks(PcmSample* buf, u32 nframe) {
-  //todo
+  for (u32 i=0; i<nframe; ++i) {
+    noiseTimer -= (4 + ctrl.r.nos_stp);
+    if (noiseTimer < 0) {
+      noiseTimer += (0x2'0000 >> ctrl.r.nos_shf);
+      s32 pb = ((nsLevel>>15) & 1) ^ ((nsLevel>>12) & 1) ^ 
+               ((nsLevel>>11) & 1) ^ ((nsLevel>>10) & 1) ^ 1;
+      nsLevel = (nsLevel << 1) | pb;
+    }
+    buf[i] = nsLevel / PcmSample(0x7fff);
+  }
 }
 
 
@@ -410,7 +422,7 @@ u8* SoundProcessing::get_spu_mem() {
 }
 
 
-void SoundProcessing::set_ctrl_req(u32) {
+void SoundProcessing::set_ctrl_req(u32, u32) {
   if (ctrl.r.dma_trs == u8(SpuDmaDir::ManualWrite)) {
     trigger_manual_write();
   }
@@ -562,7 +574,7 @@ void PcmLowpass::filter(PcmSample *data, u32 frame, double freq) {
 }
 
 
-VolumeEnvelope* VolumeEnvelopeSet::get(bool left, VolData& vd) {
+VolumeEnvelope* VolumeEnvelopeSet::get(bool left, VolData& vd, s32 clevel) {
   if (vd.mode == 0) {
     if (vd.vol == 0) {
       return left ? &lz : &rz;
@@ -574,7 +586,7 @@ VolumeEnvelope* VolumeEnvelopeSet::get(bool left, VolData& vd) {
   }
 
   Sweep* s = left ? &ls : &rs;
-  s->reset(vd);
+  s->reset(vd, clevel);
   return s;
 }
 
@@ -599,19 +611,24 @@ void VolumeEnvelopeSet::Sweep::apply(PcmSample& v) {
 }
 
 
-void VolumeEnvelopeSet::Sweep::reset(VolData& vd) {
+void VolumeEnvelopeSet::Sweep::reset(VolData& vd, s32 clevel) {
   if (vd.v != arg.v) {
     filter.reset(vd.mode, vd.dir, vd.shift, vd.step);
-    arg = vd;
-    dir = vd.dir;
+    arg    = vd;
+    dir    = vd.dir;
     cycles = 0;
-    level = 0;//??
+    level  = clevel;
+
     if (vd.phase == 0 || vd.mode == 0) {
       phase = 1;
     } else if (vd.phase == 1) {
       phase = -1;
     }
   }
+}
+
+s16 VolumeEnvelopeSet::Sweep::getVol() {
+  return u16(level & 0xffff);
 }
 
 
@@ -625,13 +642,18 @@ void VolumeEnvelopeSet::FixVol::reset(VolData& vd) {
 }
 
 
+s16 VolumeEnvelopeSet::FixVol::getVol() {
+  return u16(vol);
+}
+
+
 void VolumeEnvelopeSet::DoZero::apply(PcmSample& v) {
   //Do nothing
 }
 
 
-u32 VolumeEnvelopeSet::getCurrentSweepVol() {
-  return ls.level & (rs.level << 16);
+s16 VolumeEnvelopeSet::DoZero::getVol() {
+  return 0;
 }
 
 }
