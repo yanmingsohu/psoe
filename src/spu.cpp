@@ -422,43 +422,28 @@ u8* SoundProcessing::get_spu_mem() {
 }
 
 
-void SoundProcessing::print_var(SpuChVarFlag f) {
-#define CALL_GET_VAR(name, n)  b.printf(" %4x", name ## n.getVar(f)); if (n == 11) b.put('\n');
-  static const char* space = "  ";
-  PrintfBuf b;
-  switch (f) {
-    case SpuChVarFlag::volume:
-      b.printf(" VOL"); break;
-    case SpuChVarFlag::work_volume:
-      b.printf("Wvol"); break;
-    case SpuChVarFlag::sample_rate:
-      b.printf("RATE"); break;
-    case SpuChVarFlag::start_address:
-      b.printf("Sadr"); break;
-    case SpuChVarFlag::repeat_address:
-      b.printf("Radr"); break;
-    case SpuChVarFlag::adsr:
-      b.printf("ADSR"); break;
-    case SpuChVarFlag::adsr_volume:
-      b.printf("Avol"); break;
-    case SpuChVarFlag::adsr_state:
-      b.printf("Aste"); break;
-    default: 
-      b.printf("Key On\n");
-      b.bit(nKeyOn.read(), space);
-      b.printf("Key Off\n");
-      b.bit(nKeyOff.read(), space);
-      b.printf("ENDx\n");
-      b.bit(endx.read(), space);
-      b.printf("FM\n");
-      b.bit(nFM.read(), space);
-      b.printf("Noise\n");
-      b.bit(nNoise.read(), space);
-      return;
+u32 SoundProcessing::get_var(SpuChVarFlag f, int c) {
+  if (c >= 0 && c < 24) {
+    return channel_stream[c]->getVar(f);
   }
-  b.putchar('\n');
-  SPU_DEF_ALL_CHANNELS(ch, CALL_GET_VAR);
-  b.putchar('\n');
+
+  switch (f) {
+    case SpuChVarFlag::key_on:
+      return nKeyOn.read();
+
+    case SpuChVarFlag::key_off:
+      return nKeyOff.read();
+
+    case SpuChVarFlag::endx:
+      return endx.read();
+
+    case SpuChVarFlag::fm:
+      return nFM.read();
+
+    case SpuChVarFlag::noise:
+      return nNoise.read();
+  }
+  return 0;
 }
 
 

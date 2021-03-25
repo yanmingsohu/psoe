@@ -211,22 +211,16 @@ wait_input:
           }
           goto wait_input;
 
-        case 'd':
-          for (u32 i=1; i<=u32(SpuChVarFlag::__end); ++i) {
-            spu.print_var(SpuChVarFlag(i));
-          }
-          goto wait_input;
-
-        case 'm':
-          bus.write32(0x1F80'1D8C, 0xffff'ffff); // Koff
+        case 'z':
+          play_spu_current_font(spu, bus);
           goto wait_input;
 
         case 'h': {
           PrintfBuf pb;
           pb.putchar('\n');
           pb.printf("'r' show reg     'x' run, hide debug     's' dump spu memory\n");
-          pb.printf("'1' debug 100    'a' show address value  'm' stop all sound\n");
-          pb.printf("'2' debug 10000  '3' debug 1000000       'd' show spu register\n");
+          pb.printf("'1' debug 100    'a' show address value  'z' spu play mode\n");
+          pb.printf("'2' debug 10000  '3' debug 1000000       \n");
           pb.printf("'0' Reset        'w' write memory        \n");
           pb.printf("'b' set break    'Enter' next op         \n");
           pb.printf("'h' show help    'ESC' Exit              \n");

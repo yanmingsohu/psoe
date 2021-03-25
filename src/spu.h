@@ -68,7 +68,13 @@ enum class SpuChVarFlag : u32 {
   adsr,
   adsr_volume,
   adsr_state,
-  __end,
+  __end_channel__,
+  key_on,
+  key_off,
+  endx,
+  fm,
+  noise,
+  __end_core__,
 };
 
 
@@ -738,7 +744,7 @@ public:
   bool use_low_pass = true;
   void print_fifo();
   u8 *get_spu_mem();
-  void print_var(SpuChVarFlag);
+  u32 get_var(SpuChVarFlag, int c);
 
   void setEndxFlag(u8 channelIndex);
   bool isAttackOn(u8 channelIndex); // 查询后复位对应位
