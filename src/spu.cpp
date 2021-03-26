@@ -290,18 +290,23 @@ void SoundProcessing::apply_reverb(PcmSample* echo, u32 nframe) {
 #define L(addr)     base[(echo_addr_offset + ((addr)>>1)) % hwlen]
 #define R(addr)     L(addr + hwlen)
 #define MUL(a, b)   ((T(a)*T(b)) / maxVol)
+#define LIMIT(x)    ((x)>0x7FFF ? 0x7FFF : ((x)<-0x7FFF ? -0x7FFF : x))
 
   for (u32 i = 0; i < (nframe<<1); i+=2) {
     if (masterEchoEnable) {
-      //TODO: echo输入音量超过x引起爆音, 寻找x
-      T Lin = T(vLIN.r.sl) * echo[i+0] *0.7;
-      T Rin = T(vRIN.r.sl) * echo[i+1] *0.7;
+      T Lin = T(vLIN.r.sl) * echo[i+0];
+      T Rin = T(vRIN.r.sl) * echo[i+1];
+      T swap;
 
-      L(mLSAME) = MUL((Lin + MUL(L(dLSAME), vWALL) - L(mLSAME -2)), vIIR) + L(mLSAME -2);
-      R(mRSAME) = MUL((Rin + MUL(R(dRSAME), vWALL) - R(mRSAME -2)), vIIR) + R(mRSAME -2);
+      swap = MUL((Lin + MUL(L(dLSAME), vWALL) - L(mLSAME -2)), vIIR) + L(mLSAME -2);
+      L(mLSAME) = LIMIT(swap);
+      swap = MUL((Rin + MUL(R(dRSAME), vWALL) - R(mRSAME -2)), vIIR) + R(mRSAME -2);
+      R(mRSAME) = LIMIT(swap);
 
-      L(mLDIFF) = MUL((Lin + MUL(L(dRDIFF), vWALL) - L(mLDIFF -2)), vIIR) + L(mLDIFF -2);
-      R(mRDIFF) = MUL((Rin + MUL(R(dLDIFF), vWALL) - R(mRDIFF -2)), vIIR) + R(mRDIFF -2);
+      swap = MUL((Lin + MUL(L(dRDIFF), vWALL) - L(mLDIFF -2)), vIIR) + L(mLDIFF -2);
+      L(mLDIFF) = LIMIT(swap);
+      swap = MUL((Rin + MUL(R(dLDIFF), vWALL) - R(mRDIFF -2)), vIIR) + R(mRDIFF -2);
+      R(mRDIFF) = LIMIT(swap);
     }
 
     T Lout = MUL(vCOMB1, L(mLCOMB1)) +MUL(vCOMB2, L(mLCOMB2)) +MUL(vCOMB3, L(mLCOMB3)) +MUL(vCOMB4, L(mLCOMB4));
@@ -320,10 +325,10 @@ void SoundProcessing::apply_reverb(PcmSample* echo, u32 nframe) {
     Rout = MUL(o4, vAPF2) + R(mRAPF2 - dAPF2);
 
     if (masterEchoEnable) {
-      L(mLAPF1) = o1;
-      R(mRAPF1) = o2;
-      L(mLAPF2) = o3;
-      R(mRAPF2) = o4;
+      L(mLAPF1) = LIMIT(o1);
+      R(mRAPF1) = LIMIT(o2);
+      L(mLAPF2) = LIMIT(o3);
+      R(mRAPF2) = LIMIT(o4);
     }
 
     echo[i+0] = T(Lout) / maxVol;
