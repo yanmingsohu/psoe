@@ -16,6 +16,7 @@ namespace ps1e {
 // 512K
 #define SPU_MEM_SIZE        0x8'0000
 #define SPU_MEM_MASK        (SPU_MEM_SIZE-1)
+#define SPU_MEM_ECHO_MASK   (SPU_MEM_MASK-1)
 // 32 个半字, 64个字节
 #define SPU_FIFO_SIZE       0x20
 #define SPU_FIFO_MASK       (SPU_FIFO_SIZE-1)
@@ -26,7 +27,8 @@ namespace ps1e {
 #define SPU_WORK_FREQ       44100
 #define SPU_ADPCM_RETE      22050
 // 转换 spu 整数音量到浮点值 x[-8000h..+7FFEh] 输出 -n ~ +n 倍, x==0 则没有变化
-#define SPU_F_VOLUME(x)     (1 + s16(x)/float(0x8000) * 2)
+// old: (1 + s16(x)/float(0x8000) * 2)
+#define SPU_F_VOLUME(x)     (s16(x) / float(0x8000))
 #define not_aligned_nosupport(x) error("Cannot read SPU IO %u, Memory misalignment\n", u32(x))
 
 // 如果 begin 到 begin+size(不包含) 之间穿过了 point 则返回 true, size > 0
@@ -77,6 +79,7 @@ enum class SpuChVarFlag : u32 {
   fm,
   noise,
   echo,
+  ctrl,
   __end_core__,
 };
 
@@ -122,6 +125,10 @@ struct AdpcmBlock {
 
 union SpuReg {
   SPU_COMM_BIT(v);
+  struct {
+    s16 sl;
+    s16 sh;
+  };
 };
 
 
@@ -282,6 +289,9 @@ public:
     }
   }
 
+  Reg* operator->() {
+    return &r;
+  }
 friend P;
 };
 
@@ -310,6 +320,7 @@ public:
   void write(u8 v)   { if (ReadOnly) return; r._hw0 = v; }
   void write2(u8 v)  { if (ReadOnly) return; r._hw2  = v; }
 
+  R* operator->() { return &r; }
 friend P;
 };
 
@@ -661,7 +672,7 @@ private:
   // 0x1F80'1D84 混响输出音量
   SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_reverb_vol> reverbVol;
   // 0x1F80'1DA2 混响工作内存起始地址
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_ram_rev_addr> ramReverbStartAddress;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_ram_rev_addr> reverbBegin;
 
   SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_unknow1> _un1;
   SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_unknow2> _un2;
@@ -676,28 +687,28 @@ private:
   SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_ref_vol2>     vWALL;
   SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_apf_vol1>     vAPF1;
   SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_apf_vol2>     vAPF2;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref1l>  mSAMEl;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref1r>  mSAMEr;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb1l>      mCOMB1l;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb1r>      mCOMB1r;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb2l>      mCOMB2l;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb2r>      mCOMB2r;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref2l>  dSAMEl;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref2r>  dSAMEr;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref1l>  mDIFFl;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref1r>  mDIFFr;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb3l>      mCOMB3l;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb3r>      mCOMB3r;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb4l>      mCOMB4l;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb4r>      mCOMB4r;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref2l>  dDIFFl;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref2r>  dDIFFr;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr1l>  mAPF1l;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr1r>  mAPF1r;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr2l>  mAPF2l;
-  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr2r>  mAPF2r;
-  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_in_voll>      vINl;
-  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_in_volr>      vINr;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref1l>  mLSAME;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref1r>  mRSAME;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb1l>      mLCOMB1;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb1r>      mRCOMB1;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb2l>      mLCOMB2;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb2r>      mRCOMB2;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref2l>  dLSAME;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_same_ref2r>  dRSAME;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref1l>  mLDIFF;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref1r>  mRDIFF;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb3l>      mLCOMB3;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb3r>      mRCOMB3;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb4l>      mLCOMB4;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_comb4r>      mRCOMB4;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref2l>  dLDIFF;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_diff_ref2r>  dRDIFF;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr1l>  mLAPF1;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr1r>  mRAPF1;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr2l>  mLAPF2;
+  SpuIO<SoundProcessing, AddrReg, DeviceIOMapper::spu_rb_apf_addr2r>  mRAPF2;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_in_voll>      vLIN;
+  SpuIO<SoundProcessing, SpuReg, DeviceIOMapper::spu_rb_in_volr>      vRIN;
 
   // ch0 ... ch23
   SPU_DEF_ALL_CHANNELS(ch, SPU_DEF_VAL)
@@ -718,6 +729,8 @@ private:
   s16 nsLevel;
   SmallBuf<PcmSample> swap1;
   SmallBuf<PcmSample> swap2;
+  SmallBuf<PcmSample> echoOutSwap;
+  s32 echo_addr_offset;
 
   // 寄存器函数
   void set_transfer_address(u32 a, u32);
@@ -734,6 +747,29 @@ private:
   // 'beginAddr+偏移'(不包含) 之间, 则发送中断并返回 true
   bool check_irq(u32 beginAddr, u32 offset);
   void init_dac();
+  // echo 收集所有通道必要的混响数据, 处理后将混响数据输出到 echo
+  void apply_reverb(PcmSample* echo, u32 nframe);
+
+  //
+  // 进行最后的混合, 对buf 进行主音量包络, 并将混响/CD/外部音源混合到输出
+  // 缓冲区都是左右格式
+  // buf    -- 输入输出缓冲区, 所有通道的混音, 并最终输出
+  // echo   -- 所有通道的混响数据
+  // nframe -- 一个声道的输出帧数量
+  //
+  void mix_end(PcmSample* buf, PcmSample* echo, u32 nframe);
+
+  //
+  // 将通道中的所有帧混合到输出缓冲区
+  // cn         -- 通道号
+  // dst        -- 音频输出缓冲区, 将通道数据混合到其中, 左右格式
+  // median     -- 前一通道的输出数据, 未经过通道音量包络, 单通道
+  // channelout -- 当前通道的输出数据, 未经过通道音量包络, 单通道
+  // nframe     -- 一个声道的输出帧数量
+  // echoOut    -- 混响输出缓冲区, 必要时将通道数据混合到其中, 左右格式
+  //
+  void process_channel(int cn, PcmSample *dst, PcmSample *median, PcmSample* channelout, 
+                       u32 nframe, PcmSample* echoOut);
 
 protected:
   void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) override;

@@ -38,7 +38,7 @@ static const PcmSample adpcm_coefs_dict[16][2] = {
     { 0.109375  , -0.9375    }, //{   7.0 / 64.0 , -60.0 / 64.0 },
 };
 
-static PcmSample fix_volume_overload = 0.18;
+static PcmSample fix_volume_overload = 0.22;
 
 // 混音算法 
 // int32: C = A + B - (A * B >> 0x10)
@@ -47,8 +47,8 @@ static inline PcmSample mixer(PcmSample a, PcmSample b) {
   //return (a + b) - (a * b);
   PcmSample r = a + b * fix_volume_overload;
 #ifdef SPU_AUTO_LIMIT_VOLUME
-  if (r > 1.0 || r < -1.0) {
-    fix_volume_overload -= 0.001;
+  if (r >= 1.0 || r <= -1.0) {
+    fix_volume_overload -= (1.0/44100.0);
     warn("Volume overload %f\n", fix_volume_overload);
   }
 #endif
@@ -86,21 +86,22 @@ SoundProcessing::SoundProcessing(Bus& b) :
   SPU_II(dAPF1),    SPU_II(dAPF2),    SPU_II(vIIR),
   SPU_II(vCOMB1),   SPU_II(vCOMB2),   SPU_II(vCOMB3),
   SPU_II(vCOMB4),   SPU_II(vWALL),    SPU_II(vAPF1),
-  SPU_II(vAPF2),    SPU_II(mSAMEr),   SPU_II(mCOMB1r),
-                    SPU_II(mSAMEl),   SPU_II(mCOMB1l),
-  SPU_II(mCOMB2r),  SPU_II(dSAMEr),   SPU_II(mDIFFr),
-  SPU_II(mCOMB2l),  SPU_II(dSAMEl),   SPU_II(mDIFFl),
-  SPU_II(mCOMB3r),  SPU_II(mCOMB4r),  SPU_II(dDIFFr),
-  SPU_II(mCOMB3l),  SPU_II(mCOMB4l),  SPU_II(dDIFFl),
-  SPU_II(mAPF1r),   SPU_II(mAPF2r),   SPU_II(vINr),
-  SPU_II(mAPF1l),   SPU_II(mAPF2l),   SPU_II(vINl),
+  SPU_II(vAPF2),    SPU_II(mRSAME),   SPU_II(mRCOMB1),
+                    SPU_II(mLSAME),   SPU_II(mLCOMB1),
+  SPU_II(mRCOMB2),  SPU_II(dRSAME),   SPU_II(mRDIFF),
+  SPU_II(mLCOMB2),  SPU_II(dLSAME),   SPU_II(mLDIFF),
+  SPU_II(mRCOMB3),  SPU_II(mRCOMB4),  SPU_II(dRDIFF),
+  SPU_II(mLCOMB3),  SPU_II(mLCOMB4),  SPU_II(dLDIFF),
+  SPU_II(mRAPF1),   SPU_II(mRAPF2),   SPU_II(vRIN),
+  SPU_II(mLAPF1),   SPU_II(mLAPF2),   SPU_II(vLIN),
   SPU_DEF_ALL_CHANNELS(ch, SPU_INIT_CHANNEL) _un1(*this, b), _un2(*this, b),
-  SPU_II(ramReverbStartAddress), SPU_II(ramIrqAdress), SPU_II(ramTransferCtrl),
+  SPU_II(reverbBegin), SPU_II(ramIrqAdress), SPU_II(ramTransferCtrl),
   ramTransferFifo(*this, b, &SoundProcessing::push_fifo),
   ramTransferAddress(*this, b, &SoundProcessing::set_transfer_address),
   ctrl(*this, b, &SoundProcessing::set_ctrl_req),
   nKeyOn(*this, b, &SoundProcessing::key_on_changed)
 {
+  reverbBegin.r.v = SPU_MEM_ECHO_MASK;
   mem = new u8[SPU_MEM_SIZE];
   memset(mem, 0, SPU_MEM_SIZE);
   memset(fifo, 0, SPU_FIFO_SIZE << 1);
@@ -150,8 +151,14 @@ static void setzero(PcmSample *buf, u32 nframe) {
 }
 
 
-static void process_channel(PcmStreamer* ps, PcmSample *dst, 
-                            PcmSample *median, PcmSample* channelout, u32 nframe) {
+void SoundProcessing::process_channel(int cn, 
+                                      PcmSample *dst, 
+                                      PcmSample *median, 
+                                      PcmSample* channelout, 
+                                      u32 nframe, 
+                                      PcmSample* echo_out) 
+{
+  PcmStreamer* ps = channel_stream[cn];
   if (ps->readSampleBlocks(median, channelout, nframe)) {
     VolumeEnvelope* lve = ps->getVolumeEnvelope(true);
     VolumeEnvelope* rve = ps->getVolumeEnvelope(false);
@@ -164,6 +171,11 @@ static void process_channel(PcmStreamer* ps, PcmSample *dst,
       rve->apply(right);
       dst[i+0] = mixer(dst[i+0], left);
       dst[i+1] = mixer(dst[i+1], right);
+
+      if (isEnableEcho(cn)) {
+        echo_out[i+0] = mixer(echo_out[i+0], left);
+        echo_out[i+1] = mixer(echo_out[i+1], left);
+      }
     }
     ps->syncVol(lve, rve);
   } else {
@@ -181,46 +193,149 @@ void SoundProcessing::requestAudioData(PcmSample *buf, u32 nframe, double time) 
     return;
   }
 
+  PcmSample* ec = echoOutSwap.get(nframe << 1);
   PcmSample* p1 = swap1.get(nframe);
   PcmSample* p2 = swap2.get(nframe);
   setzero(p1, nframe);
+  setzero(ec, nframe << 1);
 
-  process_channel( &ch0, buf, p1, p2, nframe);
-  process_channel( &ch1, buf, p2, p1, nframe);
-  process_channel( &ch2, buf, p1, p2, nframe);
-  process_channel( &ch3, buf, p2, p1, nframe);
-  process_channel( &ch4, buf, p1, p2, nframe);
-  process_channel( &ch5, buf, p2, p1, nframe);
-  process_channel( &ch6, buf, p1, p2, nframe);
-  process_channel( &ch7, buf, p2, p1, nframe);
+  process_channel( 0, buf, p1, p2, nframe, ec);
+  process_channel( 1, buf, p2, p1, nframe, ec);
+  process_channel( 2, buf, p1, p2, nframe, ec);
+  process_channel( 3, buf, p2, p1, nframe, ec);
+  process_channel( 4, buf, p1, p2, nframe, ec);
+  process_channel( 5, buf, p2, p1, nframe, ec);
+  process_channel( 6, buf, p1, p2, nframe, ec);
+  process_channel( 7, buf, p2, p1, nframe, ec);
 
-  process_channel( &ch8, buf, p1, p2, nframe);
-  process_channel( &ch9, buf, p2, p1, nframe);
-  process_channel(&ch10, buf, p1, p2, nframe);
-  process_channel(&ch11, buf, p2, p1, nframe);
-  process_channel(&ch12, buf, p1, p2, nframe);
-  process_channel(&ch13, buf, p2, p1, nframe);
-  process_channel(&ch14, buf, p1, p2, nframe);
-  process_channel(&ch15, buf, p2, p1, nframe);
+  process_channel( 8, buf, p1, p2, nframe, ec);
+  process_channel( 9, buf, p2, p1, nframe, ec);
+  process_channel(10, buf, p1, p2, nframe, ec);
+  process_channel(11, buf, p2, p1, nframe, ec);
+  process_channel(12, buf, p1, p2, nframe, ec);
+  process_channel(13, buf, p2, p1, nframe, ec);
+  process_channel(14, buf, p1, p2, nframe, ec);
+  process_channel(15, buf, p2, p1, nframe, ec);
 
-  process_channel(&ch16, buf, p1, p2, nframe);
-  process_channel(&ch17, buf, p2, p1, nframe);
-  process_channel(&ch18, buf, p1, p2, nframe);
-  process_channel(&ch19, buf, p2, p1, nframe);
-  process_channel(&ch20, buf, p1, p2, nframe);
-  process_channel(&ch21, buf, p2, p1, nframe);
-  process_channel(&ch22, buf, p1, p2, nframe);
-  process_channel(&ch23, buf, p2, p1, nframe);
+  process_channel(16, buf, p1, p2, nframe, ec);
+  process_channel(17, buf, p2, p1, nframe, ec);
+  process_channel(18, buf, p1, p2, nframe, ec);
+  process_channel(19, buf, p2, p1, nframe, ec);
+  process_channel(20, buf, p1, p2, nframe, ec);
+  process_channel(21, buf, p2, p1, nframe, ec);
+  process_channel(22, buf, p1, p2, nframe, ec);
+  process_channel(23, buf, p2, p1, nframe, ec);
+
+  apply_reverb(ec, nframe);
+  mix_end(buf, ec, nframe);
+}
+
 
   //TODO 混合CD/混响/外部音源
-  if (mainVol.r.v != 0) {
-    PcmSample main_left  = SPU_F_VOLUME(mainVol.r.v & 0xFFFF);
-    PcmSample main_right = SPU_F_VOLUME(mainVol.r.v >> 16);
-    for (u32 i = 0; i < (nframe<<1); i+=2) {
-      buf[i+0] = buf[i+0] * main_left;
-      buf[i+1] = buf[i+1] * main_right;
-    }
+void SoundProcessing::mix_end(PcmSample* buf, PcmSample* echo, u32 nframe) {
+  PcmSample main_left  = SPU_F_VOLUME(mainVol.r.v & 0xFFFF);
+  PcmSample main_right = SPU_F_VOLUME(mainVol.r.v >> 16);
+  PcmSample echo_left  = SPU_F_VOLUME(reverbVol.r.v & 0xFFFF);
+  PcmSample echo_right = SPU_F_VOLUME(reverbVol.r.v >> 16);
+
+  for (u32 i = 0; i < (nframe<<1); i+=2) {
+    buf[i+0] = buf[i+0] * main_left  + echo[i+0] * echo_left;
+    buf[i+1] = buf[i+1] * main_right + echo[i+1] * echo_right;
   }
+}
+
+
+void SoundProcessing::apply_reverb(PcmSample* echo, u32 nframe) {
+#define A(reg)    s16(reg->address()>>1)
+#define V(reg)    s16(reg->sl)
+#define T         double
+  const s16 mLSAME = A(this->mLSAME);
+  const s16 mRSAME = A(this->mRSAME);
+  const s16 dLSAME = A(this->dLSAME);
+  const s16 dRSAME = A(this->dRSAME);
+  const T   vWALL  = V(this->vWALL);
+  const T   vIIR   = V(this->vIIR);
+  const s16 mLDIFF = A(this->mLDIFF);
+  const s16 mRDIFF = A(this->mRDIFF);
+  const s16 dRDIFF = A(this->dRDIFF);
+  const s16 dLDIFF = A(this->dLDIFF);
+  const T   vCOMB1 = V(this->vCOMB1);
+  const T   vCOMB2 = V(this->vCOMB2);
+  const T   vCOMB3 = V(this->vCOMB3);
+  const T   vCOMB4 = V(this->vCOMB4);
+  const s16 mLCOMB1= A(this->mLCOMB1);
+  const s16 mLCOMB2= A(this->mLCOMB2);
+  const s16 mLCOMB3= A(this->mLCOMB3);
+  const s16 mLCOMB4= A(this->mLCOMB4);
+  const s16 mRCOMB1= A(this->mRCOMB1);
+  const s16 mRCOMB2= A(this->mRCOMB2);
+  const s16 mRCOMB3= A(this->mRCOMB3);
+  const s16 mRCOMB4= A(this->mRCOMB4);
+  const s16 mLAPF1 = A(this->mLAPF1);
+  const s16 mLAPF2 = A(this->mLAPF2);
+  const s16 mRAPF1 = A(this->mRAPF1);
+  const s16 mRAPF2 = A(this->mRAPF2);
+  const s16 dAPF1  = A(this->dAPF1);
+  const s16 dAPF2  = A(this->dAPF2);
+  const T   vAPF1  = V(this->vAPF1);
+  const T   vAPF2  = V(this->vAPF2);
+
+  const PcmSample maxVol = 0x8000;
+  const bool masterEchoEnable = ctrl.r.mst_rev;
+  const u32 begin = reverbBegin.r.address() & SPU_MEM_ECHO_MASK;
+  const u32 len   = SPU_MEM_ECHO_MASK - begin;
+  const s32 hwlen = len >> 1;
+  s16 *base = (s16*)(mem + begin);
+
+#define L(addr)     base[(echo_addr_offset + ((addr)>>1)) % hwlen]
+#define R(addr)     L(addr + hwlen)
+#define MUL(a, b)   ((T(a)*T(b)) / maxVol)
+
+  for (u32 i = 0; i < (nframe<<1); i+=2) {
+    if (masterEchoEnable) {
+      //TODO: echo输入音量超过x引起爆音, 寻找x
+      T Lin = T(vLIN.r.sl) * echo[i+0] *0.7;
+      T Rin = T(vRIN.r.sl) * echo[i+1] *0.7;
+
+      L(mLSAME) = MUL((Lin + MUL(L(dLSAME), vWALL) - L(mLSAME -2)), vIIR) + L(mLSAME -2);
+      R(mRSAME) = MUL((Rin + MUL(R(dRSAME), vWALL) - R(mRSAME -2)), vIIR) + R(mRSAME -2);
+
+      L(mLDIFF) = MUL((Lin + MUL(L(dRDIFF), vWALL) - L(mLDIFF -2)), vIIR) + L(mLDIFF -2);
+      R(mRDIFF) = MUL((Rin + MUL(R(dLDIFF), vWALL) - R(mRDIFF -2)), vIIR) + R(mRDIFF -2);
+    }
+
+    T Lout = MUL(vCOMB1, L(mLCOMB1)) +MUL(vCOMB2, L(mLCOMB2)) +MUL(vCOMB3, L(mLCOMB3)) +MUL(vCOMB4, L(mLCOMB4));
+    T Rout = MUL(vCOMB1, R(mRCOMB1)) +MUL(vCOMB2, R(mRCOMB2)) +MUL(vCOMB3, R(mRCOMB3)) +MUL(vCOMB4, R(mRCOMB4));
+
+    T o1 = Lout - MUL(vAPF1, L(mLAPF1 - dAPF1));
+    Lout = MUL(o1, vAPF1) + L(mLAPF1 - dAPF1);
+
+    T o2 = Rout - MUL(vAPF1, R(mRAPF1 - dAPF1));
+    Rout = MUL(o2, vAPF1) + R(mRAPF1 - dAPF1);
+
+    T o3 = Lout - MUL(vAPF2, L(mLAPF2 - dAPF2));
+    Lout = MUL(o3, vAPF2) + L(mLAPF2 - dAPF2);
+
+    T o4 = Rout - MUL(vAPF2, R(mRAPF2 - dAPF2));
+    Rout = MUL(o4, vAPF2) + R(mRAPF2 - dAPF2);
+
+    if (masterEchoEnable) {
+      L(mLAPF1) = o1;
+      R(mRAPF1) = o2;
+      L(mLAPF2) = o3;
+      R(mRAPF2) = o4;
+    }
+
+    echo[i+0] = T(Lout) / maxVol;
+    echo[i+1] = T(Rout) / maxVol;
+    ++echo_addr_offset;
+  }
+#undef A
+#undef V
+#undef L
+#undef R
+#undef MUL
+#undef T
 }
 
 
@@ -308,12 +423,12 @@ void SoundProcessing::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
   status.r.busy = 1;
 
   u32 waddr = mem_write_addr;
-  u32 *m32  = (u32*) mem;
-  const int step = inc << 2;
-  const int len = bytesize >> 2;
+  u16 *m16  = (u16*) mem;
+  const int step = inc << 1;
+  const int len = bytesize >> 1;
 
   for (int i=0; i < len; ++i) {
-    m32[i + waddr] = bus.read32(addr);
+    m16[i + waddr] = bus.read16(addr);
     addr += step;
   }
 
@@ -331,12 +446,12 @@ void SoundProcessing::dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) {
   status.r.busy = 1;
 
   u32 waddr = mem_write_addr;
-  u32 *m32  = (u32*) mem;
-  const int step = inc << 2;
-  const int len = bytesize >> 2;
+  u16 *m16  = (u16*) mem;
+  const int step = inc << 1;
+  const int len = bytesize >> 1;
 
   for (int i=0; i < len; ++i) {
-    bus.write32(addr, m32[i + waddr]);
+    bus.write16(addr, m16[i + waddr]);
     addr += step;
   }
 
@@ -492,28 +607,30 @@ u8* SoundProcessing::get_spu_mem() {
 
 
 u32 SoundProcessing::get_var(SpuChVarFlag f, int c) {
-  if (c >= 0 && c < 24) {
-    return channel_stream[c]->getVar(f);
-  }
-
   switch (f) {
     case SpuChVarFlag::key_on:
-      return nKeyOn.read();
+      return c>=0 ? nKeyOn.get(c) : nKeyOn.read();
 
     case SpuChVarFlag::key_off:
-      return nKeyOff.read();
+      return c>=0 ? nKeyOff.get(c) : nKeyOff.read();
 
     case SpuChVarFlag::endx:
-      return endx.read();
+      return c>=0 ? endx.get(c) : endx.read();
 
     case SpuChVarFlag::fm:
-      return nFM.read();
+      return c>=0 ? nFM.get(c) : nFM.read();
 
     case SpuChVarFlag::noise:
-      return nNoise.read();
+      return c>=0 ? nNoise.get(c) : nNoise.read();
 
     case SpuChVarFlag::echo:
-      return nReverb.read();
+      return c>=0 ? nReverb.get(c) : nReverb.read();
+
+    case SpuChVarFlag::ctrl:
+      return ctrl.r.v;
+  }
+  if (c >= 0 && c < 24) {
+    return channel_stream[c]->getVar(f);
   }
   return 0;
 }
@@ -603,7 +720,7 @@ static long resample_src_callback(void *cb_data, float **data) {
 PcmResample::PcmResample(PcmStreamer *p) : stage(0), stream(p) {
   // SRC_SINC_MEDIUM_QUALITY SRC_SINC_FASTEST
   int error;
-  stage = src_callback_new(resample_src_callback, SRC_SINC_FASTEST, 1, &error, this);
+  stage = src_callback_new(resample_src_callback, SRC_SINC_MEDIUM_QUALITY, 1, &error, this);
   check_error(error);
   buf = new float[buf_size];
 }

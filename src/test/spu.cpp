@@ -106,6 +106,58 @@ static void print_number(PrintfBuf& b, int begin, int size) {
 }
 
 
+static void print_sw(PrintfBuf& b, SoundProcessing& spu, int begin, int size) {
+  static const char d[] = {'_', '<', '_', '>', '_', '|', '_', '!', '_', '*', '_', '~'};
+  for (int i=begin; i<begin+size; ++i) {
+    b.printf("  %c%c%c%c%c%c ", 
+      d[spu.get_var(SpuChVarFlag::key_on, i)],
+      d[spu.get_var(SpuChVarFlag::key_off, i)+2],
+      d[spu.get_var(SpuChVarFlag::endx, i)+4],
+      d[spu.get_var(SpuChVarFlag::fm, i)+6],
+      d[spu.get_var(SpuChVarFlag::noise, i)+8],
+      d[spu.get_var(SpuChVarFlag::echo, i)+10]
+      );
+  }
+  b.put('\n');
+}
+
+
+static void print_adsr(PrintfBuf& b, SoundProcessing& spu, int begin, int size) {
+  ADSRReg a;
+  b.printf(" Atk ");
+  for (int i=begin; i<begin+size; ++i) {
+    a.v = spu.get_var(SpuChVarFlag::adsr, i);
+    b.printf(" %c+%d<<%02d ", a.at_md?'^':' ', a.at_st, a.at_sh);
+  }
+
+  b.printf("\n Dec ");
+  for (int i=begin; i<begin+size; ++i) {
+    a.v = spu.get_var(SpuChVarFlag::adsr, i);
+    b.printf(" ^-8<<%02d ", a.de_sh);
+  }
+
+  b.printf("\n Sus ");
+  for (int i=begin; i<begin+size; ++i) {
+    a.v = spu.get_var(SpuChVarFlag::adsr, i);
+    b.printf(" %c%c%d<<%02d ", a.su_md?'^':' ', a.su_di?'-':'+', a.su_st, a.su_sh);
+  }
+
+  b.printf("\n Slv ");
+  for (int i=begin; i<begin+size; ++i) {
+    a.v = spu.get_var(SpuChVarFlag::adsr, i);
+    b.printf("   %5d ", (a.su_lv+1) * 0x800);
+  }
+
+  b.printf("\n Rel ");
+  for (int i=begin; i<begin+size; ++i) {
+    a.v = spu.get_var(SpuChVarFlag::adsr, i);
+    b.printf(" %c-3<<%02d ", a.re_md ?'^':' ', a.at_st, a.re_sh);
+  }
+
+  b.put('\n');
+}
+
+
 static void print_group(PrintfBuf& b, SoundProcessing& spu, int begin, int size) {
   print_number(b, begin, size);
   for (int i=0; i<9*size + 5; ++i) b.putchar('_');
@@ -119,12 +171,15 @@ static void print_group(PrintfBuf& b, SoundProcessing& spu, int begin, int size)
     print_var(b, spu, SpuChVarFlag::start_address, begin, size);
   b.printf("Radr ");
     print_var(b, spu, SpuChVarFlag::repeat_address, begin, size);
-  b.printf("ADSR ");
-    print_var(b, spu, SpuChVarFlag::adsr, begin, size);
   b.printf("AVol ");
     print_var(b, spu, SpuChVarFlag::adsr_volume, begin, size);
   b.printf("Aste ");
     print_var(b, spu, SpuChVarFlag::adsr_state, begin, size);
+  b.printf("SW   ");
+    print_sw(b, spu, begin, size);
+  b.printf("ADSR ");
+    print_var(b, spu, SpuChVarFlag::adsr, begin, size);
+  print_adsr(b, spu, begin, size);
   b.put('\n');
 }
 
@@ -135,6 +190,7 @@ static void print_register(SoundProcessing& spu) {
   print_group(b, spu, 0, 8);
   print_group(b, spu, 8, 8);
   print_group(b, spu, 16, 8);
+  b.printf(MAGENTA("NOTE: < Key on  > Key off  | End  ! FM  * Noise  ~ Echo\n\n"));
 }
 
 
@@ -148,6 +204,8 @@ static void print_switch(SoundProcessing& spu) {
   b.bit(spu.get_var(SpuChVarFlag::noise, -1), "|");
   b.printf("END\n");
   b.bit(spu.get_var(SpuChVarFlag::endx, -1), "|");
+  b.printf("CTRL\n");
+  b.bit(spu.get_var(SpuChVarFlag::ctrl, -1), "|");
 }
 
 
@@ -245,7 +303,7 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
     else switch (ch) {
     case '?': {
       PrintfBuf b;
-      b.printf("\tpress =-123456789   chang pitch\n");
+      b.printf("\r\tpress =-123456789   chang pitch\n");
       b.printf("\tpress a-z           play note\n");
       b.printf("\tpress [ ]           up left/right volume\n");
       b.printf("\tpress { }           down left/right volume, maybe change to sweet mode\n");
@@ -407,7 +465,9 @@ static void spu_play_sound() {
     b.write32(0x1F80'1C00 +chi, 0); // 音量
   }
   
-  b.write32(0x1F80'1DAA, 0x0000'F083); // SPUCNT, Unmute
+  b.write32(0x1F80'1D84, 0xffff); // 混响音量
+  b.write16(0x1F80'1DA2, 0x0007'F000 >> 3); // 混响地址
+  b.write32(0x1F80'1DAA, 0x0000'F003); // SPUCNT, Unmute, 0x0000'F083启用混响
   play_spu_current_font(spu, b, use_channel_n);
 }
 
@@ -438,7 +498,7 @@ static void test_adsr() {
 void test_spu() {
   test_spu_reg();
   //test_adsr();
-  spu_play_sound();
+  //spu_play_sound();
 }
 
 }

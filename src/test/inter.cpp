@@ -166,23 +166,11 @@ wait_input:
 
         case '0':
           cpu.reset();
-          printf("RESET\n");
-          break;
-
-        case '1':
-          show_code = 100;
-          break;
-
-        case '2':
-          show_code = 10000;
-          break;
-
-        case '3':
-          show_code = 1000000;
+          printf("\n\n !!! RESET !!!\n\n");
           break;
 
         case 'a':
-          if (inputHexVal("Address HEX:", address)) {
+          if (inputHexVal("Show mem Address HEX:", address)) {
             bus.show_mem_console(address, 0x60);
           }
           goto wait_input;
@@ -196,7 +184,7 @@ wait_input:
           break;
 
         case 'w':
-          if (inputHexVal("Address HEX:", address)) {
+          if (inputHexVal("Write to Address HEX:", address)) {
             u32 v;
             if (inputHexVal("Velue HEX:", v)) {
               bus.write32(address, v);
@@ -206,7 +194,7 @@ wait_input:
           goto wait_input;
 
         case 's':
-          if (inputHexVal("Address HEX:", address)) {
+          if (inputHexVal("Show SPU mem Address HEX:", address)) {
             print_hex("SPU MEM", spu.get_spu_mem()+address, 128, address-s32(spu.get_spu_mem()));
           }
           goto wait_input;
@@ -215,15 +203,15 @@ wait_input:
           play_spu_current_font(spu, bus);
           goto wait_input;
 
+        case '?':
         case 'h': {
           PrintfBuf pb;
           pb.putchar('\n');
           pb.printf("'r' show reg     'x' run, hide debug     's' dump spu memory\n");
-          pb.printf("'1' debug 100    'a' show address value  'z' spu play mode\n");
-          pb.printf("'2' debug 10000  '3' debug 1000000       \n");
-          pb.printf("'0' Reset        'w' write memory        \n");
-          pb.printf("'b' set break    'Enter' next op         \n");
-          pb.printf("'h' show help    'ESC' Exit              \n");
+          pb.printf("'0' Reset        'a' show address value  'z' spu play mode\n");
+          pb.printf("'w' write memory 'Enter' next op          \n");
+          pb.printf("'b' set break                             \n");
+          pb.printf("'h' show help    'ESC' Exit               \n");
           goto wait_input;
           }
 
