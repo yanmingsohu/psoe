@@ -8,16 +8,17 @@ namespace ps1e {
 #define MaxT(a,b)   (((a) > (b)) ? (a) : (b))
 #define CONSTRUCT
 #define SPU_CHANNEL_DEF(RET) \
-  template<DeviceIOMapper t_vol, DeviceIOMapper t_sr, \
-         DeviceIOMapper t_sa,  DeviceIOMapper t_adsr, \
-         DeviceIOMapper t_acv, DeviceIOMapper t_ra,   \
-         DeviceIOMapper t_cv,  int Number>            \
-  RET SPUChannel<t_vol, t_sr, t_sa, t_adsr, t_acv, t_ra, t_cv, Number>
+  template<DeviceIOMapper t_vol_l, DeviceIOMapper t_vol_r, \
+           DeviceIOMapper t_sr,    DeviceIOMapper t_sa,    \
+           DeviceIOMapper t_adsr,  DeviceIOMapper t_acv,   \
+           DeviceIOMapper t_ra,    DeviceIOMapper t_cv,  int Number> \
+  RET SPUChannel<t_vol_l, t_vol_r, t_sr, t_sa, t_adsr, t_acv, t_ra, t_cv, Number>
 
 
 SPU_CHANNEL_DEF(CONSTRUCT)::SPUChannel(SoundProcessing& parent, Bus& b) :
   spu(parent),
-  volume(*this, b, &SPUChannel::set_volume), 
+  voll(*this, b, &SPUChannel::set_volume_l), 
+  volr(*this, b, &SPUChannel::set_volume_r), 
   pcmSampleRate(*this, b, &SPUChannel::set_sample_rate), 
   pcmStartAddr(*this, b, &SPUChannel::set_start_address),
   adsr(*this, b), 
@@ -214,22 +215,27 @@ SPU_CHANNEL_DEF(void)::set_sample_rate(u32 v, u32) {
 
 
 // 当音量变为扫描模式时, 需要同步 currVolume 寄存器
-SPU_CHANNEL_DEF(void)::set_volume(u32 v, u32 old) {
-  const u32 lmask = 1<<15;
-  u32 curr = currVolume.r.v;
+SPU_CHANNEL_DEF(void)::set_volume_l(u32 v, u32 old) {
+  const u32 lmask = 1 << 15;
   if (((v & lmask) == 1) && ((old & lmask) == 0)) {
-    curr = (curr & 0xffff'0000) | ((old & 0x0000'7fff) << 1);
+    currVolume.r.sl = old << 1;
   }
-  const u32 rmask = 1<<31;
+  //ps1e_t::ext_stop = 1;
+  //spudbg("set channel %d volume %x\n", Number, v);
+}
+
+
+SPU_CHANNEL_DEF(void)::set_volume_r(u32 v, u32 old) {
+  const u32 rmask = 1 << 15;
   if (((v & rmask) == 1) && ((old & rmask) == 0)) {
-    curr = (curr & 0x0000'ffff) | ((old & 0x7fff'0000) << 1);
+    currVolume.r.sh = old << 1;
   }
-  currVolume.r.v = curr;
 }
 
 
 SPU_CHANNEL_DEF(VolumeEnvelope*)::getVolumeEnvelope(bool left) {
-  VolData vd = (left ? volume.r.left : volume.r.right);
+  VolData vd;
+  vd.v = u16(left ? voll.r.v : voll.r.v);
   s32 clevel = (left ? s16(currVolume.r.v & 0xffff) : s16(currVolume.r.v >> 16));
   return sweet_ve.get(left, vd, clevel);
 }
@@ -243,7 +249,7 @@ SPU_CHANNEL_DEF(void)::syncVol(VolumeEnvelope* l, VolumeEnvelope* r) {
 SPU_CHANNEL_DEF(u32)::getVar(SpuChVarFlag f) {
   switch (f) {
     case SpuChVarFlag::volume:
-      return volume.r.v;
+      return voll.r.v | (volr.r.v << 16);
     case SpuChVarFlag::work_volume:
       return currVolume.r.v;
     case SpuChVarFlag::sample_rate:

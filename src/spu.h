@@ -28,7 +28,8 @@ namespace ps1e {
 #define SPU_ADPCM_RETE      22050
 // 转换 spu 整数音量到浮点值 x[-8000h..+7FFEh] 输出 -n ~ +n 倍, x==0 则没有变化
 //#define SPU_F_VOLUME(x)     (1 + s16(x)/float(0x8000) * 2)
-#define SPU_F_VOLUME(x)     (s16(x) / float(0x8000))
+// 这个音量策略, 允许音量为负值, 使声音反相.
+#define SPU_F_VOLUME(x)     (float(s16(x)) / float(0x8000))
 
 #define not_aligned_nosupport(x) error("Cannot read SPU IO %u, Memory misalignment\n", u32(x))
 
@@ -259,6 +260,7 @@ friend Parent;
 };
 
 
+// 对于 32位总线, 高16位高8位写入无响应
 template<class P, DeviceIOMapper N, class Reg = SpuReg, bool ReadOnly = false>
 class SpuIOFunction : public SpuIOBase<P, N> {
 public:
@@ -543,14 +545,16 @@ public:
 };
 
 
-template<DeviceIOMapper t_vol, DeviceIOMapper t_sr,
-         DeviceIOMapper t_sa,  DeviceIOMapper t_adsr,
-         DeviceIOMapper t_acv, DeviceIOMapper t_ra,
-         DeviceIOMapper t_cv,  int Number>
+template<DeviceIOMapper t_vol_l, DeviceIOMapper t_vol_r, 
+         DeviceIOMapper t_sr,    DeviceIOMapper t_sa,  
+         DeviceIOMapper t_adsr,  DeviceIOMapper t_acv, 
+         DeviceIOMapper t_ra,    DeviceIOMapper t_cv,  int Number>
 class SPUChannel : public NonCopy, public PcmStreamer {
 private:
   // 0x1F801Cn0
-  SpuIOFunction<SPUChannel, t_vol, VolumnReg> volume;  
+  SpuIOFunction<SPUChannel, t_vol_l, SpuReg> voll;
+  // 0x1F801Cn2
+  SpuIOFunction<SPUChannel, t_vol_r, SpuReg> volr;
   // 0x1F801Cn4 (0=stop, 4000h=fastest, 4001h..FFFFh == 4000h, 1000h=44100Hz)
   SpuIOFunction<SPUChannel, t_sr, SpuReg> pcmSampleRate;
   // 0x1F801Cn6 声音开始地址, 样本由一个或多个16字节块组成
@@ -588,7 +592,8 @@ private:
   void set_start_address(u32, u32);
   void set_repeat_addr(u32, u32);
   void set_sample_rate(u32, u32);
-  void set_volume(u32, u32);
+  void set_volume_l(u32, u32);
+  void set_volume_r(u32, u32);
   u32 read_curr_volume();
 
 public:

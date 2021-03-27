@@ -38,7 +38,7 @@ static const PcmSample adpcm_coefs_dict[16][2] = {
     { 0.109375  , -0.9375    }, //{   7.0 / 64.0 , -60.0 / 64.0 },
 };
 
-static PcmSample fix_volume_overload = 0.18;
+static PcmSample fix_volume_overload = 0.8;
 
 // 混音算法 
 // int32: C = A + B - (A * B >> 0x10)
@@ -49,7 +49,7 @@ static inline PcmSample mixer(PcmSample a, PcmSample b) {
 #ifdef SPU_AUTO_LIMIT_VOLUME
   if (r >= 1.0 || r <= -1.0) {
     fix_volume_overload -= (1.0/44100.0);
-    warn("Volume overload %f\n", fix_volume_overload);
+    warn("\rVolume overload %f ", fix_volume_overload);
   }
 #endif
   return r;
@@ -882,7 +882,7 @@ s16 VolumeEnvelopeSet::FixVol::getVol() {
 
 
 void VolumeEnvelopeSet::DoZero::apply(PcmSample& v) {
-  //Do nothing
+  v = 0;
 }
 
 

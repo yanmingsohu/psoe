@@ -279,10 +279,11 @@ static void scan_loop_point(SoundProcessing& spu, u32 *font, u32& size) {
 void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
   u32 font[0xff] = {0x1000};
   u32 fp = sizeof(font) / sizeof(u32);
-  u32 volume = 0x4000'4000;
+  u32 volume = 0x3fff'3fff; //3FFF 音量最大, 7FFF 反向, FFFF 扫频模式
   int font_i = 0;
-  u16 pitch = 0x100;
-  u16 mpitch = 0;
+  double pitch8 = 110;
+  double note = 0;
+  double frq = 0;
   u32 channelIdx = 0;
   u32 noise = 0;
   u32 nfm = 0;
@@ -295,10 +296,10 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
     //printf("%d ", ch);
 
     if (ch > '0' && ch <= '9') {
-      pitch = 0x100 + (ch - '1') * 0x400;
+      pitch8 = std::pow(2, (ch - '0')) * 110.0;
     } 
     else if (ch >= 'a' && ch <= 'z') {
-      mpitch = toneMap[ch - 'a'] * 0x90;
+      note = toneMap[ch - 'a'];
     }
     else switch (ch) {
     case '?': {
@@ -308,10 +309,10 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
       b.printf("\tpress [ ]           up left/right volume\n");
       b.printf("\tpress { }           down left/right volume, maybe change to sweet mode\n");
       b.printf("\tpress BS            stop all note\n");
-      b.printf("\tpress 0             reset pitch and volume\n");
+      b.printf("\tpress 0             reset volume to zero\n");
       b.printf("\tpress /             switch low pass filter\n");
       b.printf("\tpress ,.            change timbre\n");
-      b.printf("\tpreee `             switch channel 0 noise\n");
+      b.printf("\tpreee `             switch channel 0 Noise\n");
       b.printf("\tpreee TAB           switch channel 1 Pitch Modulation\n");
       b.printf("\tpreee ENTER         show spu register.\n");
       b.printf("\tpreee \\             show spu channel switch.\n");
@@ -334,16 +335,15 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
       return;
 
     case '=': case '+':
-      pitch += 0x10;
+      pitch8 += 0x10;
       break;
 
     case '-': case '_':
-      pitch -= 0x10;
+      pitch8 -= 0x10;
       break;
 
     case '0':
-      pitch = 0x1000;
-      volume = 0x4000'4000;
+      volume = 0;
       break;
 
     case '/':
@@ -405,13 +405,14 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
     default:
       continue;
     }
-
+    
+    frq = std::pow(std::pow(2.0, 1.0/12.0), note) * pitch8;
     b.write32(0x1F80'1C00 + (0x10 * channelIdx), volume); //音量
-    b.write16(0x1F80'1C04 + (0x10 * channelIdx), pitch + mpitch); //音高
+    b.write16(0x1F80'1C04 + (0x10 * channelIdx), frq /44100.0 *0x1000); //音高
     b.write16(0x1F80'1C06 + (0x10 * channelIdx), (font[font_i]) >> 3); // 地址
     b.write32(0x1F80'1D88, 1 << channelIdx); // Kon
-    printf(" channel %d pitch %d volume %x tone %d\n", 
-        channelIdx, (pitch + mpitch) * (44100/0x1000), volume, font_i);
+    printf(" channel %d pitch %f volume %x tone %d\n", 
+        channelIdx, frq, volume, font_i);
 
     if (++channelIdx >= use_channel_n) {
       channelIdx = 0;
