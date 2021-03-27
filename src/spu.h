@@ -27,8 +27,9 @@ namespace ps1e {
 #define SPU_WORK_FREQ       44100
 #define SPU_ADPCM_RETE      22050
 // 转换 spu 整数音量到浮点值 x[-8000h..+7FFEh] 输出 -n ~ +n 倍, x==0 则没有变化
-// old: (1 + s16(x)/float(0x8000) * 2)
+//#define SPU_F_VOLUME(x)     (1 + s16(x)/float(0x8000) * 2)
 #define SPU_F_VOLUME(x)     (s16(x) / float(0x8000))
+
 #define not_aligned_nosupport(x) error("Cannot read SPU IO %u, Memory misalignment\n", u32(x))
 
 // 如果 begin 到 begin+size(不包含) 之间穿过了 point 则返回 true, size > 0

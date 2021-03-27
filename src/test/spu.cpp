@@ -279,7 +279,7 @@ static void scan_loop_point(SoundProcessing& spu, u32 *font, u32& size) {
 void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
   u32 font[0xff] = {0x1000};
   u32 fp = sizeof(font) / sizeof(u32);
-  u32 volume = 0;
+  u32 volume = 0x4000'4000;
   int font_i = 0;
   u16 pitch = 0x100;
   u16 mpitch = 0;
@@ -343,7 +343,7 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
 
     case '0':
       pitch = 0x1000;
-      volume = 0x0000'0000;
+      volume = 0x4000'4000;
       break;
 
     case '/':
@@ -457,6 +457,10 @@ static void spu_play_sound() {
   printf("ADSR:");
   print_adsr(a.v);
   
+  b.write32(0x1F80'1D80, 0x7fff'7fff); // 主音量
+  b.write32(0x1F80'1D84, 0x0); // 混响音量
+  b.write16(0x1F80'1DA2, 0x0007'F000 >> 3); // 混响地址
+
   for (u32 i=0; i<use_channel_n; ++i) {
     u32 chi = 0x10 * i;
     b.write32(0x1F80'1C08 +chi, a.v); // adsr
@@ -465,8 +469,6 @@ static void spu_play_sound() {
     b.write32(0x1F80'1C00 +chi, 0); // 音量
   }
   
-  b.write32(0x1F80'1D84, 0xffff); // 混响音量
-  b.write16(0x1F80'1DA2, 0x0007'F000 >> 3); // 混响地址
   b.write32(0x1F80'1DAA, 0x0000'F003); // SPUCNT, Unmute, 0x0000'F083启用混响
   play_spu_current_font(spu, b, use_channel_n);
 }
@@ -498,7 +500,7 @@ static void test_adsr() {
 void test_spu() {
   test_spu_reg();
   //test_adsr();
-  //spu_play_sound();
+  spu_play_sound();
 }
 
 }

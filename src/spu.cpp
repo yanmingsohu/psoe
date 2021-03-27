@@ -38,7 +38,7 @@ static const PcmSample adpcm_coefs_dict[16][2] = {
     { 0.109375  , -0.9375    }, //{   7.0 / 64.0 , -60.0 / 64.0 },
 };
 
-static PcmSample fix_volume_overload = 0.22;
+static PcmSample fix_volume_overload = 0.18;
 
 // 混音算法 
 // int32: C = A + B - (A * B >> 0x10)
@@ -189,6 +189,7 @@ void SoundProcessing::requestAudioData(PcmSample *buf, u32 nframe, double time) 
   //spudbg("\r\t\t\t\tReQ audio data %d %f", nframe, time);
   noiseTimer -= nframe;
   setzero(buf, nframe << 1);
+
   if (ctrl.r.mute == 0) {
     return;
   }
@@ -725,7 +726,7 @@ static long resample_src_callback(void *cb_data, float **data) {
 PcmResample::PcmResample(PcmStreamer *p) : stage(0), stream(p) {
   // SRC_SINC_MEDIUM_QUALITY SRC_SINC_FASTEST
   int error;
-  stage = src_callback_new(resample_src_callback, SRC_SINC_MEDIUM_QUALITY, 1, &error, this);
+  stage = src_callback_new(resample_src_callback, SRC_SINC_FASTEST, 1, &error, this);
   check_error(error);
   buf = new float[buf_size];
 }
