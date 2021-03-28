@@ -183,7 +183,7 @@ private:
       }
     }
     cop0.sr.v = SET_BIT(cop0.sr.v, COP0_SR_RFE_SHIFT_MASK, u32(cop0.sr.v << 2));
-    debug("Exception GOTO: %x\n", pc);
+    //debug("Exception GOTO: %x\n", pc);
   }
 
   void prejump(u32 target_pc) {
@@ -644,7 +644,7 @@ public:
   }
 
   void mtc0(mips_reg t, mips_reg d) {
-    printf("Cpu SET COP0.%d = %x\n", d, reg.u[t]);
+    //printf("Cpu SET COP0.%d = %x\n", d, reg.u[t]);
     switch (d) {
       case COP0_CAUSE_REG_IDX:
         cop0.r[d] = setbit_with_mask<u32>(cop0.r[d], reg.u[t], COP0_CAUSE_RW_MASK);

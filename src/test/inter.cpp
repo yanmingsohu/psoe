@@ -132,7 +132,7 @@ void debug_system(R3000A& cpu, Bus& bus, MMU& mmu, SoundProcessing& spu) {
     }
 
     if (cpu.exception_counter) {
-      debug("Exception<%d> %d ON PC %x\n", ext_count, counter, cpu.getepc());
+      //debug("Exception<%d> %d ON PC %x\n", ext_count, counter, cpu.getepc());
       ext_count += cpu.exception_counter;
       cpu.exception_counter = 0;
       // 打印前后 5 条指令

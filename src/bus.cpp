@@ -71,7 +71,7 @@ void show_irq_msg(const char *msg, u32 v) {
 
 void IrqReceiver::ready_recv_irq() {
   if (trigger) {
-    show_irq_curr(trigger);
+    //show_irq_curr(trigger);
     set_ext_int(CpuCauseInt::hardware);
     trigger = 0;
   }
@@ -258,35 +258,14 @@ void Bus::__on_write(psmem addr, u32 v) {
   if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
     printf("BUS write JOY %x = %x\n", addr, v);
   }
-  /*if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
-    if (addr != 0x1F80'1DA8 && addr != 0x1f801daa) {
-      printf("BUS write SPU %x = %x\n", addr, v);
+  /*if (addr == 0x1F80'1074) {
+    if (irq_mask != v) {
+      show_irq_msg("mask", v);
     }
+  }
+  if (addr = 0x1F80'1070) {
+    show_irq_msg("stat", irq_status & (v & IRQ_ST_WR_MASK));
   }*/
-  /*if ((0xFFFF'f000 & addr) == 0x1F80'2000) {
-    printf("!!!!!!!!!!!!!!!!!!!!!!!!Bus write RE2 %x = %x %c\n", addr, v, v);
-    ps1e_t::ext_stop = 1;
-  }*/
-
-  // 写入了该地址值 0xf2 导致死循环, 8005616c 处的代码写入
-  // 80056158 写死了值 0xf2, 此路不通
-  // 此后立即执行了 cdrom setloc 命令
-  if (addr == 0x800FBB44) {
-    printf("Die3 %x = %x !!!\n\n", addr, v);
-    //ps1e_t::ext_stop = 1;
-  }
-  if (addr == 0x8011'AF78) {
-    // 死循环原因1: printf 读取 0x8011'AF78 时, 其中为 0, 
-    // 8003e5a8 处代码从 a0010000 复制数据到 8011AF78, 
-    // 用字节顺序拷贝(1byte) 64 字节 (8011afb8), 拷贝结束调用 printf 死循环
-    error("die1 %x %x !!!\n\n", addr, v);
-    //ps1e_t::ext_stop = 1;
-  }
-  if (addr == 0xa001'0000) {
-    // 未找到有代码写入这个地址, 一块内存都是 0
-    error("die2 %x %x !!!\n\n", addr, v);
-    //ps1e_t::ext_stop = 1;
-  }
 }
 
 
@@ -306,13 +285,6 @@ void Bus::__on_read(psmem addr) {
   if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
     printf("BUS read JOY %x\n", addr);
   }
-  //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
-  //  printf("BUS read SPU %x\n", addr);
-  //}
-  /*if ((0xFFFF'f000 & addr) == 0x1F80'2000) {
-    printf("!!!!!!!!!!!!!!!!!!!!!!!!Bus read RE2 %x\n", addr);
-    ps1e_t::ext_stop = 1;
-  }*/
 }
 
 
