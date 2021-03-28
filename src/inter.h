@@ -20,7 +20,8 @@ private:
   u32 pc;
   u32 hi;
   u32 lo;
-  u32 slot_over_pc;
+  // 在跳转延时槽中, 跳转指令得最终目的地址
+  u32 slot_over_pc; 
   bool on_slot_time;
 
 public:
@@ -56,6 +57,7 @@ public:
     check_exe_break();
     if (has_exception()) {
       process_exception();
+      return;
     }
     timer.systemClock();
 
@@ -73,7 +75,6 @@ public:
     u32 code = bus.readOp(npc);
     if (!mips_decode(code, this)) {
       exception(ExeCodeTable::RI, true);
-      ps1e_t::ext_stop = 1;
     }
     
     if (is_on_slot) {
@@ -154,10 +155,13 @@ private:
       
     cop0.sr.KUc = 0;
     cop0.cause.wp = 1;
-
+    
+    // 发生异常后, 不执行 pc 指向得指令, 在退出异常后, 
+    // 重新执行跳转指令
     if (on_slot_time) {
       cop0.cause.bd = 1;
       cop0.epc = pc - 4; 
+      on_slot_time = 0;
     } else {
       cop0.cause.bd = 0;
       cop0.epc = pc;

@@ -222,7 +222,32 @@ static void test_instruction() {
 }
 
 
+static void test_rfe() {
+  const u32 from = 0xEEEE'EEEE;
+  const u32 succ = 0xEEEE'EECB;
+  u32 sr = (COP0_SR_RFE_SHIFT_MASK & from) >> 2;
+  eq(sr, u32(0xB), "bad right shift");
+  u32 to = (COP0_SR_RFE_RESERVED_MASK & from) | sr;
+  eq(to, succ, "rfe mask");
+
+  MemJit j;
+  MMU m(j);
+  Bus b(m);
+  TimerSystem t(b);
+  R3000A c(b, t);
+  b.write32(0, from);
+  c.lw(1, 0, 0);
+  c.mtc0(1, 12); 
+  c.rfe();
+  c.mfc0(2, 12);
+  c.sw(2, 0, 4);
+  u32 v = b.read32(4);
+  eq(v, succ, "rfe fail");
+}
+
+
 void test_cpu() {
+  test_rfe();
   test_reg();
   test_instruction();
   test_bit_order();

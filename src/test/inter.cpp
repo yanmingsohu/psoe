@@ -224,6 +224,13 @@ wait_input:
           }
           goto wait_input;
 
+        case 'k':
+          if (inputHexVal("Display at least N instructions after running HEX:", address)) {
+            show_code = address;
+            ext_stop = 0;
+          }
+          break;
+
         case '?':
         case 'h': {
           PrintfBuf pb;
@@ -231,7 +238,7 @@ wait_input:
           pb.printf("'r' show reg     'x' run, hide debug     's' dump spu memory\n");
           pb.printf("'0' Reset        'a' show address value  'z' spu play mode\n");
           pb.printf("'w' write memory 'Enter' next op         '-' backwards disassembly\n");
-          pb.printf("'b' set break    'i' RW io break \n");
+          pb.printf("'b' set break    'i' RW io break         'k' show OP after running\n");
           pb.printf("'h' show help    'ESC' Exit               \n");
           goto wait_input;
           }

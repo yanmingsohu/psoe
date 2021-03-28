@@ -46,8 +46,8 @@ typedef union {
 } MipsReg;
 
 
-#define COP0_SR_RFE_SHIFT_MASK 0xb0011'1111
-#define COP0_SR_RFE_RESERVED_MASK (~0xb1111)
+#define COP0_SR_RFE_SHIFT_MASK 0b0011'1111
+#define COP0_SR_RFE_RESERVED_MASK (~0b011'1111)
 #define COP0_SR_REG_IDX 12
 typedef union {
   u32 v;

@@ -830,7 +830,7 @@ void CDrom::CmdReadTOC() {
 
 
 void CDrom::CmdGetstat() {
-  //update_status();
+  update_status();
   push_response(attr.v);
   attr.shellopen = 0;
   send_irq(3);
