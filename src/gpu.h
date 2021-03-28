@@ -10,6 +10,7 @@
 #include "otc.h"
 #include "time.h"
 
+#define GPU_DEBUG_INFO
 struct GLFWwindow;
 
 namespace std {
@@ -21,6 +22,13 @@ namespace ps1e {
 class GPU;
 class MonoColorShader;
 class VirtualScreenShader;
+
+#ifdef GPU_DEBUG_INFO
+  #define gpudbg __gpudbg
+  void __gpudbg(const char* format, ...);
+#else
+  #define gpudbg
+#endif
 
 
 union GpuStatus {

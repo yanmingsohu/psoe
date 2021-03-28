@@ -5,9 +5,10 @@
 #include <mutex>
 //#include <condition_variable>
 
+#define DEBUG_CDROM_INFO
+
 struct msf_s;
 struct _CdIo;
-
 
 namespace ps1e {
 
@@ -103,6 +104,7 @@ union CdAttribute {
   void playing();
   void donothing();
   void clearerr();
+  void nodisk();
 };
 
 
@@ -260,6 +262,7 @@ private:
   void clear_data_fifo();
   void clear_resp_fifo(bool resetFifo = true);
   void clear_parm_fifo(bool resetFifo = true);
+  void update_status();
 
 public:
   void CmdSync();

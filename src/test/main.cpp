@@ -1,5 +1,6 @@
 ﻿#include <string.h>
 #include <cstdlib>
+#include <Windows.h>
 
 #include "test.h"
 #include "../gpu.h"
@@ -32,6 +33,13 @@ int main() {
     error("Cannot support big endian CPU\n");
     return 1;
   }
+
+#ifdef WIN_NT
+  SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE)
+      , ENABLE_VIRTUAL_TERMINAL_PROCESSING 
+      | ENABLE_PROCESSED_OUTPUT
+      | ENABLE_WRAP_AT_EOL_OUTPUT);
+#endif
   
   OpenGLScope opengl;
   test_spu();

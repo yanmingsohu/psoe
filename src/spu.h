@@ -10,6 +10,7 @@ extern "C" struct SRC_STATE_tag;
 
 namespace ps1e {
 
+// SPU 调试开关
 #define SPU_DEBUG_INFO
 // 自动压限会影响性能
 #define SPU_AUTO_LIMIT_VOLUME

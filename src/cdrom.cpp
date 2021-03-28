@@ -7,10 +7,13 @@
 
 namespace ps1e {
 
-//#define DEBUG_CDROM
-
-#ifdef DEBUG_CDROM
-  #define dbgcd info
+#ifdef DEBUG_CDROM_INFO
+  #define dbgcd __dbgcd
+  void __dbgcd(const char* format, ...) {
+  //if (ps1e_t::ext_stop) {
+    warp_printf(format, "\x1b[30m\x1b[43m");
+  //}
+}
 #else
   #define dbgcd
 #endif
@@ -91,6 +94,12 @@ void CdAttribute::donothing() {
 
 void CdAttribute::clearerr() {
   seekerr = iderror = error = 0;
+}
+
+
+void CdAttribute::nodisk() {
+  motor = play = read = seek = 0;
+  shellopen = 1;
 }
 
 
@@ -387,7 +396,7 @@ void CDROM_REG::write1(u8 v) {
   switch (p.s_index) {
     case 0: // command 发送命令, 清空数据缓冲区?
       //ps1e_t::ext_stop = 1;
-      dbgcd("CD-ROM w 1f801801(8) cmd %08x\n", v);
+      dbgcd("CD-ROM w 1f801801(8) CMD %08x\n", v);
       p.cmd = v;
       p.has_cmd = true;
       p.s_busy = 1;
@@ -506,6 +515,15 @@ void CDrom::clear_parm_fifo(bool resetFifo) {
   else param.pread = param.pwrite;
   s_parm_full = PARM_EMPTY;
   s_parm_empt = PARM_EMPTY;
+}
+
+
+void CDrom::update_status() {
+  if (drive.hasDisk()) {
+    attr.seeking();
+  } else {
+    attr.nodisk();
+  }
 }
 
 
@@ -641,6 +659,7 @@ void CDrom::CmdInit() {
   clear_parm_fifo();
   clear_data_fifo();
   mute = true;
+  //attr.shellopen = 1;
 
   push_response(attr.v);
   send_irq2(2);
@@ -670,6 +689,7 @@ void CDrom::CmdReset() {
 
 
 void CDrom::CmdMotorOn() {
+  update_status();
   if (attr.motor) {
     attr.error = 1;
     push_response(attr.v);
@@ -711,10 +731,12 @@ void CDrom::CmdSetloc() {
   loc.m = read_param();
   loc.s = read_param();
   loc.f = read_param();
-  attr.donothing();
+
+  attr.seeking();
 
   push_response(attr.v);
   send_irq(3);
+  //ps1e_t::ext_stop = 1;
 }
 
 
@@ -722,7 +744,7 @@ void CDrom::CmdSeekL() {
   push_response(attr.v);
   send_irq(3);
   
-  attr.donothing();
+  attr.seeking();
 
   push_response(attr.v);
   send_irq2(2);
@@ -733,7 +755,7 @@ void CDrom::CmdSeekP() {
   push_response(attr.v);
   send_irq(3);
   
-  attr.donothing();
+  attr.seeking();
 
   push_response(attr.v);
   send_irq2(2);
@@ -808,7 +830,9 @@ void CDrom::CmdReadTOC() {
 
 
 void CDrom::CmdGetstat() {
+  //update_status();
   push_response(attr.v);
+  attr.shellopen = 0;
   send_irq(3);
 }
 
@@ -889,6 +913,7 @@ void CDrom::CmdGetQ() {
 //Modchip:Audio/Mode1    INT3(stat)     INT2(02h,00h, 00h,00h, 53h,43h,45h,4xh)
 //SCEI (49 日本 / NTSC), SCEA (41 美国 / NTSC), SCEE (45 欧洲 / PAL)
 void CDrom::CmdGetID() {
+  update_status();
   if (attr.shellopen == 1) {
     attr.error = 1;
     push_response(attr.v);

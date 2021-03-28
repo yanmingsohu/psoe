@@ -7,8 +7,6 @@
 
 namespace ps1e {
 
-//#define DEBUG_GP0_SHOW_CMD
-
 static const u32 X_MASK  = 0x0000'03FF;
 static const u32 Y_MASK  = 0x01FF'0000;
 static const u32 XY_MASK = X_MASK | Y_MASK;
@@ -623,7 +621,7 @@ public:
   // Ysiz=((Ysiz-1) AND 1FFh)+1                 ;range 1..200h
   //
   bool write(const u32 c) {
-    //printf("FM %d %08x\n", step, c);
+    //gpudbg("FM %d %08x\n", step, c);
     switch (step) {
       case -3:
         break;
@@ -957,7 +955,7 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       p.status.mask = c.parm & 1;
       p.status.enb_msk = (c.parm >> 1) & 1;
       p.dirtyAttr();
-      printf("\nGPU E6 lock:%d mask:%d\n", p.status.enb_msk, p.status.mask);
+      gpudbg("\nGPU E6 lock:%d mask:%d\n", p.status.enb_msk, p.status.mask);
       return false;
       
     // 单色三点多边形，不透明
@@ -1253,9 +1251,6 @@ bool GPU::GP0::parseCommand(const GpuCommand c) {
       break;
 
     default:
-      #ifdef DEBUG_GP0_SHOW_CMD
-        ps1e_t::ext_stop = 1;
-      #endif
       error("Invaild GP0 Command %x %x\n", c.cmd, c.v);
       return false;
   }
@@ -1279,30 +1274,23 @@ u32 GPU::GP0::read() {
 
 
 void GPU::GP0::write(u32 v) {
-  //printf("GP0 Write 0x%08x\n", v);
+  //gpudbg("GP0 Write 0x%08x\n", v);
   switch (stage) {
     case ShapeDataStage::read_command:
       if (!parseCommand(v)) {
         break;
       }
-      #ifdef DEBUG_GP0_SHOW_CMD
-        printf("command gpu %08x, color %dbit\n", v, p.status.isrgb24 ? 24 : 15);
-        ps1e_t::ext_stop = 1;
-      #endif
+      gpudbg("command gpu %08x, color %dbit\n", v, p.status.isrgb24 ? 24 : 15);
       stage = ShapeDataStage::read_data;
       // do not break
 
     case ShapeDataStage::read_data:
-      #ifdef DEBUG_GP0_SHOW_CMD
-        printf("\t0x%08x", v);
-      #endif
+      gpudbg("\t0x%08x", v);
       if (!shape->write(v)) {
         p.send(shape);
         shape = NULL;
         stage = ShapeDataStage::read_command;
-        #ifdef DEBUG_GP0_SHOW_CMD
-          printf("\nGpu cmd over\n");
-        #endif
+        gpudbg("\nGpu cmd over\n");
       }
       break;
   }

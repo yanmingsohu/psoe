@@ -118,6 +118,7 @@ void GPU::gpu_thread() {
     bus.send_irq(IrqDevMask::vblank);
     //debug("SEND vblank\r");
 
+    // 480 模式每帧修改
     if (status.height) {
       status.lcf = ~status.lcf;
     }
@@ -318,6 +319,13 @@ GpuDataRange& VirtualFrameBuffer::size() {
 
 GLTexture* VirtualFrameBuffer::useTexture() {
   return &virtual_screen;
+}
+
+
+void __gpudbg(const char* format, ...) {
+  if (ps1e_t::ext_stop) {
+    warp_printf(format, "\x1b[1m\x1b[45m");
+  }
 }
 
 

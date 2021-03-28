@@ -12,7 +12,9 @@ namespace ps1e {
 
 #ifdef SPU_DEBUG_INFO
   void _spudbg(const char* format, ...) {
-    warp_printf(format, "\x1b[32m\x1b[44m");
+    if (ps1e_t::ext_stop) {
+      warp_printf(format, "\x1b[32m\x1b[44m");
+    }
   }
 #endif
 

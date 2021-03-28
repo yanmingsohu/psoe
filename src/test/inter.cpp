@@ -17,6 +17,8 @@ using namespace ps1e;
 
 // 通过这个全局变量在任意地方停止cpu并开始调试
 int ext_stop = 0;
+// 内存断点
+u32 io_breakpoint = 0;
 int exit_debug = 0;
 std::mutex debug_lck;
 std::condition_variable wait_debug;
@@ -105,6 +107,7 @@ void debug_system(R3000A& cpu, Bus& bus, MMU& mmu, SoundProcessing& spu) {
   for (;;) {
     if (show_code > 0) {
       disa.current();
+      if (show_code > 0x0fff'ffff) show_code = 0;
     } else if (show_code == 0) {
       info(" ... \n");
     }
@@ -118,7 +121,10 @@ void debug_system(R3000A& cpu, Bus& bus, MMU& mmu, SoundProcessing& spu) {
         (cpu.getpc() == 0xB0 && cpu.getreg().t1 == 0x3D)) {
       char c = char(cpu.getreg().a0);
       if (c == '\n' || c == '\r' || c == 0) {
-        printf("\x1b[30m\x1b[47m TTY(%d): %s \033[m\n", c, ttybuf.c_str());
+        printf("\x1b[30m\x1b[47m %s \033[m\n", ttybuf.c_str());
+        /*if (ttybuf.find("Game") != std::string::npos) {
+          ps1e_t::ext_stop = 1;
+        }*/
         ttybuf.clear();
       } else {
         ttybuf += c;
@@ -137,6 +143,7 @@ void debug_system(R3000A& cpu, Bus& bus, MMU& mmu, SoundProcessing& spu) {
     }
 
     if (ext_stop || disa.isDebugInterrupt()) {
+      ext_stop = 1;
       if (show_code < 0) {
         for (int i = 1; i > 0; --i) {
           disa.decode(-i);
@@ -150,6 +157,14 @@ wait_input:
       putchar('\r');
 
       switch (ch) {
+        case '-':
+          if (inputHexVal("backwards line Hex:", address)) {
+            for (int i = address; i > 0; --i) {
+              disa.decode(-i);
+            }
+          }
+          break;
+
         case ' ':
         case 'r':
           printMipsReg(cpu.getreg());
@@ -203,14 +218,20 @@ wait_input:
           play_spu_current_font(spu, bus);
           goto wait_input;
 
+        case 'i':
+          if (inputHexVal("Set IO Address break point HEX:", address)) {
+            io_breakpoint = address;
+          }
+          goto wait_input;
+
         case '?':
         case 'h': {
           PrintfBuf pb;
           pb.putchar('\n');
           pb.printf("'r' show reg     'x' run, hide debug     's' dump spu memory\n");
           pb.printf("'0' Reset        'a' show address value  'z' spu play mode\n");
-          pb.printf("'w' write memory 'Enter' next op          \n");
-          pb.printf("'b' set break                             \n");
+          pb.printf("'w' write memory 'Enter' next op         '-' backwards disassembly\n");
+          pb.printf("'b' set break    'i' RW io break \n");
           pb.printf("'h' show help    'ESC' Exit               \n");
           goto wait_input;
           }
@@ -241,7 +262,10 @@ void wait_anykey_debug() {
   printf("Press any key debug\n");
   std::unique_lock<std::mutex> lk(debug_lck);
   while (!exit_debug) {
-    _getch();
+    char c = _getch();
+    if (ext_stop) {
+      _ungetch(c);
+    }
     ext_stop = 1;
     wait_debug.wait(lk);
   }

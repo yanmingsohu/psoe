@@ -244,46 +244,71 @@ u32 Bus::readOp(psmem addr) {
 
 // 该函数为测试用, 最终可以删除其中的代码
 void Bus::__on_write(psmem addr, u32 v) {
+  if (ps1e_t::io_breakpoint && (addr == ps1e_t::io_breakpoint)) {
+    warn("IO Write Break point %x %x\n", addr, v);
+    ps1e_t::ext_stop = 1;
+  }
+  if (ps1e_t::ext_stop && (0xFFFF'0000 & addr) == 0x1F80'0000) {
+    printf("BUS Write IO %x %x\n", addr, v);
+  }
+
   /*if (addr == 0x1F80'1070) {
     printf("BUS write irq status %x\n", v);
   }*/
-  /*else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
+  if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
     printf("BUS write JOY %x = %x\n", addr, v);
-  }*/
+  }
   /*if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
     if (addr != 0x1F80'1DA8 && addr != 0x1f801daa) {
       printf("BUS write SPU %x = %x\n", addr, v);
     }
   }*/
-  // 写入了该地址值 0xf2 导致死循环, 8005616c 处的代码写入
-  /*if (addr == 0x800FBB44) {
-    ps1e_t::ext_stop = 1;
-    printf("Write %x = %x %u\n", addr, v, v);
-  }*/
-  if (ps1e_t::ext_stop && (0xFFFF'0000 & addr) == 0x1F80'0000) {
-    printf("BUS Write IO %x %x\n", addr, v);
-  }
   /*if ((0xFFFF'f000 & addr) == 0x1F80'2000) {
     printf("!!!!!!!!!!!!!!!!!!!!!!!!Bus write RE2 %x = %x %c\n", addr, v, v);
     ps1e_t::ext_stop = 1;
   }*/
+
+  // 写入了该地址值 0xf2 导致死循环, 8005616c 处的代码写入
+  // 80056158 写死了值 0xf2, 此路不通
+  // 此后立即执行了 cdrom setloc 命令
+  if (addr == 0x800FBB44) {
+    printf("Die3 %x = %x !!!\n\n", addr, v);
+    //ps1e_t::ext_stop = 1;
+  }
+  if (addr == 0x8011'AF78) {
+    // 死循环原因1: printf 读取 0x8011'AF78 时, 其中为 0, 
+    // 8003e5a8 处代码从 a0010000 复制数据到 8011AF78, 
+    // 用字节顺序拷贝(1byte) 64 字节 (8011afb8), 拷贝结束调用 printf 死循环
+    error("die1 %x %x !!!\n\n", addr, v);
+    //ps1e_t::ext_stop = 1;
+  }
+  if (addr == 0xa001'0000) {
+    // 未找到有代码写入这个地址, 一块内存都是 0
+    error("die2 %x %x !!!\n\n", addr, v);
+    //ps1e_t::ext_stop = 1;
+  }
 }
 
 
 // 该函数为测试用, 最终可以删除其中的代码
 void Bus::__on_read(psmem addr) {
-  /*if (addr == 0x1F80'1070) {
-    printf("BUS read irq status %x\n", irq_status);
-  }*/
-  /*else if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
-    printf("BUS read JOY %x\n", addr);
-  }*/
-  //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
-  //  printf("BUS read SPU %x\n", addr);
-  //}
+  if (ps1e_t::io_breakpoint && (addr == ps1e_t::io_breakpoint)) {
+    warn("IO Read Break point %x\n", addr);
+    ps1e_t::ext_stop = 1;
+  }
   if (ps1e_t::ext_stop && (0xFFFF'0000 & addr) == 0x1F80'0000) {
     printf("BUS read IO %x\n", addr);
   }
+
+  /*if (addr == 0x1F80'1070) {
+    printf("BUS read irq status %x\n", irq_status);
+  }*/
+  if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
+    printf("BUS read JOY %x\n", addr);
+  }
+  //else if (addr >= 0x1F80'1C00 && addr <= 0x1F80'1DFC) {
+  //  printf("BUS read SPU %x\n", addr);
+  //}
   /*if ((0xFFFF'f000 & addr) == 0x1F80'2000) {
     printf("!!!!!!!!!!!!!!!!!!!!!!!!Bus read RE2 %x\n", addr);
     ps1e_t::ext_stop = 1;

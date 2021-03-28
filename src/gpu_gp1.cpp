@@ -22,6 +22,7 @@ public:
 
 
 void GPU::GP1::parseCommand(const GpuCommand c) {
+  gpudbg("GP1 command %x\n", c);
   switch (c.cmd & 0b0011'1111) {
     // 重置GPU
     case 0x00:
@@ -144,9 +145,8 @@ u32 GPU::GP1::read() {
     default:
       s.dma_req = 0;
   }
-  /*printf("GP1 read status %x dma_md.%x dma_req.%x r_dma.%x r_cpu.%x irq.%x\n", 
-    s.v, s.dma_md, s.dma_req, s.r_dma, s.r_cpu, s.irq_on);
-  ps1e_t::ext_stop = 1;*/
+  gpudbg("GP1 read status %x dma_md.%x dma_req.%x r_dma.%x r_cpu.%x irq.%x lcf.%x\n", 
+         s.v, s.dma_md, s.dma_req, s.r_dma, s.r_cpu, s.irq_on, s.lcf);
   return s.v;
 }
 

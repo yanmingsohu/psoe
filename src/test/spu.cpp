@@ -281,7 +281,7 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
   u32 fp = sizeof(font) / sizeof(u32);
   u32 volume = 0x3fff'3fff; //3FFF 音量最大, 7FFF 反向, FFFF 扫频模式
   int font_i = 0;
-  double pitch8 = 110;
+  double pitch8 = 2640;
   double note = 0;
   double frq = 0;
   u32 channelIdx = 0;
@@ -411,7 +411,7 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
     b.write16(0x1F80'1C04 + (0x10 * channelIdx), frq /44100.0 *0x1000); //音高
     b.write16(0x1F80'1C06 + (0x10 * channelIdx), (font[font_i]) >> 3); // 地址
     b.write32(0x1F80'1D88, 1 << channelIdx); // Kon
-    printf(" channel %d pitch %f volume %x tone %d\n", 
+    printf(" channel %2d pitch %6.2f volume %x tone %d\n", 
         channelIdx, frq, volume, font_i);
 
     if (++channelIdx >= use_channel_n) {
@@ -422,16 +422,11 @@ void play_spu_current_font(SoundProcessing& spu, Bus& b, int use_channel_n) {
 
 
 // 该测试需要手动返回
-static void spu_play_sound() {
-  const char *font_files[] = {
-    "D:\\ps1e\\demo\\YarozeSDK\\PSX\\DATA\\SOUND\\STD0.VB",
-    "D:\\game\\bio2\\Pl0\\Rdt\\room1000\\snd0.vb",
-  };
-
+static void spu_play_sound(const char *font_file) {
   // 调试开关
   const bool remove_loop_flag = 0; // 移除重复标记
   const u32  use_channel_n    = 24; // 使用的通道数量, 从 1-24
-  const char *fname           = font_files[0];
+  const char *fname           = font_file;
 
   MemJit mj;
   MMU mmu(mj);
@@ -499,9 +494,14 @@ static void test_adsr() {
 
 
 void test_spu() {
+  const char *font_files[] = {
+    "D:\\ps1e\\demo\\YarozeSDK\\PSX\\DATA\\SOUND\\STD0.VB",
+    "D:\\game\\bio2\\Pl0\\Rdt\\room1000\\snd0.vb",
+  };
+
   test_spu_reg();
   //test_adsr();
-  spu_play_sound();
+  //spu_play_sound(font_files[0]);
 }
 
 }

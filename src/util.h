@@ -10,6 +10,7 @@
 
 namespace ps1e_t {
   extern int ext_stop;
+  extern uint32_t io_breakpoint;
 }
 
 namespace ps1e {
