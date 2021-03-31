@@ -3,6 +3,7 @@
 #include <cdio/cdio.h>
 #include <cdio/cd_types.h>
 #include <cdio/util.h>
+#include <cdio/logging.h>
 #include <chrono>
 
 namespace ps1e {
@@ -10,10 +11,10 @@ namespace ps1e {
 #ifdef DEBUG_CDROM_INFO
   #define dbgcd __dbgcd
   void __dbgcd(const char* format, ...) {
-  //if (ps1e_t::ext_stop) {
-    warp_printf(format, "\x1b[30m\x1b[43m");
-  //}
-}
+    //if (ps1e_t::ext_stop) {
+      warp_printf(format, "\x1b[30m\x1b[43m");
+    //}
+  }
 #else
   #define dbgcd
 #endif
@@ -28,37 +29,39 @@ static const u8 DATA_NON_EMP  = 1;
 
 
 static void message(const char* oper, const driver_return_code_t t) {
+  const char * msg = cdio_driver_errmsg(t);
+  error("CD-Drive %s\n", msg);
   switch (t) {
     case DRIVER_OP_ERROR:
-      warn("%s: error\n", oper); 
+      error("CD-Drive %s: error\n", oper); 
       break;
 
     case DRIVER_OP_UNSUPPORTED:
-      warn("%s: Unsupported\n", oper); 
+      error("CD-Drive %s: Unsupported\n", oper); 
       break;
 
     case DRIVER_OP_UNINIT:
-      warn("%s: hasn't been initialized\n", oper); 
+      error("CD-Drive %s: hasn't been initialized\n", oper); 
       break;
 
     case DRIVER_OP_NOT_PERMITTED:
-      warn("%s: Not permitted\n", oper); 
+      error("CD-Drive %s: Not permitted\n", oper); 
       break;
 
     case DRIVER_OP_BAD_PARAMETER:
-      warn("%s: Bad parameter\n", oper); 
+      error("CD-Drive %s: Bad parameter\n", oper); 
       break;
 
     case DRIVER_OP_BAD_POINTER:
-      warn("%s: Bad pointer to memory area\n", oper); 
+      error("CD-Drive %s: Bad pointer to memory area\n", oper); 
       break;
 
     case DRIVER_OP_NO_DRIVER:
-      warn("%s: Driver not available on this OS\n", oper); 
+      error("CD-Drive %s: Driver not available on this OS\n", oper); 
       break;
 
     case DRIVER_OP_MMC_SENSE_DATA:
-      warn("%s: MMC operation returned sense data, but no other error above recorded.\n", oper); 
+      error("CD-Drive %s: MMC operation returned sense data, but no other error above recorded.\n", oper); 
       break;
   }
 }
@@ -72,18 +75,21 @@ static void _wait(long ms) {
 void CdAttribute::reading() {
   motor = read = 1;
   seek = play = 0;
+  shellopen = 0;
 }
 
 
 void CdAttribute::seeking() {
   motor = seek = 1;
   read = play = 0;
+  shellopen = 0;
 }
 
 
 void CdAttribute::playing() {
   motor = play = 1;
   read = seek = 0;
+  shellopen = 0;
 }
 
 
@@ -105,8 +111,8 @@ void CdAttribute::nodisk() {
 
 u16 CdMode::data_size() {
   if (ib) return 2328;   // 918h
-  if (size) return 2048; // 800h
-  else return 2340;      // 924h
+  if (size) return 2340; // 924h 
+  return 2048;           // 800h
 }
 
 
@@ -122,6 +128,7 @@ void CdMsf::next_section() {
 
 
 CdDrive::CdDrive() : cd(0), first_track(0), num_track(0), offset(-1) {
+  cdio_loglevel_default = CDIO_LOG_DEBUG; 
 }
 
 
@@ -136,7 +143,11 @@ bool CdDrive::loadDisk(CDIO c) {
     cd = c;
     first_track = cdio_get_first_track_num(cd);
     num_track   = cdio_get_num_tracks(cd); 
-    dbgcd("CD-ROM Track (%i - %i)\n", first_track, num_track); 
+
+    printf("CD-ROM Track (%i - %i)\n", first_track, num_track);
+    for (CDTrack i = first_track; i <= num_track; ++i) {
+      printf("\tTrack %d - %s\n", i, trackFormatStr(cdio_get_track_format(cd, i)));
+    }
     return true;
   }
   error("Cannot open CDROM\n");
@@ -159,7 +170,7 @@ bool CdDrive::hasDisk() {
 
 bool CdDrive::loadPhysical(char* src) {
   dbgcd("Open physical CDROM %s\n", src);
-  ::CdIo_t *p_cdio = cdio_open(src, DRIVER_UNKNOWN);
+  ::CdIo_t *p_cdio = cdio_open(src, DRIVER_DEVICE);
   return loadDisk(p_cdio);
 }
 
@@ -226,6 +237,7 @@ bool CdDrive::readAudio(void* buf) {
 
 // mode2[true=M2RAW_SECTOR_SIZE(2336), false=CDIO_CD_FRAMESIZE(2048)]
 bool CdDrive::readData(void* buf) {
+  printf("CD READ data lsn %x\n", offset);
   driver_return_code_t r = cdio_read_mode2_sector(cd, buf, offset, false);
   if (r) message("ReadData", r);
   return r == 0;
@@ -233,15 +245,11 @@ bool CdDrive::readData(void* buf) {
 
 
 CDrom::CDrom(Bus& b, CdDrive& d) 
-: bus(b), drive(d), reg(*this, b), response(1), param(4), cmd(1), data(0x96),
-  DMADev(b, DeviceIOMapper::dma_cdrom_base), thread_running(true),
+: DMADev(b, DeviceIOMapper::dma_cdrom_base, true), thread_running(true),
+  bus(b), drive(d), reg(*this, b), response(1), param(4), cmd(1), data(0x96),
   th(&CDrom::command_processor, this), has_irq_flag2(0), irq_flag(0), irq_flag2(0)
 {
   s_busy = 0;
-  s_data_empt = DATA_EMPTY;
-  s_resp_empt = RESP_EMPTY;
-  s_parm_empt = PARM_EMPTY;
-  s_parm_full = PARM_EMPTY;
 }
 
 
@@ -270,7 +278,6 @@ void CDrom::send_irq2(u8 irq) {
 
 
 void CDrom::push_response(u8 v) {
-  s_resp_empt = RESP_NON_EMP;
   response.write(v);
 }
 
@@ -281,12 +288,10 @@ u8 CDrom::read_param() {
 }
 
 
-CdromFifo::CdromFifo(u8 len16bit) : len(0x10 * len16bit), mask(len-1) {
+CdromFifo::CdromFifo(u8 len16bit) : len(0x10 * len16bit) {
   reset();
   d = new u8[len];
-  for (u32 i = 0; i<len; ++i) {
-    d[i] = 0;
-  }
+  memset(d, 0, len);
 }
 
 
@@ -302,15 +307,31 @@ void CdromFifo::reset() {
 
 
 u8 CdromFifo::read() {
-  u8 v = d[pread & mask];
+  u8 v = d[pread % len];
   pread++;
   return v;
 }
 
 
 void CdromFifo::write(u8 v) {
-  d[pwrite & mask] = v;
+  d[pwrite % len] = v;
   pwrite++;
+}
+
+
+bool CdromFifo::isEmpty() {
+  return pread == pwrite;
+}
+
+
+bool CdromFifo::isFull() {
+  return (pread + len) == pwrite;
+}
+
+
+volatile s32& CdromFifo::getWriter(u8*& p) {
+  p = d;
+  return pwrite;
 }
 
 
@@ -323,11 +344,11 @@ CDROM_REG::CDROM_REG(CDrom &_p, Bus& b) : p(_p) {
 u32 CDROM_REG::read() {
   CdStatus s;
   s.index = p.s_index;
-  s.adpcm_empt = p.s_adpcm_empt;
-  s.parm_empt = p.s_parm_empt;
-  s.parm_full = p.s_parm_full;
-  s.resp_empt = p.s_resp_empt;
-  s.data_empt = p.s_data_empt;
+  s.adpcm_empt = 0;
+  s.parm_empt = p.param.isEmpty()    ? PARM_EMPTY : PARM_NON_EMP;
+  s.parm_full = p.param.isFull()     ? PARM_FULL  : PARM_EMPTY;
+  s.resp_empt = p.response.isEmpty() ? RESP_EMPTY : RESP_NON_EMP;
+  s.data_empt = p.data.isEmpty()     ? DATA_EMPTY : DATA_NON_EMP;
   s.busy = p.s_busy;
 
   dbgcd("CD-ROM r 1f801800 status %x\n", s.v);
@@ -338,9 +359,6 @@ u32 CDROM_REG::read() {
 // 0x1F80'1801 读取应答, 16byte
 u32 CDROM_REG::read1() {
   u8 r = p.response.read();
-  if (p.response.pread == p.response.pwrite) {
-    p.clear_resp_fifo(false);
-  }
   dbgcd("CD-ROM r 1f801801 response %x\n", r);
   return r;
 }
@@ -349,9 +367,6 @@ u32 CDROM_REG::read1() {
 // 0x1F80'1802 读取数据
 u32 CDROM_REG::read2() {
   u32 d = p.data.read();
-  if (p.s_data_empt != DATA_EMPTY && p.data.pread == p.data.pwrite) {
-    p.clear_data_fifo();
-  }
   dbgcd("CD-ROM r 1f801802 data %x\n", d);
   return d;
 }
@@ -423,11 +438,6 @@ void CDROM_REG::write2(u8 v) {
     case 0: // Parameter fifo
       dbgcd("CD-ROM w 1f801802(8) param %08x\n", v);
       p.param.write(v);
-      // 参数队列由游戏重置, cdrom不管理
-      if (p.param.pwrite >= p.param.len) {
-        p.s_parm_full = PARM_FULL;
-      }
-      p.s_parm_empt = PARM_NON_EMP;
       break;
 
     case 1: // 中断使能寄存器
@@ -459,9 +469,15 @@ void CDROM_REG::write3(u8 v) {
   switch (p.s_index) {
     case 0: // 请求寄存器
       dbgcd("CD-ROM w 1f801803(8) REQ %08x\n", v);
+      // 上拉
+      if ((p.req.bfrd == 0) && (v & 0x80)) {
+        p.want_data = 1;
+      }
+
       p.req.v = v;
       if (p.req.bfrd == 0) {
         p.clear_data_fifo();
+        p.want_data = 0;
       }
       break;
 
@@ -472,12 +488,7 @@ void CDROM_REG::write3(u8 v) {
       // bit6 Write: 1=Reset Parameter Fifo
       if (v & 0x40) {
         dbgcd("CD-rom clear param fifo\n");
-        p.clear_parm_fifo(false);
-      }
-
-      if ((p.irq_flag & 0x1F) == 0 && p.has_irq_flag2) {
-        p.has_irq_flag2 = 0;
-        p.send_irq(p.irq_flag2);
+        p.clear_parm_fifo();
       }
       break;
 
@@ -498,23 +509,17 @@ void CDROM_REG::write3(u8 v) {
 
 
 void CDrom::clear_data_fifo() {
-  s_data_empt = DATA_EMPTY;
   data.reset();
 }
 
 
-void CDrom::clear_resp_fifo(bool resetFifo) {
-  s_resp_empt = RESP_EMPTY;
-  // 防止两个线程同时修改
-  if (resetFifo) response.reset();
+void CDrom::clear_resp_fifo() {
+  response.reset();
 }
 
 
-void CDrom::clear_parm_fifo(bool resetFifo) {
-  if (resetFifo) param.reset();
-  else param.pread = param.pwrite;
-  s_parm_full = PARM_EMPTY;
-  s_parm_empt = PARM_EMPTY;
+void CDrom::clear_parm_fifo() {
+  param.reset();
 }
 
 
@@ -528,10 +533,10 @@ void CDrom::update_status() {
 
 
 #define CD_CMD(n, fn) \
-  case n: dbgcd("CD-ROM CMD: %s\n", #fn); Cmd##fn(); break
+  case n: dbgcd("CD-ROM CMD: " BLUE("%s") "\n", #fn); Cmd##fn(); break
 
 #define CD_CMD_SE(n, fn, x) \
-  case n: dbgcd("CD-ROM CMD-SE: %s\n", #fn #x); Cmd##fn(x); break
+  case n: dbgcd("CD-ROM CMD-SE: " BLUE("%s") "\n", #fn #x); Cmd##fn(x); break
 
 
 void CDrom::do_cmd(u8 c) {
@@ -589,12 +594,16 @@ void CDrom::command_processor() {
     if (irq_flag) {
       _wait(1);
       continue;
+    } else if (has_irq_flag2) {
+      has_irq_flag2 = 0;
+      send_irq(irq_flag2);
+      continue;
     }
 
     if (has_cmd) {
       has_cmd = 0;
       s_busy = 1;
-      clear_data_fifo();
+      //clear_data_fifo();
       //clear_resp_fifo();
       attr.clearerr();
       do_cmd(cmd);
@@ -602,13 +611,24 @@ void CDrom::command_processor() {
       continue;
     }
 
-    // 实现 CmdReadN / ReadN 持续读取
-    if (attr.read && s_data_empt == DATA_EMPTY) {
-      s_busy = 1;
-      loc.next_section();
-      read_next_section();
-      continue;
+    {
+      std::lock_guard<std::mutex> _lk(for_read);
+      // 实现 CmdReadN / ReadN 持续读取
+      if (/*attr.read &&*/ data.isEmpty() && want_data) {
+        printf("CDROM read\n");
+        if (paused) {
+          want_data = 0;
+        }
+        s_busy = 1;
+        //sleep(100);
+        read_next_section();
+        loc.next_section();
+        drive.seek(&loc);
+        send_irq1 = 1;
+        continue;
+      }
     }
+
     if (attr.seek) {
       attr.donothing();
       continue;
@@ -659,6 +679,8 @@ void CDrom::CmdInit() {
   clear_parm_fifo();
   clear_data_fifo();
   mute = true;
+  paused = 0;
+  want_data = 0;
   //attr.shellopen = 1;
 
   push_response(attr.v);
@@ -673,6 +695,8 @@ void CDrom::CmdReset() {
   s_index = 0;
   mode.v = 0;
   attr.v = 0;
+  paused = 0;
+  want_data = 0;
   if (drive.hasDisk()) {
     attr.seeking();
   }
@@ -717,10 +741,13 @@ void CDrom::CmdPause() {
   push_response(attr.v);
   send_irq(3);
   
+  //attr.read = 0;
+  //attr.seek = 0;
+  //attr.play = 0;
+  //attr.error = 0;
+  paused = 1;
+  //attr.seeking();
   attr.read = 0;
-  attr.seek = 0;
-  attr.play = 0;
-  attr.error = 0;
 
   push_response(attr.v);
   send_irq2(2);
@@ -745,6 +772,7 @@ void CDrom::CmdSeekL() {
   send_irq(3);
   
   attr.seeking();
+  drive.seek(&loc);
 
   push_response(attr.v);
   send_irq2(2);
@@ -756,6 +784,7 @@ void CDrom::CmdSeekP() {
   send_irq(3);
   
   attr.seeking();
+  drive.seek(&loc);
 
   push_response(attr.v);
   send_irq2(2);
@@ -789,30 +818,36 @@ void CDrom::CmdSetSession() {
 }
 
 
-void CDrom::CmdReadN() {
-  attr.clearerr();
-  attr.reading();
-  push_response(attr.v);
-  send_irq(3);
-
-  read_next_section();
+void CDrom::read_next_section() {
+  dbgcd("\rCD LSF [%2d:%2d:%2d] ", loc.m, loc.s, loc.f);
+  if (send_irq1) {
+    push_response(attr.v);
+    send_irq(1);
+  }
+  //data.reset();
+  u8* writer;
+  volatile s32& wsize = data.getWriter(writer);
+  drive.readData(writer);
+  wsize = mode.data_size();
+  //TODO: 正确读取扇区头
+  if (attr.read) {
+    memcpy(locL, writer, 8);
+  } else {
+    memcpy(locP, writer, 8);
+  }
 }
 
 
-void CDrom::read_next_section() {
-  dbgcd("\r\t\t\t\t[%2d:%2d:%2d] ", loc.m, loc.s, loc.f);
-  data.reset();
-  data.pwrite = mode.data_size();
-  drive.readData((void*) data.d);
-  //TODO: 正确读取扇区头
-  if (attr.read) {
-    memcpy(locL, data.d, 8);
-  } else {
-    memcpy(locP, data.d, 8);
-  }
-  s_data_empt = DATA_NON_EMP;
+void CDrom::CmdReadN() {
+  attr.clearerr();
   push_response(attr.v);
-  send_irq(1);
+  send_irq(3);
+  paused = 0;
+  send_irq1 = 0;
+  attr.reading();
+
+  push_response(attr.v);
+  send_irq2(1);
 }
 
 
@@ -1047,6 +1082,32 @@ void CDrom::CmdTest() {
       send_irq(3);
       break;
   }
+}
+
+
+void CDrom::dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) {
+  error("Not support CD-ROM write\n");
+  throw std::runtime_error("cd dma");
+}
+
+
+void CDrom::dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) {
+  dbgcd("CDrom DMA begin %x, %d bytes, %d\n", addr, bytesize, inc);
+
+  u32 cnt = 0;
+  do {
+    while (data.isEmpty()) sleep(1);
+
+    {
+      std::lock_guard<std::mutex> _lk(for_read);
+      while (cnt < bytesize && (!data.isEmpty())) {
+        bus.write8(addr, data.read());
+        addr += inc;
+        ++cnt;
+      }
+    }
+  } while(cnt < bytesize);
+  dbgcd("CD rom DMA exit\n");
 }
 
 }

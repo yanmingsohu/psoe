@@ -3,6 +3,12 @@
 #include "util.h"
 #include "io.h"
 
+namespace std {
+  class mutex;
+  class condition_variable;
+  class thread;
+}
+
 namespace ps1e {
 
 // dma0 : MDEC in
@@ -167,6 +173,17 @@ private:
   const DmaDeviceNum devnum;
   u32 _mask;
 
+private:
+  std::thread* work;
+  std::mutex* for_work;
+  std::condition_variable* working_alert;
+  bool use_thread;
+
+  // DMA 传输过程, 由设备调用该方法开始 DMA 传输,
+  // 应该在单独的线程中执行
+  void transport();
+  void transport_on_thread();
+
 protected:
   
   Bus& bus;
@@ -177,10 +194,6 @@ protected:
   int idle;
   bool is_transferring;
 
-  // DMA 传输过程, 由设备调用该方法开始 DMA 传输,
-  // 应该在单独的线程中执行
-  void transport();
-
   // 子类实现内存到设备传输
   virtual void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc);
   // 子类实现设备到内存传输
@@ -189,8 +202,8 @@ protected:
   virtual void dma_order_list(psmem addr);
 
 public:
-  DMADev(Bus& _bus, DeviceIOMapper dma_x_base);
-  virtual ~DMADev() {};
+  DMADev(Bus& _bus, DeviceIOMapper dma_x_base, bool _use_thread = false);
+  virtual ~DMADev();
 
   // 停止 DMA 传输
   //void stop();

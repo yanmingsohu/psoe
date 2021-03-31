@@ -1,19 +1,35 @@
 ﻿#include <stdexcept> 
+#include <thread>
+#include <mutex>
 #include "dma.h"
 #include "mem.h"
 #include "bus.h"
 
 namespace ps1e {
 
-DMADev::DMADev(Bus& _bus, DeviceIOMapper type0) : 
+DMADev::DMADev(Bus& _bus, DeviceIOMapper type0, bool ut) : 
       bus(_bus), devnum(convertToDmaNumber(type0)), is_transferring(false),
-      base_io(this), blocks_io(this), ctrl_io(_bus, this), idle(0)
+      base_io(this), blocks_io(this), ctrl_io(_bus, this), idle(0), 
+      use_thread(ut), work(0)
 {
   _mask = 1 << (static_cast<u32>(number()) * 4 + 3);
   bus.bind_io(type0, &base_io);
   bus.bind_io(type0 + 1, &blocks_io);
   bus.bind_io(type0 + 2, &ctrl_io);
   bus.set_dma_dev(this);
+  for_work = new std::mutex();
+  work = new std::thread(&DMADev::transport_on_thread, this);
+  working_alert = new std::condition_variable();
+}
+
+
+DMADev::~DMADev() {
+  use_thread = false;
+  working_alert->notify_all();
+  work->join();
+  delete for_work;
+  delete work;
+  delete working_alert;
 }
 
 
@@ -26,7 +42,11 @@ void DMADev::start() {
       if (ctrl_io.chcr.trigger) {
         ctrl_io.chcr.trigger = 0;
         ctrl_io.chcr.start = 1;
-        transport();
+        if (use_thread) {
+          working_alert->notify_all();
+        } else {
+          transport();
+        }
         ctrl_io.chcr.start = 0;
       }
       break;
@@ -34,11 +54,26 @@ void DMADev::start() {
     case ChcrMode::Stream:
     case ChcrMode::LinkedList:
       if (ctrl_io.chcr.start) {
-        transport();
+        if (use_thread) {
+          working_alert->notify_all();
+        } else {
+          transport();
+        }
         ctrl_io.chcr.start = 0;
       }
       break;
   }
+}
+
+
+void DMADev::transport_on_thread() {
+  do {
+    std::unique_lock<std::mutex> _lk(*for_work);
+    working_alert->wait(_lk);
+    if (use_thread) {
+      transport();
+    }
+  } while (use_thread);
 }
 
 

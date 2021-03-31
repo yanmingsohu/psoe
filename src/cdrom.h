@@ -39,7 +39,7 @@ union CdReq {
     u8 notuse : 5; //0-4
     u8 smen   : 1; //5 SMEN Want Command Start Interrupt on Next Command (0=No change, 1=Yes)
     u8 bfwr   : 1; //6
-    u8 bfrd   : 1; //7 (0=No/Reset Data Fifo, 1=Yes/Load Data Fifo)
+    u8 bfrd   : 1; //7 (0=No/Reset Data Fifo, 1=Yes/Load Data Fifo), 上拉后开始数据传输?
   };
 };
 
@@ -180,12 +180,11 @@ public:
 
 //TODO: fix 当 pwrite 回绕到 0 逻辑错误
 class CdromFifo {
-public:
+private:
   u8 *d;
-  u32 pread;
-  u32 pwrite;
-  const u32 len;
-  const u16 mask;
+  volatile s32 pread;
+  volatile s32 pwrite;
+  const s32 len;
 
 public:
   // len16bit - 16字节的倍数
@@ -194,6 +193,17 @@ public:
   void reset();
   u8 read();
   void write(u8);
+  bool isEmpty();
+  bool isFull();
+  volatile s32& getWriter(u8*&);
+};
+
+
+class ICDCommand {
+public:
+  virtual ~ICDCommand() = 0;
+  // 返回true 表示命令执行完毕, 立即进入下一条命令的解析
+  virtual bool docmd(CDrom&) = 0;
 };
 
 
@@ -215,11 +225,6 @@ private:
 
   // 解决多线程冲突
   u8 s_index;
-  u8 s_adpcm_empt;
-  u8 s_parm_empt;
-  u8 s_parm_full;
-  u8 s_resp_empt;
-  u8 s_data_empt;
   u8 s_busy;
 
   //0-2   Read: Response Received   Write: 7=Acknowledge   ;INT1..INT7
@@ -234,16 +239,21 @@ private:
 
   bool mute;
   CdReq req;
+  // 索引整个光盘, 绝对位置; 对于轨道/会话, 软件通过 GetTD 确定绝对位置.
   CdMsf loc;
 
   bool thread_running;
   std::thread th;
+  std::mutex for_read;
 
   CdromFifo response;
   CdromFifo param;
   CdromFifo data;
   volatile u8 cmd;
   volatile bool has_cmd;
+  volatile bool paused;
+  volatile bool want_data; // 上拉有效?
+  volatile bool send_irq1;
 
   u8 locL[8];
   u8 locP[8];
@@ -260,9 +270,13 @@ private:
   void read_next_section();
   
   void clear_data_fifo();
-  void clear_resp_fifo(bool resetFifo = true);
-  void clear_parm_fifo(bool resetFifo = true);
+  void clear_resp_fifo();
+  void clear_parm_fifo();
   void update_status();
+
+protected:
+  void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) override;
+  void dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) override;
 
 public:
   void CmdSync();

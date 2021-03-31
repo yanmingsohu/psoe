@@ -137,7 +137,7 @@ private:
 
     if (e != ExeCodeTable::SYS && (!has_exception())) {
       // debug info
-      printf(YELLOW("SKIP exception (%X)%s PC=%x\n"), e, MipsCauseStr[static_cast<u32>(e)], pc);
+      //printf(YELLOW("SKIP exception (%X)%s PC=%x\n"), e, MipsCauseStr[static_cast<u32>(e)], pc);
       //printf("IE %d, IM %xH, IP %xH\n", cop0.sr.ie, cop0.sr.im, cop0.cause.ip);
 
       if (from_instruction) {
@@ -150,8 +150,8 @@ private:
   }
 
   void process_exception() {
-    printf(YELLOW("Got exception %s(%X) sr:%x [PC:0x%08x, 0x%08x]\n"), 
-      MipsCauseStr[cop0.cause.ExcCode], cop0.cause.ExcCode, cop0.sr.v, pc, bus.read32(pc));
+    /*printf(YELLOW("Got exception %s(%X) sr:%x [PC:0x%08x, 0x%08x]\n"), 
+      MipsCauseStr[cop0.cause.ExcCode], cop0.cause.ExcCode, cop0.sr.v, pc, bus.read32(pc));*/
       
     cop0.sr.KUc = 0;
     cop0.cause.wp = 1;
