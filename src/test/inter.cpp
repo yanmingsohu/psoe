@@ -35,7 +35,10 @@ static void test_mips_size() {
 
 
 static void test_mips_inter() {
-  char image[] = "ps-exe/Raiden Project, The (Europe).cue";
+  const char *image[] = {
+    "ps-exe/Raiden Project, The (Europe).cue",
+    "ps-exe/PS One Demo Disc 02 (Europe) (En,Fr,De,Es,It).cue",
+  };
   const char *biosf[] = { 
     "H:\\EMU-console\\PlayStation1\\bios\\SCPH1000.BIN", //0
     "H:\\EMU-console\\PlayStation1\\bios\\SCPH1001.BIN", //1
@@ -48,7 +51,7 @@ static void test_mips_inter() {
 
   MemJit mmjit;
   MMU mmu(mmjit);
-  if (!mmu.loadBios(biosf[0])) {
+  if (!mmu.loadBios(biosf[1])) {
     panic("load bios fail");
   }
 
@@ -59,7 +62,7 @@ static void test_mips_inter() {
   OrderingTables otc(bus);
   SerialPort spi(bus);
   CdDrive dri;
-  dri.loadImage(image);
+  dri.loadImage(image[0]);
   CDrom cdrom(bus, dri);
 
   R3000A cpu(bus, ti);

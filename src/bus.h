@@ -30,7 +30,7 @@ class IrqReceiver {
 private:
   static const u32 IRQ_BIT_SIZE = 11;
   static const u32 IRQ_REQUEST_BIT = (1 << IRQ_BIT_SIZE)-1;
-  u32 trigger;
+  std::atomic<s32> trigger;
 
 protected:
   IrqReceiver() : trigger(0) {}

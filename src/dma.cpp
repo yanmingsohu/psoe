@@ -34,8 +34,8 @@ DMADev::~DMADev() {
 
 
 void DMADev::start() {
-  //debug("DMA(%x) start M:%x T:%x S:%x\n", devnum,
-  //      ctrl_io.chcr.mode, ctrl_io.chcr.trigger, ctrl_io.chcr.start);
+  /*debug("DMA(%x) start M:%x T:%x S:%x\n", devnum,
+        ctrl_io.chcr.mode, ctrl_io.chcr.trigger, ctrl_io.chcr.start);*/
 
   switch (ctrl_io.chcr.mode) {
     case ChcrMode::Manual:
@@ -43,11 +43,11 @@ void DMADev::start() {
         ctrl_io.chcr.trigger = 0;
         ctrl_io.chcr.start = 1;
         if (use_thread) {
+          std::unique_lock<std::mutex> _lk(*for_work);
           working_alert->notify_all();
         } else {
           transport();
         }
-        ctrl_io.chcr.start = 0;
       }
       break;
 
@@ -55,11 +55,11 @@ void DMADev::start() {
     case ChcrMode::LinkedList:
       if (ctrl_io.chcr.start) {
         if (use_thread) {
+          std::unique_lock<std::mutex> _lk(*for_work);
           working_alert->notify_all();
         } else {
           transport();
         }
-        ctrl_io.chcr.start = 0;
       }
       break;
   }
@@ -143,8 +143,9 @@ void DMADev::transport() {
       break;
   }
 
-  bus.send_dma_irq(this);
   is_transferring = false;
+  ctrl_io.chcr.start = 0;
+  bus.send_dma_irq(this);
 }
 
 

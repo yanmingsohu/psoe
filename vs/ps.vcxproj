@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp" />
+    <ClCompile Include="..\src\cdrom-cmd.cpp" />
     <ClCompile Include="..\src\cdrom.cpp" />
     <ClCompile Include="..\src\cpu.cpp" />
     <ClCompile Include="..\src\dma.cpp" />

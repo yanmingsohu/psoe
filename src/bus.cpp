@@ -71,9 +71,18 @@ void show_irq_msg(const char *msg, u32 v) {
 
 void IrqReceiver::ready_recv_irq() {
   if (trigger) {
-    //show_irq_curr(trigger);
     set_ext_int(CpuCauseInt::hardware);
-    trigger = 0;
+    //show_irq_curr(trigger);
+
+    //TODO: 确认 每种IRQ发送一次中断??
+    u32 mask = 1;
+    for (int i = 0; i < 10; ++i) {
+      if (trigger & mask) {
+        trigger = trigger & (~mask);
+        break;
+      }
+      mask <<= 1;
+    }
   }
 }
 
@@ -82,7 +91,7 @@ void IrqReceiver::send_irq(u32 i) {
   if (i == 0) {
     clr_ext_int(CpuCauseInt::hardware);
   }
-  trigger = i;
+  trigger = trigger | i;
 }
 
 
@@ -255,9 +264,9 @@ void Bus::__on_write(psmem addr, u32 v) {
   /*if (addr == 0x1F80'1070) {
     printf("BUS write irq status %x\n", v);
   }*/
-  if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
+  /*if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
     printf("BUS write JOY %x = %x\n", addr, v);
-  }
+  }*/
   /*if (addr == 0x1F80'1074) {
     if (irq_mask != v) {
       show_irq_msg("mask", v);
@@ -282,9 +291,9 @@ void Bus::__on_read(psmem addr) {
   /*if (addr == 0x1F80'1070) {
     printf("BUS read irq status %x\n", irq_status);
   }*/
-  if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
+  /*if (addr >= 0x1F801040 && addr <= 0x1F80104f) {
     printf("BUS read JOY %x\n", addr);
-  }
+  }*/
 }
 
 

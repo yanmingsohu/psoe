@@ -1,9 +1,6 @@
 ﻿#pragma once 
 
 #include "bus.h"
-#include <thread>
-#include <mutex>
-//#include <condition_variable>
 
 #define DEBUG_CDROM_INFO
 
@@ -13,9 +10,19 @@ struct _CdIo;
 namespace ps1e {
 
 class CDrom;
+class CDCommandFifo;
+class ::std::thread;
+class ::std::mutex;
 typedef _CdIo* CDIO;
 typedef u8    CDTrack;
 typedef s32   CdLsn;
+
+#ifdef DEBUG_CDROM_INFO
+  #define cddbg __cddbg
+  void __cddbg(const char* format, ...);
+#else
+  #define dbgcd
+#endif
 
 
 #pragma pack(push, 1)
@@ -102,9 +109,11 @@ union CdAttribute {
   void reading();
   void seeking();
   void playing();
-  void donothing();
+  void idle();
   void clearerr();
   void nodisk();
+  void sync();
+  void reset();
 };
 
 
@@ -143,8 +152,8 @@ public:
   virtual ~CdDrive();
 
   void releaseDisk();
-  bool loadPhysical(char* src);
-  bool loadImage(char* filepath);
+  bool loadPhysical(const char* src);
+  bool loadImage(const char* filepath);
   int getTrackFormat(CDTrack track);
   const char* trackFormatStr(int);
   CDTrack first();
@@ -199,11 +208,20 @@ public:
 };
 
 
+// 该类的实现必须可以安全复制
 class ICDCommand {
+protected:
+  u8 id = 0;
+  int stage = 0;
+  void setID(u8 _id) { id = _id; }
+
 public:
-  virtual ~ICDCommand() = 0;
+  virtual ~ICDCommand() {};
   // 返回true 表示命令执行完毕, 立即进入下一条命令的解析
   virtual bool docmd(CDrom&) = 0;
+  bool is(u8 _id) { return _id == id; }
+
+friend class CDCommandFifo;
 };
 
 
@@ -216,12 +234,16 @@ private:
 
   CDROM_REG reg;
   CdAudioCode code;
-  CdAttribute attr;
-  CdMode mode;
-  u8 file;
-  u8 channel;
   u8 irq_enb;
-  u8 session;
+
+  u8 mode_cdda;
+  u8 mode_auto_pause;
+  u8 mode_play_irq;
+  u8 mode_filter;
+  u8 mode_ig_pos;
+  u8 mode_size;
+  u8 mode_to_spu;
+  u8 mode_speed;
 
   // 解决多线程冲突
   u8 s_index;
@@ -234,88 +256,65 @@ private:
   //6     Read: Always 1 ;XXX "_"   Write: 1=Reset Parameter Fifo ;XXX CLRPRM
   //7     Read: Always 1 ;XXX "_"   Write: 1=Unknown              ;XXX CHPRST
   u8 irq_flag;
-  u8 irq_flag2;
-  bool has_irq_flag2;
 
-  bool mute;
   CdReq req;
   // 索引整个光盘, 绝对位置; 对于轨道/会话, 软件通过 GetTD 确定绝对位置.
   CdMsf loc;
 
   bool thread_running;
-  std::thread th;
-  std::mutex for_read;
+  std::thread* th;
+  std::mutex* for_read;
 
+  CDCommandFifo* cmdfifo;
   CdromFifo response;
   CdromFifo param;
   CdromFifo data;
-  volatile u8 cmd;
-  volatile bool has_cmd;
-  volatile bool paused;
-  volatile bool want_data; // 上拉有效?
-  volatile bool send_irq1;
-
-  u8 locL[8];
-  u8 locP[8];
 
   void command_processor();
-
-  void push_response(u8);
-  // 由cdrom命令调用
-  void send_irq(u8);
-  // 由cdrom命令调用
-  void send_irq2(u8);
-  void do_cmd(u8);
-  u8 read_param();
-  void read_next_section();
-  
-  void clear_data_fifo();
-  void clear_resp_fifo();
-  void clear_parm_fifo();
-  void update_status();
 
 protected:
   void dma_ram2dev_block(psmem addr, u32 bytesize, s32 inc) override;
   void dma_dev2ram_block(psmem addr, u32 bytesize, s32 inc) override;
 
 public:
-  void CmdSync();
-  void CmdGetstat();
-  void CmdSetloc();
-  void CmdPlay();
-  void CmdForward();
-  void CmdBackward();
-  void CmdReadN();
-  void CmdMotorOn();
-  void CmdStop();
-  void CmdPause();
-  void CmdInit();
-  void CmdMute();
-  void CmdDemute();
-  void CmdSetfilter();
-  void CmdSetmode();
-  void CmdGetparam();
-  void CmdGetlocL();
-  void CmdGetlocP();
-  void CmdSetSession();
-  void CmdGetTN();
-  void CmdGetTD();
-  void CmdSeekL();
-  void CmdSeekP();
-  void CmdSetClock();
-  void CmdGetClock();
-  void CmdTest();
-  void CmdGetID();
-  void CmdReadS();
-  void CmdReset();
-  void CmdGetQ();
-  void CmdReadTOC();
-  void CmdVideoCD();
-  void CmdSecret(int);
+  CdAttribute attr;
+  volatile bool mute;
+  volatile bool want_data; 
+  u8 file;
+  u8 channel;
+  u8 locL[8];
+  u8 locP[8];
 
 public:
   CDrom(Bus&, CdDrive&);
   ~CDrom();
+
+  bool nextCmdIsStop();
+  void updateStatus();
+  
+  u8 pop_param();
+  void pushResponse(u8);
+  // 发送当前状态
+  void pushResponse();
+  // 由cdrom命令调用
+  void sendIrq(u8);
+  // 由cdrom命令调用
+  void setFilter(u8 file, u8 channel);
+  void setMode(u8 m);
+  u8 getMode();
+  void clearDataFifo();
+  void clearRespFifo();
+  void clearParmFifo();
+  void setLoc(u8 m, u8 s, u8 f);
+  void syncDriveLoc();
+  void moveToFirstTrack();
+  void readSectionData();
+  void moveNextTrack();
+  bool dataIsEmpty();
+  std::mutex* readLock();
+  void getSessionTrack(CDTrack& first, CDTrack& end);
+  bool getTrackMsf(CDTrack t, CdMsf *r);
+  bool hasDisk();
 
 friend class CDROM_REG;
 };
