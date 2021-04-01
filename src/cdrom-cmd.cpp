@@ -613,7 +613,7 @@ public:
 
 
 #define CD_CMD(n, fn) \
-  case n: cddbg("CD-ROM CMD: " BLUE("%s") "\n", #fn); \
+  case n: printf("CD-ROM CMD: " BLUE("%s") "\n", #fn); \
     return CmdRef(new CDCmd##fn()); 
 
 

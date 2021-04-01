@@ -3,7 +3,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
-#include <queue>
+#include <condition_variable>
 #include <cdio/cdio.h>
 #include <cdio/cd_types.h>
 #include <cdio/util.h>
@@ -264,48 +264,48 @@ bool CdDrive::readData(void* buf) {
 // 线程安全的
 class CDCommandFifo {
 private:
-  std::queue<u8> fifo;
+  u8 cmd;
+  bool _has;
   std::mutex rw;
 
 public: 
-  CDCommandFifo() {}
+  CDCommandFifo() : _has(false) {}
 
   // 有更多命令返回 true
   bool has() {
-    return !fifo.empty();
+    return _has;
   }
 
   // 提取出下一个命令
   CmdRef next() {
     std::lock_guard<std::mutex> _lk(rw);
-    u8 cmdid = fifo.front();
-    CmdRef n = parse_cmd(cmdid);
-    n->setID(cmdid);
-    fifo.pop();
-    return n;
+    if (_has) {
+      CmdRef n = parse_cmd(cmd);
+      n->setID(cmd);
+      _has = false;
+      return n;
+    }
+    return CmdRef();
   }
 
   // 推入下一个命令
   void push(u8 cmd) {
     std::lock_guard<std::mutex> _lk(rw);
-    fifo.push(cmd);
+    this->cmd = cmd;
+    _has = 1;
   }
 
   // 下一个命令如果是 id 则返回 true
-  bool nextIs(const u8* id, int size) {
+  bool nextIs(u8 a0, u8 a1, u8 a2, u8 a3) {
     std::lock_guard<std::mutex> _lk(rw);
     if (!has()) return false;
-    const u8 fid = fifo.front();
-    for (int i = 0; i < size; ++i) {
-      if (fid == id[i]) return true;
-    }
-    return false;
+    return (cmd == a0) || (cmd == a1) || (cmd == a2) || (cmd == a3);
   }
 
   bool nextIs(const u8 id) {
     std::lock_guard<std::mutex> _lk(rw);
     if (!has()) return false;
-    return fifo.front() == id;
+    return cmd == id;
   }
 };
 
@@ -436,6 +436,7 @@ void CDROM_REG::write1(u8 v) {
       cddbg("CD-ROM w 1f801801(8) CMD %08x\n", v);
       p.cmdfifo->push(v);
       p.s_busy = 1;
+      p.recovery_processing->notify_all();
       break;
 
     case 1: // 声音映射数据输出
@@ -511,6 +512,7 @@ void CDROM_REG::write3(u8 v) {
         cddbg("CD-rom clear param fifo\n");
         p.clearParmFifo();
       }
+      p.recovery_processing->notify_all();
       break;
 
     case 2:
@@ -532,11 +534,13 @@ void CDROM_REG::write3(u8 v) {
 CDrom::CDrom(Bus& b, CdDrive& d) 
 : DMADev(b, DeviceIOMapper::dma_cdrom_base), thread_running(true),
   bus(b), drive(d), reg(*this, b), response(1), param(4), data(0x96),
-  th(0), irq_flag(0), cmdfifo(0)
+  th(0), irq_flag(0), cmdfifo(0), for_processor(0), recovery_processing(0)
 {
   th = new std::thread(&CDrom::command_processor, this);
   for_read = new std::mutex();
   cmdfifo = new CDCommandFifo();
+  for_processor = new std::mutex();
+  recovery_processing = new std::condition_variable();
   s_busy = 0;
 }
 
@@ -551,7 +555,7 @@ CDrom::~CDrom() {
 
 
 void CDrom::sendIrq(u8 irq) {
-  irq_flag = irq;
+  irq_flag |= irq;
 
   if (irq_flag & irq_enb) {
     cddbg("CD-rom send IRQ %x - %x\n", irq_flag, irq_enb);
@@ -693,8 +697,7 @@ bool CDrom::hasDisk() {
 
 
 bool CDrom::nextCmdIsStop() {
-  static const u8 st[] = {8, 9, 0xA, 0x1C};
-  return cmdfifo->nextIs(st, sizeof(st));
+  return cmdfifo->nextIs(0x8, 0x9, 0xA, 0x1C);
 }
 
 
@@ -705,26 +708,36 @@ std::mutex* CDrom::readLock() {
 
 void CDrom::command_processor() {
   info("CD-ROM Thread ID: %x\n", this_thread_id());
+  std::unique_lock<std::mutex> lck(*for_processor);
   CmdRef curr;
 
   while (thread_running) {
-    s_busy = 0;
-    // 做了特殊处理... 没有响应 ReadN 的 irq1 而是直接发送 pause
+    //TODO:待验证, 这里做了特殊处理... 没有响应 ReadN 的 irq1 而是直接发送 pause
+    // 用 nextCmdIsStop() 替换会导致异常读取
     if (cmdfifo->nextIs(0x09)) {
       curr.reset();
       irq_flag = 0;
     }
 
     if (irq_flag) {
-      sleep(1);//TODO: 用信号
+      recovery_processing->wait_for(lck, std::chrono::milliseconds(1));
       continue;
     }
 
     if (curr) {
+      // 给 cpu 足够的周期检查 cdrom 状态, 当 cdrom 过快的响应命令, 
+      // cpu 甚至会认为 cdrom 没有变化! (导致重复发送 init 命令, 
+      // 或者 cpu 开始检测 cdrom 已经发送完成的事件)
+      //TODO: 相比固定时间, 最好等待某个信号, 或cpu周期, 等 cpu 启用中断?.
+      sleep(1);
+
+      s_busy = 1;
       if (curr->docmd(*this)) {
         curr.reset();
       }
       continue;
+    } else {
+      s_busy = 0;
     }
 
     if (cmdfifo->has()) {
@@ -732,6 +745,8 @@ void CDrom::command_processor() {
       s_busy = 1;
       attr.clearerr();
       continue;
+    } else {
+      recovery_processing->wait_for(lck, std::chrono::milliseconds(1));
     }
   }
 }

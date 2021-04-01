@@ -13,6 +13,7 @@ class CDrom;
 class CDCommandFifo;
 class ::std::thread;
 class ::std::mutex;
+class ::std::condition_variable;
 typedef _CdIo* CDIO;
 typedef u8    CDTrack;
 typedef s32   CdLsn;
@@ -264,6 +265,8 @@ private:
   bool thread_running;
   std::thread* th;
   std::mutex* for_read;
+  std::mutex* for_processor;
+  std::condition_variable* recovery_processing;
 
   CDCommandFifo* cmdfifo;
   CdromFifo response;
