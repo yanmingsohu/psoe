@@ -86,8 +86,8 @@ void Timer::add() {
   if (pause) return;
   ++conter;
 
-  bool onTarget = (conter == target);
-  bool onMax = (conter == 0xffff);
+  const bool onTarget = (conter == target);
+  const bool onMax = (conter == 0xffff);
 
   if (onTarget) {
     mode.rtv = 1;

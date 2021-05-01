@@ -36,8 +36,8 @@ static void test_mips_size() {
 
 static void test_mips_inter() {
   const char *image[] = {
-    "ps-exe/Raiden Project, The (Europe).cue",
-    "ps-exe/PS One Demo Disc 02 (Europe) (En,Fr,De,Es,It).cue",
+    "d:/ps1e/ps-exe/Raiden Project, The (Europe).cue",
+    "d:/ps1e/ps-exe/PS One Demo Disc 02 (Europe) (En,Fr,De,Es,It).cue",
   };
   const char *biosf[] = { 
     "H:\\EMU-console\\PlayStation1\\bios\\SCPH1000.BIN", //0

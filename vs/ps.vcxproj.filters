@@ -74,6 +74,9 @@
     <ClInclude Include="..\src\time.h">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\front-io.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\asm_x86-64.cpp">
@@ -137,6 +140,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\cdrom-cmd.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\front-io.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

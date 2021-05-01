@@ -24,6 +24,7 @@
     <ClInclude Include="..\src\bus.h" />
     <ClInclude Include="..\src\cdrom.h" />
     <ClInclude Include="..\src\cpu.h" />
+    <ClInclude Include="..\src\front-io.h" />
     <ClInclude Include="..\src\gpu_shader.h" />
     <ClInclude Include="..\src\gte.h" />
     <ClInclude Include="..\src\inter.h" />
@@ -47,6 +48,7 @@
     <ClCompile Include="..\src\cdrom.cpp" />
     <ClCompile Include="..\src\cpu.cpp" />
     <ClCompile Include="..\src\dma.cpp" />
+    <ClCompile Include="..\src\front-io.cpp" />
     <ClCompile Include="..\src\gpu.cpp" />
     <ClCompile Include="..\src\gpu_gp0.cpp" />
     <ClCompile Include="..\src\gpu_gp1.cpp" />

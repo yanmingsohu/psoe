@@ -82,11 +82,11 @@ namespace ps1e {
 // (rw: 方法, a: io数组, v: 数据参数, w: 位宽(字节))
 //
 #define IO_MIRRORS_STATEMENTS(rw, a, v) \
-    rw(0x1F80'1040, joy_data            , a, v, 4) \
-    rw(0x1F80'1044, joy_stat            , a, v, 4) \
-    rw(0x1F80'1048, joy_mode            , a, v, 2) \
-    rw(0x1F80'104A, joy_ctrl            , a, v, 2) \
-    rw(0x1F80'104E, joy_baud            , a, v, 2) \
+    rw(0x1F80'1040, joy_data            , a, v, 1) \
+    rw(0x1F80'1044, joy_stat            , a, v, 1) \
+    rw(0x1F80'1048, joy_mode            , a, v, 1) \
+    rw(0x1F80'104A, joy_ctrl            , a, v, 1) \
+    rw(0x1F80'104E, joy_baud            , a, v, 1) \
                                                    \
     rw(0x1F80'1050, sio_tx_data         , a, v, 4) \
     rw(0x1F80'1054, sio_stat            , a, v, 4) \
